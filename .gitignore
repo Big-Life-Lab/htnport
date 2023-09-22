@@ -81,3 +81,5 @@ packrat.lock
 
 # If you use lintr for code linting, ignore these files
 .R/lintr_cache/
+
+.Rproj.user
