@@ -1,0 +1,124 @@
+---
+title: "Recoding CHMS medication variables"
+format: html
+---
+
+```{r}
+library(readr)
+library(here)
+library(dplyr)
+library(recodeflow)
+
+my_variables <- read.csv(here("worksheets", "chmsflow-variables.csv"))
+my_variable_details <- read.csv(here("worksheets", "chmsflow-variable-details.csv"))
+```
+
+1. Create synthetic data for cycle 1 and cycle 3.
+```{r}
+cycle1 <- data.frame(
+  atc_101a = c("C07AA05", "C09AA06", "C08CA01", "A10BC02"),
+  atc_102a = c("A01AB05", "C09AA02", "C07AB02", "C03AA03"),
+  atc_103a = c("C02CC07", "C08CA06", "C07AB07", "C07AB03"),
+  atc_104a = c("C03CA01", "C03CA01", "C09AA04", "C08CA02"),
+  atc_105a = c("C09AA04", "C07AB02", "C08CA02", "A10BD05"),
+  atc_106a = c("C09AA04", "C07AB02", "C08CA02", "A10BD05"),
+  atc_107a = c("C09AA04", "C07AB02", "C08CA02", "A10BD05"),
+  atc_108a = c("C09AA04", "C07AB02", "C08CA02", "A10BD05"),
+  atc_109a = c("C09AA04", "C07AB02", "C08CA02", "A10BD05"),
+  atc_110a = c("C09AA04", "C07AB02", "C08CA02", "A10BD05"),
+  atc_111a = c("C09AA04", "C07AB02", "C08CA02", "A10BD05"),
+  atc_112a = c("C09AA04", "C07AB02", "C08CA02", "A10BD05"),
+  atc_113a = c("C09AA04", "C07AB02", "C08CA02", "A10BD05"),
+  atc_114a = c("C09AA04", "C07AB02", "C08CA02", "A10BD05"),
+  atc_115a = c("C09AA04", "C07AB02", "C08CA02", "A10BD05"),
+  atc_201a = c("C03BA08", "C07AA07", "C07AA12", "M01AG02"),
+  atc_202a = c("C07AA05", "C09AA06", "C08CA01", "A10BC02"),
+  atc_203a = c("C03BA08", "C07AA07", "C07AA12", "M01AG02"),
+  atc_204a = c("C03BC02", "C08CA01", "C07AA05", "C07AA06"),
+  atc_205a = c("C02KX01", "C02AA05", "C07AG02", "C07AA06"),
+  atc_206a = c("A01AB05", "C09AA02", "C07AB02", "C03AA03"),
+  atc_207a = c("C02CC07", "C08CA06", "C07AB07", "C07AB03"),
+  atc_208a = c("C03CA01", "C03CA01", "C09AA04", "C08CA02"),
+  atc_209a = c("C09AA04", "C07AB02", "C08CA02", "A10BD05"),
+  atc_210a = c("C09AA04", "C07AB02", "C08CA02", "A10BD05"),
+  atc_211a = c("C09AA04", "C07AB02", "C08CA02", "A10BD05"),
+  atc_212a = c("C09AA04", "C07AB02", "C08CA02", "A10BD05"),
+  atc_213a = c("C09AA04", "C07AB02", "C08CA02", "A10BD05"),
+  atc_214a = c("C09AA04", "C07AB02", "C08CA02", "A10BD05"),
+  atc_215a = c("C09AA04", "C07AB02", "C08CA02", "A10BD05"),
+  atc_131a = c("C07AA05", "C09AA06", "C08CA01", "A10BC02"),
+  atc_132a = c("C03BA08", "C07AA07", "C07AA12", "M01AG02"),
+  atc_133a = c("C03BC02", "C08CA01", "C07AA05", "C07AA06"),
+  atc_134a = c("C02KX01", "C02AA05", "C07AG02", "C07AA06"),
+  atc_135a = c("A01AB05", "C09AA02", "C07AB02", "C03AA03"),
+  atc_231a = c("C02CC07", "C08CA06", "C07AB07", "C07AB03"),
+  atc_232a = c("C03CA01", "C03CA01", "C09AA04", "C08CA02"),
+  atc_233a = c("C09AA04", "C07AB02", "C08CA02", "A10BD05"),
+  atc_234a = c("C09AA04", "C07AB02", "C08CA02", "A10BD05"),
+  atc_235a = c("C09AA04", "C07AB02", "C08CA02", "A10BD05"),
+  mhr_101b = c(2, 3, 1, 3),
+  mhr_102b = c(1, 4, 3, 2),
+  mhr_103b = c(3, 2, 1, 4),
+  mhr_104b = c(1, 2, 4, 3),
+  mhr_105b = c(3, 2, 1, 4),
+  mhr_106b = c(3, 2, 1, 4),
+  mhr_107b = c(3, 2, 1, 4),
+  mhr_108b = c(3, 2, 1, 4),
+  mhr_109b = c(3, 2, 1, 4),
+  mhr_110b = c(3, 2, 1, 4),
+  mhr_111b = c(3, 2, 1, 4),
+  mhr_112b = c(3, 2, 1, 4),
+  mhr_113b = c(3, 2, 1, 4),
+  mhr_114b = c(3, 2, 1, 4),
+  mhr_115b = c(3, 2, 1, 4),
+  mhr_201b = c(3, 2, 2, 3),
+  mhr_202b = c(2, 3, 1, 3),
+  mhr_203b = c(3, 2, 2, 3),
+  mhr_204b = c(3, 1, 5, 1),
+  mhr_205b = c(1, 2, 3, 4),
+  mhr_206b = c(1, 4, 3, 2),
+  mhr_207b = c(3, 2, 1, 4),
+  mhr_208b = c(1, 2, 4, 3),
+  mhr_209b = c(3, 2, 1, 4),
+  mhr_210b = c(3, 2, 1, 4),
+  mhr_211b = c(3, 2, 1, 4),
+  mhr_212b = c(3, 2, 1, 4),
+  mhr_213b = c(3, 2, 1, 4),
+  mhr_214b = c(3, 2, 1, 4),
+  mhr_215b = c(3, 2, 1, 4),
+  mhr_131b = c(2, 3, 1, 3),
+  mhr_132b = c(3, 2, 2, 3),
+  mhr_133b = c(3, 1, 5, 1),
+  mhr_134b = c(1, 2, 3, 4),
+  mhr_135b = c(1, 4, 3, 2),
+  mhr_231b = c(3, 2, 1, 4),
+  mhr_232b = c(1, 2, 4, 3),
+  mhr_233b = c(3, 2, 1, 4),
+  mhr_234b = c(3, 2, 1, 4),
+  mhr_235b = c(3, 2, 1, 4)
+)
+
+cycle3 <- data.frame(
+  meucatc = c("C07AA05", "C09AA06", "C08CA01", "A10BC02"),
+  npi_25b = c(2, 3, 1, 3)
+)
+```
+
+2. Recode medication variables.
+```{r}
+# Recoding basic variables from cycles 1 and 3.
+cycle1_prescription_data <- rec_with_table(cycle1, c("atc_101a", "mhr_101b"), variable_details = my_variable_details, log = TRUE)
+head(cycle1_prescription_data)
+
+cycle3_prescription_data <- rec_with_table(cycle3, c("meucatc", "npi_25b"), variable_details = my_variable_details, log = TRUE)
+head(cycle1_prescription_data)
+
+# Recoding derived variable acemed for cycle1. All variables needed were given "Drugs" role in variables.csv to prevent writing all them out here.
+cycle1_ace_prescription_data <- rec_with_table(cycle1, recodeflow:::select_vars_by_role("Drugs", my_variables), variable_details = my_variable_details)
+head(cycle1_ace_prescription_data) # 3 out of the 4 participants use ACE inhibitors based on info from 40 of their medications
+
+# Recoding derived variable acemed for cycle3. Much simpler function used here.
+cycle3_ace_prescription_data <- rec_with_table(cycle3, c("meucatc", "npi_25b", "acemed"), variable_details = my_variable_details)
+head(cycle3_ace_prescription_data)
+```
+
