@@ -560,7 +560,7 @@ cycles1to2_calcium_channel_blockers <- function(
   
 }
 
-cycles1to2_misc_meds <- function(
+cycles1to2_other_antiHTN_meds <- function(
     atc_101a = NULL, atc_102a = NULL, atc_103a = NULL, atc_104a = NULL, atc_105a = NULL,
     atc_106a = NULL, atc_107a = NULL, atc_108a = NULL, atc_109a = NULL, atc_110a = NULL,
     atc_111a = NULL, atc_112a = NULL, atc_113a = NULL, atc_114a = NULL, atc_115a = NULL,
@@ -602,7 +602,7 @@ cycles1to2_misc_meds <- function(
   
 }
 
-cycles1to2_any_hypertension_meds <- function(
+cycles1to2_any_antiHTN_meds <- function(
     atc_101a = NULL, atc_102a = NULL, atc_103a = NULL, atc_104a = NULL, atc_105a = NULL,
     atc_106a = NULL, atc_107a = NULL, atc_108a = NULL, atc_109a = NULL, atc_110a = NULL,
     atc_111a = NULL, atc_112a = NULL, atc_113a = NULL, atc_114a = NULL, atc_115a = NULL,
@@ -670,15 +670,15 @@ cycles1to2_nsaid <- function(
   med_vars <- names(Filter(Negate(is.null), mget(ls(pattern = "^atc_.*a$"))))
   last_taken_vars <- names(Filter(Negate(is.null), mget(ls(pattern = "^mhr_.*b$"))))
   
-  nsaidmed <- is_taking_drug_class(drugs, "NSAID", med_vars, last_taken_vars, is_NSAID, log_level="INFO", overwrite = TRUE)
+  nsaid <- is_taking_drug_class(drugs, "NSAID", med_vars, last_taken_vars, is_NSAID, log_level="INFO", overwrite = TRUE)
   
-  nsaid <- 0
+  nsaid_drug <- 0
   
-  if (nsaidmed$NSAID > 0 %in% TRUE) {
-    nsaidmed <- 1
+  if (nsaid$NSAID > 0 %in% TRUE) {
+    nsaid_drug <- 1
   }
-  else if (all(is.na(nsaidmed$NSAID))) {
-    nsaidmed <- haven::tagged_na("b")
+  else if (all(is.na(nsaid$NSAID))) {
+    nsaid_drug <- haven::tagged_na("b")
   }
   
   return(nsaid)

@@ -11,6 +11,8 @@ library(recodeflow)
 
 my_variables <- read.csv(here("worksheets", "chmsflow-variables.csv"))
 my_variable_details <- read.csv(here("worksheets", "chmsflow-variable-details.csv"))
+
+source(here("R", "medications.R"), local = knitr::knit_global())
 ```
 
 1. Create synthetic data for cycle 1 and cycle 3.
@@ -107,18 +109,18 @@ cycle3 <- data.frame(
 2. Recode medication variables.
 ```{r}
 # Recoding basic variables from cycles 1 and 3.
-cycle1_prescription_data <- rec_with_table(cycle1, c("atc_101a", "mhr_101b"), variable_details = my_variable_details, log = TRUE)
+cycle1_prescription_data <- rec_with_table(cycle1, c("atc_101a", "mhr_101b"), variable_details = my_variable_details)
 head(cycle1_prescription_data)
 
-cycle3_prescription_data <- rec_with_table(cycle3, c("meucatc", "npi_25b"), variable_details = my_variable_details, log = TRUE)
+cycle3_prescription_data <- rec_with_table(cycle3, c("meucatc", "npi_25b"), variable_details = my_variable_details)
 head(cycle1_prescription_data)
 
 # Recoding derived variable acemed for cycle1. All variables needed were given "Drugs" role in variables.csv to prevent writing all them out here.
 cycle1_ace_prescription_data <- rec_with_table(cycle1, recodeflow:::select_vars_by_role("Drugs", my_variables), variable_details = my_variable_details)
-head(cycle1_ace_prescription_data) # 3 out of the 4 participants use ACE inhibitors based on info from 40 of their medications
+head(cycle1_ace_prescription_data) # 3 out of the 4 participants use ACE inhibitors based on each of their info on all their 40 reported medications
 
 # Recoding derived variable acemed for cycle3. Much simpler function used here.
 cycle3_ace_prescription_data <- rec_with_table(cycle3, c("meucatc", "npi_25b", "acemed"), variable_details = my_variable_details)
-head(cycle3_ace_prescription_data)
+head(cycle3_ace_prescription_data) # 1 out of the 4 participants use ACE inhibitors based on each of their info on their only reported medication
 ```
 
