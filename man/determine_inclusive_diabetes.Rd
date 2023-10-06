@@ -9,7 +9,7 @@ determine_inclusive_diabetes(diab_m, diab_drug, CCC_51)
 \arguments{
 \item{diab_m}{An integer indicating whether the respondent has diabetes based on HbA1c level. 1 for "Yes", 2 for "No".}
 
-\item{diab_drug}{An integer indicating whether the respondent takes diabetes drugs. 1 for "Yes", 2 for "No".}
+\item{diab_drug}{An integer indicating whether the respondent takes diabetes drugs. 1 for "Yes", 0 for "No".}
 
 \item{CCC_51}{An integer indicating whether the respondent has diabetes in general. 1 for "Yes", 2 for "No".}
 }

@@ -4,14 +4,14 @@
 \alias{determine_controlled_hypertension}
 \title{Determine Controlled Hypertension Status}
 \usage{
-determine_controlled_hypertension(BPMDPBPS, BPMDPBPD, CCC_32)
+determine_controlled_hypertension(BPMDPBPS, BPMDPBPD, anymed)
 }
 \arguments{
 \item{BPMDPBPS}{An integer representing the systolic blood pressure measurement of the respondent.}
 
 \item{BPMDPBPD}{An integer representing the diastolic blood pressure measurement of the respondent.}
 
-\item{CCC_32}{An integer indicating whether the respondent is on medication for hypertension.
+\item{anymed}{An integer indicating whether the respondent is on medication for hypertension.
 \itemize{
 \item 1: Yes
 \item 2: No
@@ -31,11 +31,11 @@ This function determines the controlled hypertension status of a respondent base
 \examples{
 
 # Example 1: Determine controlled hypertension status for a respondent with systolic BP = 150, diastolic BP = 95, and on medication.
-determine_controlled_hypertension(BPMDPBPS = 150, BPMDPBPD = 95, CCC_32 = 1)
+determine_controlled_hypertension(BPMDPBPS = 150, BPMDPBPD = 95, anymed = 1)
 # Output: 1 (Hypertension not controlled due to systolic BP, diastolic BP, and medication usage).
 
 # Example 2: Determine controlled hypertension status for a respondent with systolic BP = 120, diastolic BP = 80, and on medication.
-determine_controlled_hypertension(BPMDPBPS = 120, BPMDPBPD = 80, CCC_32 = 1)
+determine_controlled_hypertension(BPMDPBPS = 120, BPMDPBPD = 80, anymed = 1)
 # Output: 2 (Hypertension controlled as BP is below 140/90 mmHg and on medication).
 
 }

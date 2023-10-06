@@ -3,7 +3,7 @@
 #' @description This function evaluates various factors to determine the inclusive diabetes status of a respondent.
 #'
 #' @param diab_m An integer indicating whether the respondent has diabetes based on HbA1c level. 1 for "Yes", 2 for "No".
-#' @param diab_drug An integer indicating whether the respondent takes diabetes drugs. 1 for "Yes", 2 for "No".
+#' @param diab_drug An integer indicating whether the respondent takes diabetes drugs. 1 for "Yes", 0 for "No".
 #' @param CCC_51 An integer indicating whether the respondent has diabetes in general. 1 for "Yes", 2 for "No".
 #'
 #' @return An integer indicating the inclusive diabetes status. If any of the input parameters (diab_m, diab_drug, CCC_51)

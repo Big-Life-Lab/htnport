@@ -4,14 +4,14 @@
 \alias{determine_controlled_adjusted_hypertension}
 \title{Determine Controlled Adjusted Hypertension Status}
 \usage{
-determine_controlled_adjusted_hypertension(SBP_adj, DBP_adj, CCC_32)
+determine_controlled_adjusted_hypertension(SBP_adj, DBP_adj, anymed)
 }
 \arguments{
 \item{SBP_adj}{An integer representing the adjusted systolic blood pressure measurement of the respondent.}
 
 \item{DBP_adj}{An integer representing the adjusted diastolic blood pressure measurement of the respondent.}
 
-\item{CCC_32}{An integer indicating whether the respondent is on medication for hypertension.
+\item{anymed}{An integer indicating whether the respondent is on medication for hypertension.
 \itemize{
 \item 1: Yes
 \item 2: No
@@ -31,11 +31,11 @@ This function determines the controlled adjusted hypertension status of a respon
 \examples{
 
 # Example 1: Determine controlled adjusted hypertension status for a respondent with adjusted systolic BP = 150, adjusted diastolic BP = 95, and on medication.
-determine_controlled_adjusted_hypertension(SBP_adj = 150, DBP_adj = 95, CCC_32 = 1)
+determine_controlled_adjusted_hypertension(SBP_adj = 150, DBP_adj = 95, anymed = 1)
 # Output: 1 (Hypertension not controlled due to adjusted systolic BP, adjusted diastolic BP, and medication usage).
 
 # Example 2: Determine controlled adjusted hypertension status for a respondent with adjusted systolic BP = 120, adjusted diastolic BP = 80, and on medication.
-determine_controlled_adjusted_hypertension(SBP_adj = 120, DBP_adj = 80, CCC_32 = 1)
+determine_controlled_adjusted_hypertension(SBP_adj = 120, DBP_adj = 80, anymed = 1)
 # Output: 2 (Hypertension controlled as adjusted BP is below 140/90 mmHg and on medication).
 
 }

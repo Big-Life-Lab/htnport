@@ -18,7 +18,7 @@ is_diabetes_drug(MEUCATC, NPI_25B)
 5 = More than a month ago, 6 = Never taken}
 }
 \value{
-A logical, TRUE if medication is in the diabetes drug class and FALSE if it is not.
+A numeric, 1 if medication is in the diabetes drug class and 0 if it is not.
 }
 \description{
 Determine if a CHMS respondent's medication is a diabetes drug.

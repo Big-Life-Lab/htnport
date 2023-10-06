@@ -4,14 +4,14 @@
 \alias{determine_hypertension}
 \title{Determine Hypertension Status}
 \usage{
-determine_hypertension(BPMDPBPS, BPMDPBPD, CCC_32)
+determine_hypertension(BPMDPBPS, BPMDPBPD, anymed)
 }
 \arguments{
 \item{BPMDPBPS}{An integer representing the systolic blood pressure measurement of the respondent.}
 
 \item{BPMDPBPD}{An integer representing the diastolic blood pressure measurement of the respondent.}
 
-\item{CCC_32}{An integer indicating whether the respondent is on medication for hypertension.
+\item{anymed}{An integer indicating whether the respondent is on medication for hypertension.
 \itemize{
 \item 1: Yes
 \item 2: No
@@ -31,11 +31,11 @@ This function determines the hypertension status of a respondent based on their 
 \examples{
 
 # Example 1: Determine hypertension status for a respondent with systolic BP = 150, diastolic BP = 95, and on medication.
-determine_hypertension(BPMDPBPS = 150, BPMDPBPD = 95, CCC_32 = 1)
+determine_hypertension(BPMDPBPS = 150, BPMDPBPD = 95, anymed = 1)
 # Output: 1 (High blood pressure due to systolic BP, diastolic BP, and medication usage).
 
 # Example 2: Determine hypertension status for a respondent with systolic BP = 120, diastolic BP = 80, and not on medication.
-determine_hypertension(BPMDPBPS = 120, BPMDPBPD = 80, CCC_32 = 2)
+determine_hypertension(BPMDPBPS = 120, BPMDPBPD = 80, anymed = 2)
 # Output: 2 (Normal blood pressure as BP is below 140/90 mmHg and not on medication).
 
 }

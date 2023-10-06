@@ -106,7 +106,7 @@ is_taking_drug_class <- function(df, class_var_name, med_vars, last_taken_vars, 
 #'                        1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
 #'                        5 = More than a month ago, 6 = Never taken
 #' 
-#' @return A logical, TRUE if medication is in the beta blocker class and FALSE if it is not.
+#' @return A numeric, 1 if medication is in the beta blocker class and 0 if it is not.
 #' 
 #' @details This function uses the `startsWith` function to identify beta blockers based on their ATC codes, which
 #'          typically start with "C07". Additionally, specific sub-codes 'C07AA07', 'C07AA12', and 'C07AG02' are excluded 
@@ -148,7 +148,7 @@ is_beta_blocker <- function(MEUCATC, NPI_25B) {
 #'                        1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
 #'                        5 = More than a month ago, 6 = Never taken
 #' 
-#' @return A logical, TRUE if medication is in the ACE inhibitor class and FALSE if it is not.
+#' @return A numeric, 1 if medication is in the ACE inhibitor class and 0 if it is not.
 #' 
 #' @details This function uses the `startsWith` function to identify ACE inhibitors based on their ATC codes, which
 #'          typically start with "C09". If the ATC code matches the pattern and the medication was taken within the last
@@ -184,7 +184,7 @@ is_ace_inhibitor <- function(MEUCATC, NPI_25B) {
 #'                        1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
 #'                        5 = More than a month ago, 6 = Never taken
 #' 
-#' @return A logical, TRUE if medication is in the diuretic class and FALSE if it is not.
+#' @return A numeric, 1 if medication is in the diuretic class and 0 if it is not.
 #' 
 #' @details This function uses the `startsWith` function to identify diuretics based on their ATC codes, which
 #'          typically start with "C03". Additionally, specific sub-codes 'C03BA08' and 'C03CA01' are excluded from the
@@ -221,7 +221,7 @@ is_diuretic <- function(MEUCATC, NPI_25B) {
 #'                        1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
 #'                        5 = More than a month ago, 6 = Never taken
 #' 
-#' @return A logical, TRUE if medication is in the calcium channel blocker class and FALSE if it is not.
+#' @return A numeric, 1 if medication is in the calcium channel blocker class and 0 if it is not.
 #' 
 #' @details This function uses the `startsWith` function to identify calcium channel blockers based on their ATC codes,
 #'          which typically start with "C08". If the ATC code matches the pattern and the medication was taken within
@@ -257,7 +257,7 @@ is_calcium_channel_blocker <- function(MEUCATC, NPI_25B) {
 #'                        1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
 #'                        5 = More than a month ago, 6 = Never taken
 #' 
-#' @return A logical, TRUE if medication is in the other anti-hypertensive drug class and FALSE if it is not.
+#' @return A numeric, 1 if medication is in another anti-hypertensive drug class and 0 if it is not.
 #' 
 #' @details This function uses the `startsWith` function to identify other anti-hypertensive drugs based on their ATC
 #'          codes, which typically start with "C02". The sub-code 'C02KX01' is excluded from the class. If the ATC code
@@ -294,7 +294,7 @@ is_other_antiHTN_med <- function(MEUCATC, NPI_25B) {
 #'                        1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
 #'                        5 = More than a month ago, 6 = Never taken
 #' 
-#' @return A logical, TRUE if medication is in any anti-hypertensive drug class and FALSE if it is not.
+#' @return A numeric, 1 if medication is in any anti-hypertensive drug class and 0 if it is not.
 #' 
 #' @details This function first identifies any anti-hypertensive drugs based on their ATC codesm using the regular expression 
 #'          'C0[2, 3, 7, 8, 9]' which matches ATC codes that start with "C02", "C03", "C07", "C08", and "C09". Specific sub-codes 
@@ -332,7 +332,7 @@ is_any_antiHTN_med <- function(MEUCATC, NPI_25B) {
 #'                        1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
 #'                        5 = More than a month ago, 6 = Never taken
 #' 
-#' @return A logical, TRUE if medication is in the NSAID class and FALSE if it is not.
+#' @return A numeric, 1 if medication is in the NSAID class and 0 if it is not.
 #' 
 #' @details This function uses the `startsWith` function to identify NSAIDs based on their ATC codes, which typically
 #'          start with "M01A". If the ATC code matches the pattern and the medication was taken within the last month
@@ -368,7 +368,7 @@ is_NSAID <- function(MEUCATC, NPI_25B) {
 #'                        1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
 #'                        5 = More than a month ago, 6 = Never taken
 #' 
-#' @return A logical, TRUE if medication is in the diabetes drug class and FALSE if it is not.
+#' @return A numeric, 1 if medication is in the diabetes drug class and 0 if it is not.
 #' 
 #' @details This function uses the `startsWith` function to identify diabetes drugs based on their ATC codes, which
 #'          typically start with "A10". If the ATC code matches the pattern and the medication was taken within the last
@@ -393,6 +393,22 @@ is_diabetes_drug <- function(MEUCATC, NPI_25B) {
   as.numeric(startsWith(MEUCATC, "A10") && NPI_25B <= 4)
 }
 
+#' @title Determine if a person is taking beta-blockers in CHMS cycles 1 to 2.
+#' 
+#' This function checks if a given medication for a CHMS respondent belongs to the beta blocker drug class.
+#' The specific conditions for identifying a beta blocker are based on Anatomical Therapeutic Chemical (ATC) codes
+#' and the time when the medication was last taken.
+#'
+#' @param atc_101a to atc_235a Each a character vector representing the Anatomical Therapeutic Chemical (ATC) code of the medication.
+#' @param mhr_101b to mhr_235b Each an integer representing the CHMS response for the time when the medication was last taken.
+#'                        1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                        5 = More than a month ago, 6 = Never taken
+#'
+#' @return bbmed, a numeric set to 1 if the person is taking beta-blockers, NA if no information is available, 0 otherwise.
+#' 
+#' @seealso `is_beta_blocker`
+#' 
+#' @export
 cycles1to2_beta_blockers <- function(
     atc_101a = NULL, atc_102a = NULL, atc_103a = NULL, atc_104a = NULL, atc_105a = NULL,
     atc_106a = NULL, atc_107a = NULL, atc_108a = NULL, atc_109a = NULL, atc_110a = NULL,
@@ -434,7 +450,21 @@ cycles1to2_beta_blockers <- function(
   return(bbmed)
 }
 
-# Function to identify if a person is taking ACE inhibitors
+#' @title Determine if a person is taking ACE inhibitors in CHMS cycles 1 to 2.
+#'
+#' This function checks if a person is taking ACE inhibitors based on the provided Anatomical Therapeutic Chemical (ATC) codes for medications 
+#' and the Canadian Health Measures Survey (CHMS) response for the time when the medication was last taken.
+#'
+#' @param atc_101a to atc_235a Each a character vector representing the ATC code of the medication.
+#' @param mhr_101b to mhr_235b Each an integer representing the CHMS response for the time when the medication was last taken.
+#'                        1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                        5 = More than a month ago, 6 = Never taken
+#'
+#' @return acemed, a numeric set to 1 if the person is taking ACE inhibitors, NA if no information is available, 0 otherwise.
+#'
+#' @seealso `is_ace_inhibitor`
+#'
+#' @export
 cycles1to2_ace_inhibitors <- function(
     atc_101a = NULL, atc_102a = NULL, atc_103a = NULL, atc_104a = NULL, atc_105a = NULL,
     atc_106a = NULL, atc_107a = NULL, atc_108a = NULL, atc_109a = NULL, atc_110a = NULL,
@@ -476,6 +506,21 @@ cycles1to2_ace_inhibitors <- function(
   return(acemed)
 }
 
+#' @title Determine if a person is taking diuretics in CHMS cycles 1 to 2.
+#'
+#' This function checks if a person is taking diuretics based on the provided Anatomical Therapeutic Chemical (ATC) codes for medications 
+#' and the Canadian Health Measures Survey (CHMS) response for the time when the medication was last taken.
+#'
+#' @param atc_101a to atc_235a Each a character vector representing the ATC code of the medication.
+#' @param mhr_101b to mhr_235b Each an integer representing the CHMS response for the time when the medication was last taken.
+#'                        1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                        5 = More than a month ago, 6 = Never taken
+#'
+#' @return diurmed, a numeric set to 1 if the person is taking diuretics, NA if no information is available, 0 otherwise.
+#'
+#' @seealso `is_diuretic`
+#'
+#' @export
 cycles1to2_diuretics <- function(
     atc_101a = NULL, atc_102a = NULL, atc_103a = NULL, atc_104a = NULL, atc_105a = NULL,
     atc_106a = NULL, atc_107a = NULL, atc_108a = NULL, atc_109a = NULL, atc_110a = NULL,
@@ -517,6 +562,21 @@ cycles1to2_diuretics <- function(
   return(diurmed)
 }
 
+#' @title Determine if a person is taking calcium channel blockers in CHMS cycles 1 to 2.
+#'
+#' This function checks if a person is taking calcium channel blockers based on the provided Anatomical Therapeutic Chemical (ATC) codes for medications 
+#' and the Canadian Health Measures Survey (CHMS) response for the time when the medication was last taken.
+#'
+#' @param atc_101a to atc_235a Each a character vector representing the ATC code of the medication.
+#' @param mhr_101b to mhr_235b Each an integer representing the CHMS response for the time when the medication was last taken.
+#'                        1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                        5 = More than a month ago, 6 = Never taken
+#'
+#' @return ccbmed, a numeric set to 1 if the person is taking calcium channel blockers, NA if no information is available, 0 otherwise.
+#'
+#' @seealso `is_calcium_channel_blocker`
+#'
+#' @export
 cycles1to2_calcium_channel_blockers <- function(
     atc_101a = NULL, atc_102a = NULL, atc_103a = NULL, atc_104a = NULL, atc_105a = NULL,
     atc_106a = NULL, atc_107a = NULL, atc_108a = NULL, atc_109a = NULL, atc_110a = NULL,
@@ -560,6 +620,21 @@ cycles1to2_calcium_channel_blockers <- function(
   
 }
 
+#' @title Determine if a person is taking another type of anti-hypertensive medication in CHMS cycles 1 to 2.
+#'
+#' This function checks if a person is taking another type of anti-hypertensive medication based on the provided Anatomical Therapeutic Chemical (ATC) codes for medications 
+#' and the Canadian Health Measures Survey (CHMS) response for the time when the medication was last taken.
+#'
+#' @param atc_101a to atc_235a Each a character vector representing the ATC code of the medication.
+#' @param mhr_101b to mhr_235b Each an integer representing the CHMS response for the time when the medication was last taken.
+#'                        1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                        5 = More than a month ago, 6 = Never taken
+#'
+#' @return miscmed, a numeric set to 1 if the person is taking another type of anti-hypertensive medication, NA if no information is available, 0 otherwise.
+#'
+#' @seealso `is_other_antiHTN_med`
+#'
+#' @export
 cycles1to2_other_antiHTN_meds <- function(
     atc_101a = NULL, atc_102a = NULL, atc_103a = NULL, atc_104a = NULL, atc_105a = NULL,
     atc_106a = NULL, atc_107a = NULL, atc_108a = NULL, atc_109a = NULL, atc_110a = NULL,
@@ -602,6 +677,21 @@ cycles1to2_other_antiHTN_meds <- function(
   
 }
 
+#' @title Determine if a person is taking any anti-hypertensive medication in CHMS cycles 1 to 2.
+#'
+#' This function checks if a person is taking any anti-hypertensive medication based on the provided Anatomical Therapeutic Chemical (ATC) codes for medications 
+#' and the Canadian Health Measures Survey (CHMS) response for the time when the medication was last taken.
+#'
+#' @param atc_101a to atc_235a Each a character vector representing the ATC code of the medication.
+#' @param mhr_101b to mhr_235b Each an integer representing the CHMS response for the time when the medication was last taken.
+#'                        1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                        5 = More than a month ago, 6 = Never taken
+#'
+#' @return anymed, a numeric set to 1 if the person is taking any anti-hypertensive medication, NA if no information is available, 0 otherwise.
+#'
+#' @seealso `is_any_antiHTN_med`
+#'
+#' @export
 cycles1to2_any_antiHTN_meds <- function(
     atc_101a = NULL, atc_102a = NULL, atc_103a = NULL, atc_104a = NULL, atc_105a = NULL,
     atc_106a = NULL, atc_107a = NULL, atc_108a = NULL, atc_109a = NULL, atc_110a = NULL,
@@ -643,6 +733,21 @@ cycles1to2_any_antiHTN_meds <- function(
   return(anymed)
 }
 
+#' @title Determine if a person is taking non-steroidal anti-inflammatory drugs (NSAID) in CHMS cycles 1 to 2.
+#' 
+#' This function checks if a person is taking any NSAIDs based on the provided Anatomical Therapeutic Chemical (ATC) codes for medications 
+#' and the Canadian Health Measures Survey (CHMS) response for the time when the medication was last taken.
+#' 
+#' @param atc_101a to atc_235a Each a character vector representing the ATC code of the medication.
+#' @param mhr_101b to mhr_235b Each an integer representing the CHMS response for the time when the medication was last taken.
+#'                        1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                        5 = More than a month ago, 6 = Never taken
+#'
+#' @return nsaid, a numeric set to 1 if the person is taking any NSAIDs, NA if no information is available, 0 otherwise.
+#'
+#' @seealso `is_NSAID`
+#'
+#' @export
 cycles1to2_nsaid <- function(
     atc_101a = NULL, atc_102a = NULL, atc_103a = NULL, atc_104a = NULL, atc_105a = NULL,
     atc_106a = NULL, atc_107a = NULL, atc_108a = NULL, atc_109a = NULL, atc_110a = NULL,
@@ -681,10 +786,25 @@ cycles1to2_nsaid <- function(
     nsaid_drug <- haven::tagged_na("b")
   }
   
-  return(nsaid)
+  return(nsaid_drug)
   
 }
 
+#' @title Determine if a person is taking diabetes drugs in CHMS cycles 1 to 2.
+#' 
+#' This function checks if a person is taking diabetes drugs based on the provided Anatomical Therapeutic Chemical (ATC) codes for medications 
+#' and the Canadian Health Measures Survey (CHMS) response for the time when the medication was last taken.
+#' 
+#' @param atc_101a to atc_235a Each a character vector representing the ATC code of the medication.
+#' @param mhr_101b to mhr_235b Each an integer representing the CHMS response for the time when the medication was last taken.
+#'                        1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                        5 = More than a month ago, 6 = Never taken
+#'
+#' @return diab_drug, a numeric set to 1 if the person is taking any diabetes drugs, NA if no information is available, 0 otherwise.
+#'
+#' @seealso `is_diabetes_drug`
+#'
+#' @export
 cycles1to2_diabetes_drugs <- function(
     atc_101a = NULL, atc_102a = NULL, atc_103a = NULL, atc_104a = NULL, atc_105a = NULL,
     atc_106a = NULL, atc_107a = NULL, atc_108a = NULL, atc_109a = NULL, atc_110a = NULL,

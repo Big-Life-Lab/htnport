@@ -18,7 +18,7 @@ is_ace_inhibitor(MEUCATC, NPI_25B)
 5 = More than a month ago, 6 = Never taken}
 }
 \value{
-A logical, TRUE if medication is in the ACE inhibitor class and FALSE if it is not.
+A numeric, 1 if medication is in the ACE inhibitor class and 0 if it is not.
 }
 \description{
 Determine if a CHMS respondent's medication is an ACE inhibitor.
