@@ -1,4 +1,4 @@
-#' @title Adjuste systolic blood pressure
+#' @title Adjust systolic blood pressure
 #' 
 #' This function adjusts systolic blood pressure based on the respondent's systolic average blood pressure across 
 #' six measurements. The adjustment is made using specific correction factors. The adjusted systolic blood pressure
