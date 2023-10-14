@@ -5,10 +5,10 @@ library(logger)
 #' @title Calculate the number of occurrences of a specific anti-hypertensive drug class based on given conditions.
 #' 
 #' This function calculates the number of occurrences of a specific anti-hypertensive drug class in each row of a data frame.
-#' The calculation is based on custom conditions (including the drug class to be counted) specified by the user.
+#' The calculation is based on custom conditions (including the drug class to be counted) specified by the user (see parameters below).
 #' 
 #' @param df The data frame containing medication and last taken information.
-#' @param class_var_name The name of the new variable representing the drug class.
+#' @param class_var_name The name of the new variable representing the drug class to be counted.
 #' @param med_vars A character vector containing the names of medication variables in the data frame.
 #' @param last_taken_vars A character vector containing the names of last taken variables in the data frame.
 #' @param class_condition_fun A custom condition function that determines whether a medication belongs to the drug class.
@@ -125,7 +125,6 @@ is_taking_drug_class <- function(df, class_var_name, med_vars, last_taken_vars, 
 #' Example 2: Medication ATC code is 'C07AA07' (excluded code), and it was taken within the last month (NPI_25B = 4)
 #' is_beta_blocker('C07AA07', 4) # Should return 0 (FALSE)
 #' 
-#' 
 #' @export
 is_beta_blocker <- function(MEUCATC, NPI_25B) {
   
@@ -167,7 +166,6 @@ is_beta_blocker <- function(MEUCATC, NPI_25B) {
 #' Example 1: Medication ATC code is 'C09AA13', and it was taken within the last week (NPI_25B = 3)
 #' is_ace_inhibitor('C09AA13', 3) # Should return 1 (TRUE)
 #' 
-#' 
 #' @export
 is_ace_inhibitor <- function(MEUCATC, NPI_25B) {
   
@@ -207,7 +205,6 @@ is_ace_inhibitor <- function(MEUCATC, NPI_25B) {
 #' 
 #' Example 2: Medication ATC code is 'C03BA08' (excluded code), and it was taken within the last month (NPI_25B = 4)
 #' is_diuretic('C03BA08', 4) # Should return 0 (FALSE)
-#' 
 #' 
 #' @export
 is_diuretic <- function(MEUCATC, NPI_25B) {
