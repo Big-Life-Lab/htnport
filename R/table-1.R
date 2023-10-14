@@ -56,7 +56,9 @@ table1 <- dplyr::bind_rows(count(stratified_cycles1to6_table1_data, highbp14090 
 sample_size <- sum(count(stratified_cycles1to6_table1_data)$n)
 
 table1 <- table1 %>%
-  mutate(pct = (n/sample_size) * 100)
+  mutate(pct = (n/sample_size) * 100) %>%
+  mutate(conf_int_min = pct - 1.96*sqrt((pct*(100-pct))/sample_size)) %>%
+  mutate(conf_int_max = pct + 1.96*sqrt((pct*(100-pct))/sample_size))
 table1 <- recodeflow::set_data_labels(table1, variable_details = my_variable_details, variables_sheet = my_variables)
 write.csv(table1, "P:/10619/Dropbox/Sept25/rafidul_table1.csv")
 
