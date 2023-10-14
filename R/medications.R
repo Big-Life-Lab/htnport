@@ -2,10 +2,10 @@
 #' Load packages
 library(logger)
 
-#' @title Calculate the number of occurrences of a specific drug class based on given conditions.
+#' @title Calculate the number of occurrences of a specific anti-hypertensive drug class based on given conditions.
 #' 
-#' This function calculates the number of occurrences of a specific drug class in the data frame.
-#' The calculation is based on custom conditions specified by the user.
+#' This function calculates the number of occurrences of a specific anti-hypertensive drug class in each row of a data frame.
+#' The calculation is based on custom conditions (including the drug class to be counted) specified by the user.
 #' 
 #' @param df The data frame containing medication and last taken information.
 #' @param class_var_name The name of the new variable representing the drug class.
@@ -111,7 +111,7 @@ is_taking_drug_class <- function(df, class_var_name, med_vars, last_taken_vars, 
 #' @details This function identifies whether a medication is a beta blocker based on their ATC codes, which
 #'          typically start with "C07". Additionally, specific sub-codes 'C07AA07', 'C07AA12', and 'C07AG02' are excluded 
 #'          from the beta blocker class. A respondent is classified as taking a beta blocker (return = 1) if the ATC code matches the pattern and is not in the exclusion list, and the 
-#'          medication was taken within the last month (NPI_25B <= 4), otherwise the respondent is not taking a betablocker (return = 0)
+#'          medication was taken within the last month (NPI_25B <= 4), otherwise the respondent is not taking a beta blocker (return = 0)
 #' 
 #' @examples
 #' 
@@ -141,31 +141,32 @@ is_beta_blocker <- function(MEUCATC, NPI_25B) {
   return(as.numeric(is_beta_blocker))
 }
 
-#' @title Determine if a CHMS respondent's medication is an ACE inhibitor.
+#' @title Determine if a CHMS respondent's medication belongs to the ace inhibitor class.
 #' 
-#' This function checks if a given medication for a CHMS respondent belongs to the ACE inhibitor drug class.
-#' The identification is based on the Anatomical Therapeutic Chemical (ATC) code of the medication and the time when the
-#' medication was last taken.
+#' This function determines whether a given medication, taken by a CHMS respondent,
+#' is classified as an ace inhibitor. The identification is based on Anatomical Therapeutic Chemical (ATC) codes and the
+#' timing of the last medication intake.
 #' 
 #' @param MEUCATC A character vector representing the Anatomical Therapeutic Chemical (ATC) code of the medication.
 #' @param NPI_25B An integer representing the CHMS response for the time when the medication was last taken.
 #'                        1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
 #'                        5 = More than a month ago, 6 = Never taken
 #' 
-#' @return A numeric, 1 if medication is in the ACE inhibitor class and 0 if it is not.
+#' @return A numeric, 1 if medication is in the ace inhibitor class and 0 if it is not.
 #' 
-#' @details This function uses the `startsWith` function to identify ACE inhibitors based on their ATC codes, which
-#'          typically start with "C09". If the ATC code matches the pattern and the medication was taken within the last
-#'          month (NPI_25B <= 4), the medication is considered an ACE inhibitor and the function returns TRUE.
-#'          Otherwise, it returns FALSE.
+#' @details This function identifies whether a medication is an ace inhibitor based on their ATC codes, which
+#'          typically start with "C09".  A respondent is classified as taking a ace inhibitor (return = 1) if the ATC code matches the pattern, and the 
+#'          medication was taken within the last month (NPI_25B <= 4), otherwise the respondent is not taking an ace inhibitor (return = 0)
 #' 
 #' @examples
 #' 
-#' Let's say a for one respondent's medication, the ATC code is C09AB03 and the time they last took it was yesterday. By 
-#' passing in the code and integer time response (2 in this case) into the function, it can be checked if the given 
-#' respondent's medication is an ACE inhibitor (1) or not (0).
+#' Suppose a CHMS respondent's medication has the ATC code 'C09AA13', and they took it within the last week. By
+#' passing the code and the integer time response (3 in this case) into the function, you can check whether the medication
+#' is classified as a ace inhibitor (1 = TRUE) or not (0 = FALSE).
 #' 
-#' is_ace_inhibitor('C09AB03', 2)
+#' Example 1: Medication ATC code is 'C09AA13', and it was taken within the last week (NPI_25B = 3)
+#' is_ace_inhibitor('C09AA13', 3) # Should return 1 (TRUE)
+#' 
 #' 
 #' @export
 is_ace_inhibitor <- function(MEUCATC, NPI_25B) {
@@ -177,11 +178,11 @@ is_ace_inhibitor <- function(MEUCATC, NPI_25B) {
   as.numeric(startsWith(MEUCATC, "C09") && NPI_25B <= 4)
 }
 
-#' @title Determine if a CHMS respondent's medication is a diuretic.
+#' @title Determine if a CHMS respondent's medication belongs to the diuretic class.
 #' 
-#' This function checks if a given medication for a CHMS respondent belongs to the diuretic drug class.
-#' The identification is based on the Anatomical Therapeutic Chemical (ATC) code of the medication and the time when the
-#' medication was last taken.
+#' This function determines whether a given medication, taken by a CHMS respondent,
+#' is classified as an diuretic. The identification is based on Anatomical Therapeutic Chemical (ATC) codes and the
+#' timing of the last medication intake.
 #' 
 #' @param MEUCATC A character vector representing the Anatomical Therapeutic Chemical (ATC) code of the medication.
 #' @param NPI_25B An integer representing the CHMS response for the time when the medication was last taken.
@@ -190,19 +191,23 @@ is_ace_inhibitor <- function(MEUCATC, NPI_25B) {
 #' 
 #' @return A numeric, 1 if medication is in the diuretic class and 0 if it is not.
 #' 
-#' @details This function uses the `startsWith` function to identify diuretics based on their ATC codes, which
-#'          typically start with "C03". Additionally, specific sub-codes 'C03BA08' and 'C03CA01' are excluded from the
-#'          diuretic class. If the ATC code matches the pattern and is not in the exclusion list, and the medication was
-#'          taken within the last month (NPI_25B <= 4), the medication is considered a diuretic, and the function
-#'          returns TRUE. Otherwise, it returns FALSE.
+#' @details This function identifies whether a medication is an diuretic based on their ATC codes, which
+#'          typically start with "C03". Additionally, specific sub-codes 'C03BA08' and 'C03CA01' are excluded 
+#'          from the diuretic class. A respondent is classified as taking a diuretic (return = 1) if the ATC code matches the pattern, and the 
+#'          medication was taken within the last month (NPI_25B <= 4), otherwise the respondent is not taking an diuretic (return = 0)
 #' 
 #' @examples
 #' 
-#' Let's say a for one respondent's medication, the ATC code is C03AA03 and the time they last took it was within the last 
-#' week. By passing in the code and integer time response (3 in this case) into the function, it can be checked if the 
-#' given respondent's medication is a diuretic (1) or not (0).
+#' Suppose a CHMS respondent's medication has the ATC code 'C03AA13', and they took it within the last week. By
+#' passing the code and the integer time response (3 in this case) into the function, you can check whether the medication
+#' is classified as a diuretic (1 = TRUE) or not (0 = FALSE).
 #' 
-#' is_diuretic('C03AA03', 3)
+#' Example 1: Medication ATC code is 'C03AA13', and it was taken within the last week (NPI_25B = 3)
+#' is_diuretic('C03AA13', 3) # Should return 1 (TRUE)
+#' 
+#' Example 2: Medication ATC code is 'C03BA08' (excluded code), and it was taken within the last month (NPI_25B = 4)
+#' is_diuretic('C03BA08', 4) # Should return 0 (FALSE)
+#' 
 #' 
 #' @export
 is_diuretic <- function(MEUCATC, NPI_25B) {
@@ -234,11 +239,12 @@ is_diuretic <- function(MEUCATC, NPI_25B) {
 #' 
 #' @examples
 #' 
-#' Let's say a for one respondent's medication, the ATC code is C08CA05 and the time they last took it was today. By 
-#' passing in the code and integer time response (1 in this case) into the function, it can be checked if the given 
-#' respondent's medication is a calcium channel blocker (1) or not (0).
+#' Suppose a CHMS respondent's medication has the ATC code 'C08AA13', and they took it within the last week. By
+#' passing the code and the integer time response (3 in this case) into the function, you can check whether the medication
+#' is classified as a calcium channel blocker (1 = TRUE) or not (0 = FALSE).
 #' 
-#' is_calcium_channel_blocker('C08CA05', 1)
+#' Example 1: Medication ATC code is 'C08AA13', and it was taken within the last week (NPI_25B = 3)
+#' is_calcium_channel_blocker('C08AA13', 3) # Should return 1 (TRUE)
 #' 
 #' @export
 is_calcium_channel_blocker <- function(MEUCATC, NPI_25B) {
@@ -271,11 +277,15 @@ is_calcium_channel_blocker <- function(MEUCATC, NPI_25B) {
 #' 
 #' @examples
 #' 
-#' Let's say a for one respondent's medication, the ATC code is C02AC04 and the time they last took it was within the last 
-#' week. By passing in the code and integer time response (3 in this case) into the function, it can be checked if the 
-#' given respondent's medication is another anti-hypertensive drug (1) or not (0).
+#' Suppose a CHMS respondent's medication has the ATC code 'C02AA13', and they took it within the last week. By
+#' passing the code and the integer time response (3 in this case) into the function, you can check whether the medication
+#' is classified as another anti-hypertensive drug (1 = TRUE) or not (0 = FALSE).
 #' 
-#' is_other_antiHTN_med('C02AC04', 3)
+#' Example 1: Medication ATC code is 'C02AA13', and it was taken within the last week (NPI_25B = 3)
+#' is_other_antiHTN_med('C02AC04', 3) # Should return 1 (TRUE)
+#' 
+#' Example 2: Medication ATC code is 'C02KX01' (excluded code), and it was taken within the last month (NPI_25B = 4)
+#' is_other_antiHTN_med('C02KX01', 4) # Should return 0 (FALSE)
 #' 
 #' @export
 is_other_antiHTN_med <- function(MEUCATC, NPI_25B) {
@@ -309,11 +319,15 @@ is_other_antiHTN_med <- function(MEUCATC, NPI_25B) {
 #' 
 #' @examples
 #' 
-#' Let's say a for one respondent's medication, the ATC code is C07AB02 and the time they last took it was within the last 
-#' month. By passing in the code and integer time response (4 in this case) into the function, it can be checked if the 
-#' given respondent's medication is an anti-hypertensive drug (1) or not (0).
+#' Suppose a CHMS respondent's medication has the ATC code 'C02AA13', and they took it within the last week. By
+#' passing the code and the integer time response (3 in this case) into the function, you can check whether the medication
+#' is classified as an anti-hypertensive drug (1 = TRUE) or not (0 = FALSE).
 #' 
-#' is_any_antiHTN_med('C07AB02', 4)
+#' Example 1: Medication ATC code is 'C02AA13', and it was taken within the last week (NPI_25B = 3)
+#' is_any_antiHTN_med('C02AC04', 3) # Should return 1 (TRUE)
+#' 
+#' Example 2: Medication ATC code is 'C07AA12' (excluded code), and it was taken within the last month (NPI_25B = 4)
+#' is_any_antiHTN_med('C07AA12', 4) # Should return 0 (FALSE)
 #' 
 #' @export
 is_any_antiHTN_med <- function(MEUCATC, NPI_25B) {
@@ -345,11 +359,12 @@ is_any_antiHTN_med <- function(MEUCATC, NPI_25B) {
 #' 
 #' @examples
 #' 
-#' Let's say a for one respondent's medication, the ATC code is M01AB05 and the time they last took it was today. By
-#' passing in the code and integer time response (1 in this case) into the function, it can be checked if the given
-#' respondent's medication is an NSAID (1) or not (0).
+#' Suppose a CHMS respondent's medication has the ATC code 'M01AB05', and they took it within the last week. By
+#' passing the code and the integer time response (3 in this case) into the function, you can check whether the medication
+#' is classified as an anti-hypertensive drug (1 = TRUE) or not (0 = FALSE).
 #' 
-#' is_NSAID('M01AB05', 1)
+#' Example 1: Medication ATC code is 'M01AB05', and it was taken within the last week (NPI_25B = 3)
+#' is_NSAID('M01AB05', 3) # Should return 1 (TRUE)
 #' 
 #' @export
 is_NSAID <- function(MEUCATC, NPI_25B) {
@@ -377,15 +392,16 @@ is_NSAID <- function(MEUCATC, NPI_25B) {
 #' @details This function uses the `startsWith` function to identify diabetes drugs based on their ATC codes, which
 #'          typically start with "A10". If the ATC code matches the pattern and the medication was taken within the last
 #'          month (NPI_25B <= 4), the medication is considered a diabetes drug, and the function returns TRUE.
-#'          Otherwise, it returns FALSE.
+#'          Otherwise, it returns FALSE. 
 #' 
 #' @examples
 #' 
-#' Let's say a for one respondent's medication, the ATC code is A10BB09 and the time they last took it was within the last 
-#' week. By passing in the code and integer time response (3 in this case) into the function, it can be checked if the 
-#' given respondent's medication is a diabetes drug (1) or not (0).
+#' Suppose a CHMS respondent's medication has the ATC code 'A10BB09', and they took it within the last week. By
+#' passing the code and the integer time response (3 in this case) into the function, you can check whether the medication
+#' is classified as an anti-hypertensive drug (1 = TRUE) or not (0 = FALSE).
 #' 
-#' is_diabetes_drug('A10BB09', 3)
+#' Example 1: Medication ATC code is 'A10BB09', and it was taken within the last week (NPI_25B = 3)
+#' is_diabetes_drug('A10BB09', 3) # Should return 1 (TRUE)
 #' 
 #' @export
 is_diabetes_drug <- function(MEUCATC, NPI_25B) {
