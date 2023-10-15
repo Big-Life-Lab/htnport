@@ -2,31 +2,60 @@
 #' Load packages
 library(logger)
 
-#' @title Calculate the number of occurrences of a specific anti-hypertensive drug class based on given conditions.
+##' @title Calculate the number occurrences of a drug class by CHMS respondents.
 #' 
-#' This function calculates the number of occurrences of a specific anti-hypertensive drug class in each row of a data frame.
-#' The calculation is based on custom conditions (including the drug class to be counted) specified by the user (see parameters below).
+#' @description Calculate the medications a respondent is taking of a drug class based a list of variables on medications taken and the timing of its last intake by CHMS respondents. The function requires a data frame with the following columns: medication variables, last taken variables, and a new variable representing the drug class or medication to be counted. 
 #' 
-#' @param df The data frame containing medication and last taken information.
+#' The function also requries a function that determines whether a medication variable meets a definition of being in the drug class, and its corresponding 'last taken' variable meets specified  whether the medication was taken within the specified period (e.g., within the last 3 months). 
+#' 
+#' The function returns a data frame with the number of occurrences of the drug class or medication by CHMS respondents.
+#' 
+#' See link to Tracey's paper ....for an example.
+
+#' 
+#' @param df A data frame containing variables for medications and when the medications where last taken.
 #' @param class_var_name The name of the new variable representing the drug class to be counted.
-#' @param med_vars A character vector containing the names of medication variables in the data frame.
-#' @param last_taken_vars A character vector containing the names of last taken variables in the data frame.
-#' @param class_condition_fun A custom condition function that determines whether a medication belongs to the drug class.
-#'                            The function should accept two arguments: med_code (character) and last_taken (numeric).
-#'                            It should return an integer, 1 if the medication belongs to the class, 0 otherwise.
-#' @param log_level The log level for logging messages (default is "INFO").
+#' @param med_vars A character vector containing the names of medication variable(s) in the data frame.
+#' @param last_taken_vars A character vector containing the names of last taken variable(s) in the data frame.
+#' @param class_condition_fun A custom condition function to determine if a medication belongs to the drug class or if the medication should be counted. The function should accept two arguments: med_code (character) and last_taken (numeric), and return an integer (1 if the condition is met, 0 otherwise).
+#' @param log_level The log level for displaying messages during execution (default is "INFO").
 #' @param overwrite Logical value indicating whether to overwrite the 'class_var_name' if it already exists in the data frame (default is FALSE).
+#' 
+#' @details This function calculates the number of occurrences of a specific drug class or medication based on custom conditions set by the user. The calculation considers the timing of the last medication intake by CHMS respondents.
+#' 
+#' The 'class_condition_fun' is applied to each pair of medication and last taken variables. The resulting values (0 or 1) are summed for each row, and the sum is stored in the new 'class_var_name' column. The function provides logging messages to track the process and potential issues.
+#' 
+#' If 'overwrite' is TRUE, the function will overwrite the existing 'class_var_name' column in the data frame. If 'overwrite' is FALSE and the variable already exists, the function will log an error and stop execution.
+#' 
+#' Additionally, the function checks if 'med_vars' and 'last_taken_vars' are present in the data frame and have the same length. If any issues are encountered, appropriate log messages are generated, and the function stops.
 #' 
 #' @return The input data frame 'df' with an additional column representing the drug class.
 #' 
-#' @details The 'class_condition_fun' is applied to each pair of medication and last taken variables.
-#'          The resulting values (0 or 1) are summed for each row, and the sum is stored in the new 'class_var_name' column.
-#'          The function performs logging to provide information about the process and potential issues.
-#'          If 'overwrite' is TRUE, the function will overwrite the existing 'class_var_name' column in the data frame.
-#'          If 'overwrite' is FALSE and the variable already exists, the function will log an error and stop the execution.
-#'          The function also checks if 'med_vars' and 'last_taken_vars' are present in the data frame and have the same length.
-#'          If any issues are encountered, appropriate log messages are generated, and the function stops.
-#'          
+#' @examples
+#' 
+#' # Example usage with sample data
+#' data <- data.frame(
+#'   PatientID = c(1, 2, 3, 4),
+#'   Medication1 = c("C07AA13", "C07AA07", "C07AA12", "C07AA13"),
+#'   Medication2 = c("C09AA01", "C07AA13", "C07AA13", "C07AA13"),
+#'   LastTaken1 = c(3, 4, 2, 4),  # NPI_25B values: 3, 4, 2, 4 (last taken within a month)
+#'   LastTaken2 = c(4, 5, 3, 4)   # NPI_25B values: 4, 5, 3, 4 (last taken within a month)
+#' )
+#' 
+# Calculate the number of respondents taking beta blockers using is_taking_drug_class
+# data <- is_taking_drug_class(
+#   df = data,
+#   class_var_name = "IsBetaBlocker",
+#   med_vars = c("Medication1", "Medication2"),
+#   last_taken_vars = c("LastTaken1", "LastTaken2"),
+#   class_condition_fun = is_beta_blocker,  # Use the existing function directly
+#   log_level = "INFO",
+#   overwrite = TRUE
+# )
+#' 
+#' # View the updated data frame with the "IsBetaBlocker" column
+#' print(data)
+#'         
 #' @export
 is_taking_drug_class <- function(df, class_var_name, med_vars, last_taken_vars, class_condition_fun, log_level = "INFO", overwrite = FALSE) {
   # Validate input parameters
