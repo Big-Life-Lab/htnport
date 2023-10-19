@@ -12,7 +12,7 @@ library(logger)
 #' 
 #' @param df A data frame containing variables for medications and when the medications where last taken.
 #' @param class_var_name The name of the new variable representing the drug class to be counted.
-#' @param med_vars A character vector containing the names of medication variable(s) in the data frame.
+#' @param atc_code_vars A character vector containing the names of medication ATC codes variable(s) in the data frame.
 #' @param last_taken_vars A character vector containing the names of last taken variable(s) in the data frame.
 #' @param class_condition_fun A custom condition function to determine if a medication belongs to the drug class or if the medication should be counted. The function should accept two arguments: med_code (character) and last_taken (numeric), and return an integer (1 if the condition is met, 0 otherwise).
 #' @param log_level The log level for displaying messages during execution (default is "INFO").
@@ -24,7 +24,7 @@ library(logger)
 #' 
 #' If 'overwrite' is TRUE, the function will overwrite the existing 'class_var_name' column in the data frame. If 'overwrite' is FALSE and the variable already exists, the function will log an error and stop execution.
 #' 
-#' Additionally, the function checks if 'med_vars' and 'last_taken_vars' are present in the data frame and have the same length. If any issues are encountered, appropriate log messages are generated, and the function stops.
+#' Additionally, the function checks if 'atc_code_vars' and 'last_taken_vars' are present in the data frame and have the same length. If any issues are encountered, appropriate log messages are generated, and the function stops.
 #' 
 #' @return The input data frame 'df' with an additional column representing the drug class.
 #' 
@@ -43,7 +43,7 @@ library(logger)
 # data <- is_taking_drug_class(
 #   df = data,
 #   class_var_name = "IsBetaBlocker",
-#   med_vars = c("Medication1", "Medication2"),
+#   atc_code_vars = c("Medication1", "Medication2"),
 #   last_taken_vars = c("LastTaken1", "LastTaken2"),
 #   class_condition_fun = is_beta_blocker,  # Use the existing function directly
 #   log_level = "INFO",
@@ -54,7 +54,7 @@ library(logger)
 #' print(data)
 #'         
 #' @export
-is_taking_drug_class <- function(df, class_var_name, med_vars, last_taken_vars, class_condition_fun, log_level = "INFO", overwrite = FALSE) {
+is_taking_drug_class <- function(df, class_var_name, atc_code_vars, last_taken_vars, class_condition_fun, log_level = "INFO", overwrite = FALSE) {
   # Validate input parameters
   if (!is.character(class_var_name) || class_var_name == "") {
     log_fatal("The 'class_var_name' must be a non-empty character string.")
@@ -66,8 +66,8 @@ is_taking_drug_class <- function(df, class_var_name, med_vars, last_taken_vars, 
     stop()
   }
   
-  if (!all(med_vars %in% names(df))) {
-    missing_vars <- med_vars[!(med_vars %in% names(df))]
+  if (!all(atc_code_vars %in% names(df))) {
+    missing_vars <- atc_code_vars[!(atc_code_vars %in% names(df))]
     error_msg <- paste0("The following medication variables are not in the data frame: ", paste(missing_vars, collapse = ", "))
     log_error(error_msg)
     stop()
@@ -80,7 +80,7 @@ is_taking_drug_class <- function(df, class_var_name, med_vars, last_taken_vars, 
     stop()
   }
   
-  if (length(med_vars) != length(last_taken_vars)) {
+  if (length(atc_code_vars) != length(last_taken_vars)) {
     error_msg <- "The lists of medication variables and 'last_taken' variables are not of the same length."
     log_warn(error_msg)
     stop()
@@ -106,8 +106,8 @@ is_taking_drug_class <- function(df, class_var_name, med_vars, last_taken_vars, 
   df[[class_var_name]] <- 0 
   
   # Apply the condition function to each pair of med and last_taken vars using a loop
-  for (i in seq_along(med_vars)) {
-    med_values <- df[[med_vars[i]]]
+  for (i in seq_along(atc_code_vars)) {
+    med_values <- df[[atc_code_vars[i]]]
     last_taken_values <- df[[last_taken_vars[i]]]
     class_values <- numeric(nrow(df))
     
@@ -476,10 +476,10 @@ cycles1to2_beta_blockers <- function(
   
   drugs <- cbind(atc_vars, mhr_vars)
   
-  med_vars <- names(Filter(Negate(is.null), mget(ls(pattern = "^atc_.*a$"))))
+  atc_code_vars <- names(Filter(Negate(is.null), mget(ls(pattern = "^atc_.*a$"))))
   last_taken_vars <- names(Filter(Negate(is.null), mget(ls(pattern = "^mhr_.*b$"))))
   
-  bb <- is_taking_drug_class(drugs, "BBmed", med_vars, last_taken_vars, is_beta_blocker, log_level="INFO", overwrite = TRUE)
+  bb <- is_taking_drug_class(drugs, "BBmed", atc_code_vars, last_taken_vars, is_beta_blocker, log_level="INFO", overwrite = TRUE)
   
   bbmed <- 0
   
@@ -532,10 +532,10 @@ cycles1to2_ace_inhibitors <- function(
   
   drugs <- cbind(atc_vars, mhr_vars)
   
-  med_vars <- names(Filter(Negate(is.null), mget(ls(pattern = "^atc_.*a$"))))
+  atc_code_vars <- names(Filter(Negate(is.null), mget(ls(pattern = "^atc_.*a$"))))
   last_taken_vars <- names(Filter(Negate(is.null), mget(ls(pattern = "^mhr_.*b$"))))
   
-  ace <- is_taking_drug_class(drugs, "ACEmed", med_vars, last_taken_vars, is_ace_inhibitor, log_level="INFO", overwrite = TRUE)
+  ace <- is_taking_drug_class(drugs, "ACEmed", atc_code_vars, last_taken_vars, is_ace_inhibitor, log_level="INFO", overwrite = TRUE)
   
   acemed <- 0
   
@@ -588,10 +588,10 @@ cycles1to2_diuretics <- function(
   
   drugs <- cbind(atc_vars, mhr_vars)
   
-  med_vars <- names(Filter(Negate(is.null), mget(ls(pattern = "^atc_.*a$"))))
+  atc_code_vars <- names(Filter(Negate(is.null), mget(ls(pattern = "^atc_.*a$"))))
   last_taken_vars <- names(Filter(Negate(is.null), mget(ls(pattern = "^mhr_.*b$"))))
   
-  diur <- is_taking_drug_class(drugs, "DIURmed", med_vars, last_taken_vars, is_diuretic, log_level="INFO", overwrite = TRUE)
+  diur <- is_taking_drug_class(drugs, "DIURmed", atc_code_vars, last_taken_vars, is_diuretic, log_level="INFO", overwrite = TRUE)
   
   diurmed <- 0
   
@@ -644,10 +644,10 @@ cycles1to2_calcium_channel_blockers <- function(
   
   drugs <- cbind(atc_vars, mhr_vars)
   
-  med_vars <- names(Filter(Negate(is.null), mget(ls(pattern = "^atc_.*a$"))))
+  atc_code_vars <- names(Filter(Negate(is.null), mget(ls(pattern = "^atc_.*a$"))))
   last_taken_vars <- names(Filter(Negate(is.null), mget(ls(pattern = "^mhr_.*b$"))))
   
-  ccb <- is_taking_drug_class(drugs, "CCBmed", med_vars, last_taken_vars, is_calcium_channel_blocker, log_level="INFO", overwrite = TRUE)
+  ccb <- is_taking_drug_class(drugs, "CCBmed", atc_code_vars, last_taken_vars, is_calcium_channel_blocker, log_level="INFO", overwrite = TRUE)
   
   ccbmed <- 0
   
@@ -702,10 +702,10 @@ cycles1to2_other_antiHTN_meds <- function(
   
   drugs <- cbind(atc_vars, mhr_vars)
   
-  med_vars <- names(Filter(Negate(is.null), mget(ls(pattern = "^atc_.*a$"))))
+  atc_code_vars <- names(Filter(Negate(is.null), mget(ls(pattern = "^atc_.*a$"))))
   last_taken_vars <- names(Filter(Negate(is.null), mget(ls(pattern = "^mhr_.*b$"))))
   
-  misc <- is_taking_drug_class(drugs, "MISCmed", med_vars, last_taken_vars, is_other_antiHTN_med, log_level="INFO", overwrite = TRUE)
+  misc <- is_taking_drug_class(drugs, "MISCmed", atc_code_vars, last_taken_vars, is_other_antiHTN_med, log_level="INFO", overwrite = TRUE)
   
   miscmed <- 0
   
@@ -759,10 +759,10 @@ cycles1to2_any_antiHTN_meds <- function(
   
   drugs <- cbind(atc_vars, mhr_vars)
   
-  med_vars <- names(Filter(Negate(is.null), mget(ls(pattern = "^atc_.*a$"))))
+  atc_code_vars <- names(Filter(Negate(is.null), mget(ls(pattern = "^atc_.*a$"))))
   last_taken_vars <- names(Filter(Negate(is.null), mget(ls(pattern = "^mhr_.*b$"))))
   
-  anyHTN <- is_taking_drug_class(drugs, "ANYmed", med_vars, last_taken_vars, is_any_antiHTN_med, log_level="INFO", overwrite = TRUE)
+  anyHTN <- is_taking_drug_class(drugs, "ANYmed", atc_code_vars, last_taken_vars, is_any_antiHTN_med, log_level="INFO", overwrite = TRUE)
   
   anymed <- 0
   
@@ -815,10 +815,10 @@ cycles1to2_nsaid <- function(
   
   drugs <- cbind(atc_vars, mhr_vars)
   
-  med_vars <- names(Filter(Negate(is.null), mget(ls(pattern = "^atc_.*a$"))))
+  atc_code_vars <- names(Filter(Negate(is.null), mget(ls(pattern = "^atc_.*a$"))))
   last_taken_vars <- names(Filter(Negate(is.null), mget(ls(pattern = "^mhr_.*b$"))))
   
-  nsaid <- is_taking_drug_class(drugs, "NSAID", med_vars, last_taken_vars, is_NSAID, log_level="INFO", overwrite = TRUE)
+  nsaid <- is_taking_drug_class(drugs, "NSAID", atc_code_vars, last_taken_vars, is_NSAID, log_level="INFO", overwrite = TRUE)
   
   nsaid_drug <- 0
   
@@ -872,10 +872,10 @@ cycles1to2_diabetes_drugs <- function(
   
   drugs <- cbind(atc_vars, mhr_vars)
   
-  med_vars <- names(Filter(Negate(is.null), mget(ls(pattern = "^atc_.*a$"))))
+  atc_code_vars <- names(Filter(Negate(is.null), mget(ls(pattern = "^atc_.*a$"))))
   last_taken_vars <- names(Filter(Negate(is.null), mget(ls(pattern = "^mhr_.*b$"))))
   
-  diab <- is_taking_drug_class(drugs, "diabetes_drug", med_vars, last_taken_vars, is_diabetes_drug, log_level="INFO", overwrite = TRUE)
+  diab <- is_taking_drug_class(drugs, "diabetes_drug", atc_code_vars, last_taken_vars, is_diabetes_drug, log_level="INFO", overwrite = TRUE)
   
   diab_drug <- 0
   
