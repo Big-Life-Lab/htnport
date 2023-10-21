@@ -9,8 +9,8 @@ library(here)
 library(dplyr)
 library(recodeflow)
 
-my_variables <- read.csv(here("worksheets", "chmsflow-variables.csv"))
-my_variable_details <- read.csv(here("worksheets", "chmsflow-variable-details.csv"))
+my_variables <- read.csv(here("worksheets", "variables.csv"))
+my_variable_details <- read.csv(here("worksheets", "variable-details.csv"))
 
 source(here("R", "medications.R"), local = knitr::knit_global())
 ```
