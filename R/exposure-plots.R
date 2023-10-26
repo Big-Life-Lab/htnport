@@ -29,10 +29,10 @@ cycles1to6_table1_data <- dplyr::bind_rows(cycle1_table1_data, cycle2_table1_dat
 cycles1to6_table1_data <- dplyr::filter(cycles1to6_table1_data, insample == 1)
 
 sbp_data <- cycles1to6_table1_data %>% drop_na(bpmdpbps)
-plot(density(sbp_data$bpmdpbps), main = "Systolic blood pressure distribution", xlab = "Systolic blood pressure")
+plot(density(sbp_data$bpmdpbps), main = "Systolic blood pressure distribution", xlab = "Systolic blood pressure (mmHg)")
 
 dbp_data <- cycles1to6_table1_data %>% drop_na(bpmdpbpd)
-plot(density(dbp_data$bpmdpbpd), main = "Diastolic blood pressure distribution", xlab = "Diastolic blood pressure")
+plot(density(dbp_data$bpmdpbpd), main = "Diastolic blood pressure distribution", xlab = "Diastolic blood pressure (mmHg)")
 
 male_data <- filter(cycles1to6_table1_data, clc_sex == 1)
 female_data <- filter(cycles1to6_table1_data, clc_sex == 2)
