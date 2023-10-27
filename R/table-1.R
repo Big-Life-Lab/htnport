@@ -51,7 +51,7 @@ write.csv(sex_stratified_data_summary2, "P:/10619/Dropbox/Sept25/sex_stratified_
 
 selected_stratified_cycles1to6_table1_data <- cycles1to6_table1_data %>%
   group_by(clc_sex) %>%
-  select(highbp14090, agegroup4, married, nohsgrad, incq1, pgdcgt, gen_055, smkdsty, cardiov, mvpa150wk, poordiet, hwmdbmi, diabx, ckd, nonhdltodd)
+  select(highbp14090, agegroup4, married, nohsgrad, incq1, pgdcgt, img_01, gen_055, smkdsty, cardiov, mvpa150wk, poordiet, hwmdbmi, diabx, ckd, nonhdltodd, low_drink_score1, spa_020, gen_040, gendmhi)
 
 table1 <- dplyr::bind_rows(count(selected_stratified_cycles1to6_table1_data, highbp14090 == 1),
                            count(selected_stratified_cycles1to6_table1_data, agegroup4),
@@ -59,6 +59,7 @@ table1 <- dplyr::bind_rows(count(selected_stratified_cycles1to6_table1_data, hig
                            count(selected_stratified_cycles1to6_table1_data, nohsgrad == 1),
                            count(selected_stratified_cycles1to6_table1_data, incq1 == 1),
                            count(selected_stratified_cycles1to6_table1_data, pgdcgt == 1),
+                           count(selected_stratified_cycles1to6_table1_data, img_01 == 1),
                            count(selected_stratified_cycles1to6_table1_data, gen_055 == 1),
                            count(selected_stratified_cycles1to6_table1_data, smkdsty %in% c(1, 2, 3)),
                            count(selected_stratified_cycles1to6_table1_data, cardiov == 1),
@@ -67,7 +68,11 @@ table1 <- dplyr::bind_rows(count(selected_stratified_cycles1to6_table1_data, hig
                            count(selected_stratified_cycles1to6_table1_data, hwmdbmi >= 25),
                            count(selected_stratified_cycles1to6_table1_data, diabx == 1),
                            count(selected_stratified_cycles1to6_table1_data, ckd == 1),
-                           count(selected_stratified_cycles1to6_table1_data, nonhdltodd == 1))
+                           count(selected_stratified_cycles1to6_table1_data, nonhdltodd == 1),
+                           count(selected_stratified_cycles1to6_table1_data, low_drink_score1 %in% c(3, 4, 5)),
+                           count(selected_stratified_cycles1to6_table1_data, spa_020 %in% c(3, 4, 5)),
+                           count(selected_stratified_cycles1to6_table1_data, gen_040 %in% c(3, 4, 5)),
+                           count(selected_stratified_cycles1to6_table1_data, gendmhi == 0))
 
 sample_size <- sum(count(selected_stratified_cycles1to6_table1_data)$n)
 
