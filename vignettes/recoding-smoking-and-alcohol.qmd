@@ -1,0 +1,60 @@
+---
+title: "Recoding smoking and alcohol variables"
+format: html
+---
+
+```{r}
+library(readr)
+library(here)
+library(huiport)
+library(dplyr)
+library(recodeflow)
+```
+
+1. Load variables and variable-details from worksheets folder.
+```{r}
+my_variables <- read.csv(here("worksheets", "variables.csv"))
+my_variable_details <- read.csv(here("worksheets", "variable-details.csv"))
+```
+
+2.  Create CHMS synthetic data with all smoking and alcohol variables to be used for study and deriving variables.
+```{r}
+# Set a random seed for reproducibility
+set.seed(45)
+
+# Generate synthetic data
+cycle1 <- data.frame(
+  clc_age = sample(c(20:79, 996:999), 50, replace = TRUE),
+  clc_sex = sample(1:2, 50, replace = TRUE),
+  alcdwky = sample(c(0:84, 996:999), 50, replace = TRUE),
+  alc_17 = sample(1:2, 50, replace = TRUE),
+  alc_11 = sample(1:2, 50, replace = TRUE),
+  smkdsty = sample(c(1:6, 96:99), 50, replace = TRUE),
+  smkdstp = sample(c(13:74, 96:99), 50, replace = TRUE),
+  smk_52 = sample(c(10:61, 96:99), 50, replace = TRUE),
+  smk_31 = sample(c(1:40, 96:99), 50, replace = TRUE),
+  smk_41 = sample(c(1:25, 96:99), 50, replace = TRUE),
+  smk_53 = sample(c(1:75, 96:99), 50, replace = TRUE),
+  smk_23 = sample(c(1:31, 96:99), 50, replace = TRUE),
+  smk_21 = sample(c(5:50, 96:99), 50, replace = TRUE),
+  smk_11 = sample(1:2, 50, replace = TRUE)
+)
+
+# Check the first few rows of the generated data
+head(cycle1)
+```
+
+3. Recoding smoking variables, including derived pack-years variable.
+```{r}
+# Recoding pack years
+rec_with_table(cycle1, c("smkdsty", "clc_age", "smkdstp", "smk_52", "smk_31", "smk_41", "smk_53", "smk_23", "smk_21", "smk_11", "pack_years_der"), variable_details = my_variable_details, log = FALSE)
+```
+
+4. Recoding alcohol variables, including derived low drink score variables.
+```{r}
+# Recoding low_drink_score
+rec_with_table(cycle1, c("clc_sex", "alcdwky", "low_drink_score"), variable_details = my_variable_details, log = FALSE)
+
+# Recoding low_drink_score1
+rec_with_table(cycle1, c("clc_sex", "alcdwky", "alc_17", "alc_11", "low_drink_score1"), variable_details = my_variable_details, log = FALSE)
+```
