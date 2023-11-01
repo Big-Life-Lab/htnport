@@ -14,7 +14,7 @@
 #' @param SMK_52 A numeric value representing the respondent's age when they first started smoking daily.
 #' @param SMK_31 An numeric representing the number of cigarettes smoked per day for daily smokers.
 #' @param SMK_41 A numeric value representing the number of cigarettes smoked per day for occasional smokers.
-#' @param SMK_53 A numeric value representing the number of years since the respondent quit smoking (for former daily or occasional smokers).
+#' @param SMK_53 A numeric value representing the number of cigarettes smoked per day for former daily smokers.
 #' @param SMK_23 A numeric value representing the number of days per month the respondent smoked at least 1 cigarette (for former daily or occasional smokers).
 #' @param SMK_21 A numeric value representing the respondent's age when they first started smoking occasionally.
 #' @param SMK_11 An integer representing whether the respondent has smoked at least 100 cigarettes in their lifetime:
@@ -55,35 +55,35 @@ pack_years_fun <- function(SMKDSTY, CLC_AGE, SMKDSTP, SMK_52, SMK_31, SMK_41, SM
     
     # PackYears for Daily Smoker
     pack_years <- 
-      if_else2(
+      ifelse(
         SMKDSTY == 1, pmax(((CLC_AGE - SMK_52) *
                                 (SMK_31 / 20)), 0.0137),
         # PackYears for Occasional Smoker (former daily)
-        if_else2(
+        ifelse(
           SMKDSTY == 2, pmax(((CLC_AGE - SMK_52 -
                                    SMKDSTP) * (SMK_53 / 20)), 0.0137) +
-            (pmax((SMK_41 * (SMK_23 * 12) / 30), 1) * SMKDSTP),
+            (pmax((SMK_41 * SMK_23 * (SMKDSTP / 12) / 30), 1) * SMKDSTP),
           # PackYears for Occasional Smoker (never daily)
-          if_else2(
-            SMKDSTY == 3, (pmax((SMK_41 * (SMK_23 * 12) / 30), 1) / 20) *
+          ifelse(
+            SMKDSTY == 3, (pmax((SMK_41 * SMK_23 * ((CLC_AGE - SMK_21) / 12) / 30), 1) / 20) *
               (CLC_AGE - SMK_21),
             # PackYears for former daily smoker (non-smoker now)
-            if_else2(
+            ifelse(
               SMKDSTY == 4, pmax(((CLC_AGE - SMK_52 -
                                        SMKDSTP) *
                                       (SMK_53 / 20)), 0.0137),
               # PackYears for former occasional smoker (non-smoker now) who
               # smoked at least 100 cigarettes lifetime
-              if_else2(
+              ifelse(
                 SMKDSTY == 5 & SMK_11 == 1, 0.0137,
                 # PackYears for former occasional smoker (non-smoker now) who 
                 # have not smoked at least 100 cigarettes lifetime
-                if_else2(
+                ifelse(
                   SMKDSTY == 5 & SMK_11 == 2, 0.007,
                   # Non-smoker
-                  if_else2(SMKDSTY == 6, 0,
+                  ifelse(SMKDSTY == 6, 0,
                            # Account for NA(a)
-                           if_else2(SMKDSTY == "NA(a)", haven::tagged_na("a"),
+                           ifelse(SMKDSTY == "NA(a)", haven::tagged_na("a"),
                                     haven::tagged_na("b"))
                   )
                 )

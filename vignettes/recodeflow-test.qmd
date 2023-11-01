@@ -41,8 +41,8 @@ write_csv(cycle6, here::here("data", "cycle6.csv"))
 2.  Load variables and variable-details from worksheets folder.
 
 ```{r}
-my_variables <- read.csv(here("worksheets", "chmsflow-variables.csv"))
-my_variable_details <- read.csv(here("worksheets", "chmsflow-variable-details.csv"))
+my_variables <- read.csv(here("worksheets", "variables.csv"))
+my_variable_details <- read.csv(here("worksheets", "variable-details.csv"))
 ```
 
 3.  Test recodeflow on fake CHMS data. Refer to console outputs to see results. What do you think?
