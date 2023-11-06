@@ -48,7 +48,7 @@ low_drink_score_fun <- function(CLC_SEX, ALCDWKY) {
         step1 <- NA
       }
     }
-    else if (is.na(CLC_SEX) || is.na(ALCDWKY)) {
+    else {
       low_drink_score <- haven::tagged_na("b")
     }
     
@@ -111,7 +111,10 @@ low_drink_score_fun <- function(CLC_SEX, ALCDWKY) {
 #' 
 #' @export
 low_drink_score_fun1 <- function(CLC_SEX, ALCDWKY, ALC_17, ALC_11) {
-    ## Step 1: How many standard drinks did you have in a week?
+   
+   low_drink_score1 <- haven::tagged_na("b")
+  
+   ## Step 1: How many standard drinks did you have in a week?
     step1 <- NA
     if (CLC_SEX %in% c(1, 2) && ALCDWKY %in% 0:995 && ALC_17 %in% c(1, 2) && ALC_11 %in% c(1, 2)) {
       if (ALCDWKY <= 10) {
@@ -130,12 +133,11 @@ low_drink_score_fun1 <- function(CLC_SEX, ALCDWKY, ALC_17, ALC_11) {
         step1 <- NA
       }
     }
-    else if (is.na(CLC_SEX) || is.na(ALCDWKY) || is.na(ALC_17) || is.na(ALC_11)) {
-      low_drink_score1 <- haven::tagged_na("b")
+    else {
+      low_drink_score1 <- NA
     }
     
     ## Categorical score
-    low_drink_score1 <- NA
     if (!is.na(step1) && ALC_17 %in% c(1, 2) && ALC_11 %in% c(1, 2)) {
       if (step1 == 0 && ALC_17 == 2) {
         low_drink_score1 <- 1

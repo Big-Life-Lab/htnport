@@ -42,7 +42,7 @@ lines(density(female_data$clc_age), col = "red")
 
 male_income_data <- male_data %>% drop_na(adj_hh_inc)
 female_income_data <- female_data %>% drop_na(adj_hh_inc)
-plot(density(male_income_data$adj_hh_inc), main = "Household income distribution", xlab = "Household income ($)", col = "blue")
+plot(density(male_income_data$adj_hh_inc), main = "Household income distribution", xlab = "Household income ($)", col = "blue", xlim = c(0, 500000), ylim = c(0, 1.6e-05))
 lines(density(female_income_data$adj_hh_inc), col = "red")
 
 male_work_hours_data <- male_data %>% drop_na(lmh_016)
@@ -57,7 +57,7 @@ lines(density(female_smoking_data$pack_years_der), col = "red")
 
 male_exercise_data <- male_data %>% drop_na(mvpa_min)
 female_exercise_data <- female_data %>% drop_na(mvpa_min)
-plot(density(male_exercise_data$mvpa_min), main = "Physical activity distribution", xlab = "Average minutes of exercise per day", col = "blue", ylim = c(0, 0.050))
+plot(density(male_exercise_data$mvpa_min), main = "Physical activity distribution", xlab = "Average minutes of exercise per day", col = "blue", xlim = c(0, 150), ylim = c(0, 0.050))
 lines(density(female_exercise_data$mvpa_min), col = "red")
 
 plot(density(male_data$totalfv), main = "Fruit and vegetable consumption distribution", xlab = "Times per day produce consumed", col = "blue")
@@ -70,7 +70,7 @@ lines(density(female_bmi_data$hwmdbmi), col = "red")
 
 male_height_data <- male_data %>% drop_na(hwm_11cm)
 female_height_data <- female_data %>% drop_na(hwm_11cm)
-plot(density(male_height_data$hwm_11cm), main = "Height distribution", xlab = "Height (cm)", col = "blue")
+plot(density(male_height_data$hwm_11cm), main = "Height distribution", xlab = "Height (cm)", col = "blue", ylim = c(0, 0.06))
 lines(density(female_height_data$hwm_11cm), col = "red")
 
 male_weight_data <- male_data %>% drop_na(hwm_13kg)
@@ -83,14 +83,9 @@ female_waist_circum_data <- female_data %>% drop_na(hwm_14cx)
 plot(density(male_waist_circum_data$hwm_14cx), main = "Waist circumference distribution", xlab = "Waist circumference (cm)", col = "blue")
 lines(density(female_waist_circum_data$hwm_14cx), col = "red")
 
-male_bw_data <- male_data %>% drop_na(bir_14)
-female_bw_data <- female_data %>% drop_na(bir_14)
-plot(density(male_bw_data$bir_14), main = "Birth weight distribution", xlab = "Birth weight (g)", col = "blue")
-lines(density(female_bw_data$bir_14), col = "red")
-
 male_diabetes_data <- male_data %>% drop_na(lab_hba1)
 female_diabetes_data <- female_data %>% drop_na(lab_hba1)
-plot(density(male_diabetes_data$lab_hba1), main = "HbA1C distribution", xlab = "HbA1C", col = "blue")
+plot(density(male_diabetes_data$lab_hba1), main = "HbA1C distribution", xlab = "HbA1C", col = "blue", xlim = c(0.04, 0.10))
 lines(density(female_diabetes_data$lab_hba1), col = "red")
 
 male_gfr_data <- male_data %>% drop_na(gfr)
@@ -103,14 +98,19 @@ female_chol_data <- female_data %>% drop_na(nonhdl)
 plot(density(male_chol_data$nonhdl), main = "Non-HDL cholesterol distribution", xlab = "Non-HDL Cholesterol (mmol/L)", col = "blue", ylim = c(0, 0.4))
 lines(density(female_chol_data$nonhdl), col = "red")
 
+male_sodium_data <- male_data %>% drop_na(lab_sodium)
+female_sodium_data <- female_data %>% drop_na(lab_sodium)
+plot(density(male_sodium_data$lab_sodium), main = "Urinary sodium distribution", xlab = "Urinary sodium (mmol/L)", col = "blue")
+lines(density(female_sodium_data$lab_sodium), col = "red")
+
 male_alcohol_data <- male_data %>% drop_na(alcdwky)
 female_alcohol_data <- female_data %>% drop_na(alcdwky)
-plot(density(male_alcohol_data$alcdwky), main = "Alcohol distribution", xlab = "Number of alcoholic drinks per week", col = "blue")
+plot(density(male_alcohol_data$alcdwky), main = "Alcohol distribution", xlab = "Number of alcoholic drinks per week", col = "blue", xlim = c(0, 30), ylim = c(0, 0.30))
 lines(density(female_alcohol_data$alcdwky), col = "red")
 
 male_ggt_data <- male_data %>% drop_na(lab_ggt)
 female_ggt_data <- female_data %>% drop_na(lab_ggt)
-plot(density(male_ggt_data$lab_ggt), main = "Blood gamma-glutamyltransferase distribution", xlab = "Blood gamma-glutamyltransferase (U/L)", col = "blue")
+plot(density(male_ggt_data$lab_ggt), main = "Blood gamma-glutamyltransferase distribution", xlab = "Blood gamma-glutamyltransferase (U/L)", col = "blue", xlim = c(0, 250), ylim = c(0, 0.055))
 lines(density(female_ggt_data$lab_ggt), col = "red")
 
 male_calcium_data <- male_data %>% drop_na(lab_ca)
@@ -120,10 +120,15 @@ lines(density(female_calcium_data$lab_ca), col = "red")
 
 male_vitd_data <- male_data %>% drop_na(lab_vids)
 female_vitd_data <- female_data %>% drop_na(lab_vids)
-plot(density(male_vitd_data$lab_vids), main = "Blood vitamin D distribution", xlab = "Serum vitamin D (nmol/L)", col = "blue")
+plot(density(male_vitd_data$lab_vids), main = "Blood vitamin D distribution", xlab = "Blood vitamin D (nmol/L)", col = "blue")
 lines(density(female_vitd_data$lab_vids), col = "red")
 
 male_lead_data <- male_data %>% drop_na(lab_bpb)
 female_lead_data <- female_data %>% drop_na(lab_bpb)
-plot(density(male_lead_data$lab_bpb), main = "Blood lead distribution", xlab = "Blood lead (Âµmol/L)", col = "blue")
+plot(density(male_lead_data$lab_bpb), main = "Blood lead distribution", xlab = "Blood lead (�mol/L)", col = "blue", xlim = c(0, 0.4), ylim = c(0, 14))
 lines(density(female_lead_data$lab_bpb), col = "red")
+
+male_sleep_data <- male_data %>% drop_na(slp_11)
+female_sleep_data <- female_data %>% drop_na(slp_11)
+plot(density(male_sleep_data$slp_11), main = "Sleep distribution", xlab = "Hours slept per night", col = "blue")
+lines(density(female_sleep_data$slp_11), col = "red")
