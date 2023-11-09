@@ -20,6 +20,8 @@
 #' @note Step 2 is not included in this function because the questions in 
 #' step 2 are not asked in any of the CHMS cycles. The score is only based on 
 #' step 1.
+#' 
+#' See https://osf.io/eprg7/ for more details on the guideline and score.
 #'
 #' @examples
 #' 
