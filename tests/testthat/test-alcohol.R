@@ -27,6 +27,7 @@ test_that("low_drink_score_fun1 returns correct scores", {
   expect_equal(low_drink_score_fun1(CLC_SEX = 1, ALCDWKY = 25, ALC_17 = 1, ALC_11 = 1), 4, info = "Medium risk for male who drank in the past year")
   expect_equal(low_drink_score_fun1(CLC_SEX = 2, ALCDWKY = 25, ALC_17 = 1, ALC_11 = 1), 5, info = "High risk for female who drank in the past year")
   expect_true(is.na(low_drink_score_fun1(CLC_SEX = 1, ALCDWKY = 996, ALC_17 = 1, ALC_11 = 1)), info = "Invalid input should return NA")
+  expect_true(is.na(low_drink_score_fun1(CLC_SEX = "1", ALCDWKY = 9, ALC_17 = 1, ALC_11 = 1)), info = "Invalid input should return NA")
   expect_equal(low_drink_score_fun1(CLC_SEX = 1, ALCDWKY = 5, ALC_17 = 2, ALC_11 = 2), 1, info = "Low risk - never drank")
   expect_equal(low_drink_score_fun1(CLC_SEX = 1, ALCDWKY = 5, ALC_17 = 1, ALC_11 = 2), 2, info = "Low risk - former drinker")
 })

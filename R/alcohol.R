@@ -1,9 +1,13 @@
+library(logger)
+
 #' @title Calculate the low drink score for a CHMS respondent based on alcohol consumption.
 #'
 #' @param CLC_SEX An integer indicating the respondent's sex. 1 for male, 2 for female.
 #' @param ALCDWKY An integer representing the number of standard drinks consumed by the respondent in a week.
 #'
-#' @return An integer representing the low drink score:
+#' @return If data of the wrong type is inputted (eg. a string for ALCDWKY), the function would return NA and remind the user to ensure all inputs are numeric.
+#' If data is out of bounds (eg. 3 for CLC_SEX which only is 1 or 2), the function would return NA and remind the user that input data is out of bounds.
+#' Otherwise, when numeric data within proper range is inputted, the function returns an integer representing the low drink score:
 #'   - 1 for "Low risk" (0 points).
 #'   - 2 for "Marginal risk" (1-2 points).
 #'   - 3 for "Medium risk" (3-4 points).
@@ -31,6 +35,16 @@
 #' 
 #' @export
 low_drink_score_fun <- function(CLC_SEX, ALCDWKY) {
+  
+    if (!is.numeric(CLC_SEX) || !is.numeric(ALCDWKY)) {
+      log_warn("Input data must be numerics.")
+      return(haven::tagged_na("b"))
+    }
+    
+    if (any(!CLC_SEX %in% c(1, 2)) || any(!ALCDWKY %in% 0:84)) {
+      log_warn("Input data is out of bounds.")
+      return(haven::tagged_na("b"))
+    }
   
     ## Step 1: How many standard drinks did you have in a week?
     if (CLC_SEX %in% c(1, 2) && ALCDWKY %in% 0:995) {
@@ -78,7 +92,9 @@ low_drink_score_fun <- function(CLC_SEX, ALCDWKY) {
 #' @param ALC_11 An integer indicating whether the respondent drank alcohol in the past year. 
 #'              1 for "Yes", 2 for "No".
 #'
-#' @return An integer representing the low drink score:
+#' @return If data of the wrong type is inputted (eg. a string for ALCDWKY), the function would return NA and remind the user to ensure all inputs are numeric.
+#' If data is out of bounds (eg. 3 for CLC_SEX which only is 1 or 2), the function would return NA and remind the user that input data is out of bounds.
+#' Otherwise, when numeric data within proper range is inputted, the function returns an integer representing the low drink score:
 #'   - 1 - Low risk - never drank (0 points)
 #'   - 2 - Low risk - former drinker (0 points)
 #'   - 3 - Marginal risk (1-2 points)
@@ -111,6 +127,16 @@ low_drink_score_fun <- function(CLC_SEX, ALCDWKY) {
 #' 
 #' @export
 low_drink_score_fun1 <- function(CLC_SEX, ALCDWKY, ALC_17, ALC_11) {
+  
+  if (!is.numeric(CLC_SEX) || !is.numeric(ALCDWKY) || !is.numeric(ALC_17) || !is.numeric(ALC_11)) {
+    log_warn("Input data must be numerics.")
+    return(haven::tagged_na("b"))
+  }
+  
+  if (any(!CLC_SEX %in% c(1, 2)) || any(!ALCDWKY %in% 0:84) || any(!ALC_17 %in% c(1, 2)) || any(!ALC_11 %in% c(1, 2))) {
+    log_warn("Input data is out of bounds.")
+    return(haven::tagged_na("b"))
+  }
   
    ## Step 1: How many standard drinks did you have in a week?
     step1 <- NA
