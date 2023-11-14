@@ -133,51 +133,57 @@ low_drink_score_fun1 <- function(CLC_SEX, ALCDWKY, ALC_17, ALC_11) {
     return(haven::tagged_na("b"))
   }
   
-  if (any(!CLC_SEX %in% c(1, 2)) || any(!ALCDWKY %in% 0:84) || any(!ALC_17 %in% c(1, 2)) || any(!ALC_11 %in% c(1, 2))) {
+  if (any(!CLC_SEX %in% c(1, 2)) || any(!ALCDWKY %in% c(0:84)) || any(!ALC_17 %in% c(1, 2)) || any(!ALC_11 %in% c(1, 2))) {
     log_warn("Input data is out of bounds.")
     return(haven::tagged_na("b"))
   }
   
-   ## Step 1: How many standard drinks did you have in a week?
-    step1 <- NA
-    if (CLC_SEX %in% c(1, 2) && ALCDWKY %in% 0:995) {
-      if (ALCDWKY <= 10) {
-        step1 <- 0
-      } else if (CLC_SEX == 1 && ALCDWKY > 10 && ALCDWKY <= 15) {
-        step1 <- 0
-      } else if (CLC_SEX == 2 && ALCDWKY > 10 && ALCDWKY <= 15) {
-        step1 <- 1
-      } else if (CLC_SEX == 1 && ALCDWKY > 15 && ALCDWKY <= 20) {
-        step1 <- 1
-      } else if (CLC_SEX == 2 && ALCDWKY > 15 && ALCDWKY <= 20) {
-        step1 <- 3
-      } else if (ALCDWKY > 20) {
-        step1 <- 3
-      } 
+  ## Step 1: How many standard drinks did you have in a week?
+  step1 <- NA
+  
+  if (ALCDWKY <= 10) {
+    step1 <- 0
+  } else if (ALCDWKY > 10 && ALCDWKY <= 15) {
+    if (CLC_SEX == 1) {
+      step1 <- 0
+    } else {
+      step1 <- 1
     }
-    else {
-      step1 <- NA
+  } else if (ALCDWKY > 15 && ALCDWKY <= 20) {
+    if (CLC_SEX == 1) {
+      step1 <- 1
+    } else {
+      step1 <- 3
     }
-    
-    ## Categorical score
-    if (!is.na(step1) && ALC_17 %in% c(1, 2) && ALC_11 %in% c(1, 2)) {
-      if (step1 == 0 && ALC_17 == 2 && ALC_11 == 2) {
-        low_drink_score1 <- 1
-      } else if (step1 == 0 && ALC_17 == 1 && ALC_11 == 2) {
-        low_drink_score1 <- 2
-      } else if (step1 %in% c(1, 2)) {
-        low_drink_score1 <- 3
-      } else if (step1 %in% c(3, 4)) {
-        low_drink_score1 <- 4
-      } else if (step1 %in% 5:9) {
-        low_drink_score1 <- 5
-      } else {
-        low_drink_score1 <- haven::tagged_na("b")
+  } else if (ALCDWKY > 20) {
+    if (CLC_SEX == 1) {
+      step1 <- 3
+    } else {
+      step1 <- 5
+    }
+  } 
+  
+  ## Categorical score
+  if (!is.na(step1) && (ALC_17 %in% c(1, 2)) && (ALC_11 %in% c(1, 2))) {
+    if (step1 == 0) {
+      if (ALC_17 == 2 && ALC_11 == 2) {
+      low_drink_score1 <- 1
       }
-    }
-    else {
+      else {
+      low_drink_score1 <- 2    
+      } 
+    } else if (step1 %in% c(1, 2)) {
+      low_drink_score1 <- 3
+    } else if (step1 %in% c(3, 4)) {
+      low_drink_score1 <- 4
+    } else if (step1 %in% 5:9) {
+      low_drink_score1 <- 5
+    } else {
       low_drink_score1 <- haven::tagged_na("b")
     }
-    
-    return(low_drink_score1)
+  } else {
+    low_drink_score1 <- haven::tagged_na("b")
   }
+  
+  return(low_drink_score1)
+}
