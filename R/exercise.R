@@ -90,16 +90,17 @@ categorize_minperweek <- function(minperweek) {
   mvpa150wk <- haven::tagged_na("b")
   
   if (is.na(minperweek)) {
-    return(mvpa150wk)
+    mvpa150wk <- haven::tagged_na("b")
   }
   else {
     if (minperweek >= 150) {
       mvpa150wk <- 1
     }
-    else {
+    else if (minperweek < 150) {
       mvpa150wk <- 2
     }
   }
+  
   return(mvpa150wk)
   
 }
