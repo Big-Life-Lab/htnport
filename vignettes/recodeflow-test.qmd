@@ -41,15 +41,15 @@ write_csv(cycle6, here::here("data", "cycle6.csv"))
 2.  Load variables and variable-details from worksheets folder.
 
 ```{r}
-my_variables <- read.csv(here("worksheets", "chmsflow-variables.csv"))
-my_variable_details <- read.csv(here("worksheets", "chmsflow-variable-details.csv"))
+my_variables <- read.csv(here("worksheets", "variables.csv"))
+my_variable_details <- read.csv(here("worksheets", "variable-details.csv"))
+names(cycle6) <- tolower(names(cycle6)) # Putting all headers to lowercase to ensure easy recoding (cycle6 only)
 ```
 
 3.  Test recodeflow on fake CHMS data. Refer to console outputs to see results. What do you think?
 
 ```{r}
 # Recoding basic variables
-names(cycle6) <- tolower(names(cycle6)) # Putting all headers to lowercase to ensure easy recoding (cycle6 only)
 
 cycle6_ages <- recodeflow::rec_with_table(cycle6, "clc_age", variable_details = my_variable_details, log = TRUE)
 cycle6_sexes <- recodeflow::rec_with_table(cycle6, "clc_sex", variable_details = my_variable_details, log = TRUE)
@@ -81,12 +81,10 @@ table1_data <- get_descriptive_data(
   list("all" = list("clc_sex"))
 )
 
-create_descriptive_table( 
+create_unstratified_descriptive_table( 
   table1_data,
   my_variables,
-  my_variable_details,
-  c("clc_age", "bpmdpbps", "bpmdpbpd"),
-  column_stratifier = c("clc_sex")
+  my_variable_details
 )
 
 ```

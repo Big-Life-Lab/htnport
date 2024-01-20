@@ -1,4 +1,4 @@
-setwd("P:/10619/Dropbox/Sept25")
+setwd("P:/10619/Dropbox/2024/chmsflow")
 
 library(recodeflow)
 library(cchsflow)
@@ -9,11 +9,11 @@ library(cli)
 library(pastecs)
 
 source("R/alcohol.R")
-source("R/blood pressure.R")
+source("R/blood-pressure.R")
 source("R/diabetes.R")
 source("R/diet.R")
 source("R/exercise.R")
-source("R/family history.R")
+source("R/family-history.R")
 source("R/income.R")
 source("R/kidney.R")
 source("R/sample.R")
@@ -22,8 +22,8 @@ source("R/smoking.R")
 source("R/get-descriptive-data.R")
 source("R/create-descriptive-table.R")
 
-my_variables <- read.csv("P:/10619/Dropbox/Sept25/worksheets/variables.csv")
-my_variable_details <- read.csv("P:/10619/Dropbox/Sept25/worksheets/variable-details.csv")
+my_variables <- read.csv("P:/10619/Dropbox/2024/chmsflow/worksheets/variables.csv")
+my_variable_details <- read.csv("P:/10619/Dropbox/2024/chmsflow/worksheets/variable-details.csv")
 
 cycle1 <- read_stata("data/cycle1/cycle1.dta")
 cycle2 <- read_stata("data/cycle2/cycle2.dta")
@@ -55,7 +55,7 @@ huiport_table1_data <- get_descriptive_data(
   # Sets the stratifier
   list("all" = list())
 )
-write.csv(huiport_table1_data, "P:/10619/Dropbox/Sept25/vignettes/Table 1/huiport_table1_data.csv")
+write.csv(huiport_table1_data, "P:/10619/Dropbox/2024/chmsflow/vignettes/Table 1/huiport_table1_data.csv")
 
 sex_stratified_huiport_table1_data <- get_descriptive_data(
   cycles1to6_table1_data,
@@ -83,7 +83,7 @@ create_descriptive_table(
 )
 
 # cycles1to6_table1_data_summary <- as.data.frame(pastecs::stat.desc(cycles1to6_table1_data))
-# write.csv(cycles1to6_table1_data_summary, "P:/10619/Dropbox/Sept25/vignettes/Table 1/table1_data_summary.csv")
+# write.csv(cycles1to6_table1_data_summary, "P:/10619/Dropbox/2024/chmsflow/vignettes/Table 1/table1_data_summary.csv")
 # 
 # male_data <- filter(cycles1to6_table1_data, clc_sex == 1)
 # female_data <- filter(cycles1to6_table1_data, clc_sex == 2)
@@ -91,7 +91,7 @@ create_descriptive_table(
 # male__data_summary <- as.data.frame(pastecs::stat.desc(male_data))
 # female_data_summary <- as.data.frame(pastecs::stat.desc(female_data))
 # sex_stratified_data_summary <- dplyr::bind_rows(male__data_summary, female_data_summary)
-# write.csv(sex_stratified_data_summary, "P:/10619/Dropbox/Sept25/vignettes/Table 1/sex_stratified_table1_data_summary.csv")
+# write.csv(sex_stratified_data_summary, "P:/10619/Dropbox/2024/chmsflow/vignettes/Table 1/sex_stratified_table1_data_summary.csv")
 # 
 # selected_stratified_cycles1to6_table1_data <- cycles1to6_table1_data %>%
 #   group_by(clc_sex) %>%
@@ -125,4 +125,4 @@ create_descriptive_table(
 # table1 <- table1 %>%
 #   mutate(pct = (n/sample_size) * 100)
 # table1 <- recodeflow::set_data_labels(table1, variable_details = my_variable_details, variables_sheet = my_variables)
-# write.csv(table1, "P:/10619/Dropbox/Sept25/vignettes/Table 1/table1.csv")
+# write.csv(table1, "P:/10619/Dropbox/2024/chmsflow/vignettes/Table 1/table1.csv")

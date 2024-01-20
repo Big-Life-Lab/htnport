@@ -89,7 +89,7 @@ fmh_14,Fam,Youngest age of family stroke,Youngest age - immediate family member 
 fmh_15,"Fam, Predictor",Hypertension family history,Immediate family member ever had high blood pressure,Health status,Family history,Categorical,N/A,"cycle1, cycle2, cycle3, cycle4",[fmh_15],
 gendhdi,"Table 1, Predictor",Self-rated health,Self-rated health,Health status,General,Categorical,N/A,"cycle1, cycle2, cycle3, cycle4, cycle5, cycle6",[gendhdi],
 gendmhi,"Table 1, Predictor",Self-rated mental health,Self-rated mental health,Health status,General,Categorical,N/A,"cycle1, cycle2, cycle3, cycle4, cycle5, cycle6",[gendmhi],
-gen_040,"Table 1, Predictor",Work stress,"Self-perceived work stress	",Health status,General,Categorical,N/A,"cycle1, cycle2, cycle3, cycle4, cycle5, cycle6","cycle1::gen_17, cycle2::gen_17, cycle3::gen_17, cycle4::gen_17, [gen_040]",
+gen_025,"Table 1, Predictor",Stress,"Self-perceived stress	",Health status,General,Categorical,N/A,"cycle1, cycle2, cycle3, cycle4, cycle5, cycle6","cycle1::gen_15, cycle2::gen_15, cycle3::gen_15, cycle4::gen_15, [gen_025]",
 gen_045,"Table 1, Predictor",Sense of belonging,Sense of belonging to local community,Health status,General,Categorical,N/A,"cycle1, cycle2, cycle3, cycle4, cycle5, cycle6","cycle1::gen_18, cycle2::gen_18, cycle3::gen_18, cycle4::gen_18, [gen_045]",
 gen_055,Table 1,Family doctor,Family doctor,Health status,General,Categorical,N/A,"cycle1, cycle2, cycle3, cycle4, cycle5, cycle6","cycle1::gen_20, cycle2::gen_20, cycle3::gen_20, cycle4::gen_20, [gen_055]",
 gfr,"Table 1, Predictor",Estimated glomerular filtration rate,Estimated GFR - according to Finlay - where serum creatine is in mg/dL,Health status,Chronic disease,Continuous,mL/min,"cycle1, cycle2, cycle3, cycle4, cycle5, cycle6","DerivedVar::[lab_bcre, pgdcgt, clc_sex, clc_age]",
@@ -118,13 +118,13 @@ lab_alkp,,Alkaline phosphatase,Alkaline phosphatase (U/L),Health behaviour,Alcoh
 lab_alt,,Alanine aminotransferase,Alanine aminotransferase (ALT) (U/L),Health behaviour,Alcohol,Continuous,U/L,"cycle1, cycle2, cycle4, cycle6",[lab_alt],Indicator of alcohol consumption
 lab_bcre,Table 1,Blood creatine,"Blood creatinine (Âµmol/L)	",Health status,Chronic disease,Continuous,µmol/L,"cycle1, cycle2, cycle3, cycle4, cycle5, cycle6",[lab_bcre],
 lab_bpb,"Table 1, Predictor",Blood lead,"Blood lead (Âµmol/L)	",Health behaviour,Lead,Continuous,µmol/L,"cycle1, cycle2",[lab_bpb],
-lab_ca,"Table 1, Predictor",Calcium,Calcium (total) (mmol/L),Health behaviour,Diet,Continuous,mmol/L,"cycle1, cycle2, cycle3, cycle4, cycle5, cycle6",[lab_ca],Indicator of dairy consumption
+lab_ca,,Calcium,Calcium (total) (mmol/L),Health behaviour,Diet,Continuous,mmol/L,"cycle1, cycle2, cycle3, cycle4, cycle5, cycle6",[lab_ca],Indicator of dairy consumption
 lab_chol,Table 1,Total cholesterol,Total cholesterol (mmol/L),Health status,Chronic disease,Continuous,mmol/L,"cycle1, cycle2, cycle3, cycle4, cycle5, cycle6",[lab_chol],
 lab_ggt,Table 1,Gamma-glutamyltransferase,Gamma-glutamyltransferase (GGT) (U/L),Health behaviour,Alcohol,Continuous,U/L,"cycle1, cycle2, cycle3, cycle4, cycle5, cycle6",[lab_ggt],Indicator of alcohol consumption
 lab_hba1,"Table 1, Predictor",Hemoglobin A1c level,Glycated hemoglobin A1c (HbA1c),Health status,Chronic disease,Continuous,N/A,"cycle1, cycle2, cycle3, cycle4, cycle5, cycle6",[lab_hba1],
 lab_hdl,Table 1,HDL cholesterol,High-density lipoprotein cholesterol (HDL) (mmol/L),Health status,Chronic disease,Continuous,mmol/L,"cycle1, cycle2, cycle3, cycle4, cycle5, cycle6",[lab_hdl],
-lab_una,"Sodium, Predictor",Urinary sodium excretion,Sodium (mmol/L) - MEC urine,Health behaviour,Diet,Continuous,mmol/L,"cycle5, cycle6",[lab_una],Indicator of sodium consumption
-lab_vids,"Table 1, Predictor",Vitamin D,Vitamin D [25(OH)] (nmol/L),Health behaviour,Chronic disease,Continuous,nmol/L,"cycle1, cycle2, cycle3, cycle4, cycle5, cycle6","cycle1::lab_vitd, cycle2::lab_vitd, [lab_vids]",
+lab_una,,Urinary sodium excretion,Sodium (mmol/L) - MEC urine,Health behaviour,Diet,Continuous,mmol/L,"cycle5, cycle6",[lab_una],Indicator of sodium consumption
+lab_vids,,Vitamin D,Vitamin D [25(OH)] (nmol/L),Health behaviour,Chronic disease,Continuous,nmol/L,"cycle1, cycle2, cycle3, cycle4, cycle5, cycle6","cycle1::lab_vitd, cycle2::lab_vitd, [lab_vids]",
 lafcoc16,,Occupation classification,National Occupational Classification - Statistics (NOC-S) 2016,Socioeconomic,Occupation,Continuous,N/A,"cycle1, cycle2, cycle3, cycle4, cycle5, cycle6","cycle1::lbf_soc, cycle2:lbf_soc, cycle3::lafcso01, cycle4::lafcoc11, [lafcoc16]",
 lmh_016,"Table 1, Predictor",Working hours,Number of hours worked per week,Health behaviour,Occupation,Continuous,hours/week,"cycle1, cycle2, cycle3, cycle4, cycle5, cycle6","cycle1::lbfdhpw, cycle2::lbfdhpw, cycle3::lfh_16, cycle4::lfh_16, [lmh_016]",
 low_drink_score,"Table 1, Predictor",Low risk drinking score ,Low risk drinking score ,Health behaviour,Alcohol,Categorical,N/A,"cycle1, cycle2, cycle3, cycle4, cycle5, cycle6","DerivedVar::[clc_sex, alcdwky]",
