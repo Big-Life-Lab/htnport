@@ -69,22 +69,24 @@ head(cycle6_adjusted_SBPs)
 4.  Generate a Table 1 for synthetic data.
 
 ```{r}
-transformed_cycle6 <- recodeflow::rec_with_table(cycle6, variables = c("clc_age", "clc_sex", "bpmdpbps", "bpmdpbpd"), variable_details = my_variable_details, notes = FALSE) # It can transform multiple variables at once too!
+transformed_cycle6 <- recodeflow::rec_with_table(cycle6, variables = c("clc_age", "clc_sex", "bpmdpbps", "bpmdpbpd", "sbp_adj"), variable_details = my_variable_details, notes = FALSE) # It can transform multiple variables at once too!
 
 table1_data <- get_descriptive_data(
   transformed_cycle6,
   my_variables,
   my_variable_details,
   # All the variables whose descriptive statistics we want
-  c("clc_age", "clc_sex", "bpmdpbps", "bpmdpbpd"),
+  c("clc_age", "clc_sex", "bpmdpbps", "bpmdpbpd", "sbp_adj"),
   # Sets the stratifier
   list("all" = list("clc_sex"))
 )
 
-create_unstratified_descriptive_table( 
+create_descriptive_table( 
   table1_data,
   my_variables,
-  my_variable_details
+  my_variable_details,
+  c("clc_age", "clc_sex", "bpmdpbps", "bpmdpbpd", "sbp_adj"), 
+  column_stratifier = c("clc_sex")
 )
 
 ```

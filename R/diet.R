@@ -39,14 +39,13 @@
 #' @export
 find_totalFV_cycles1and2 <- function(WSDD14Y, GFVD17Y, GFVD18Y, GFVD19Y, GFVD20Y, GFVD22Y, GFVD23Y) {
   
+  totalFV <- 0
+  
   if (all(is.na(c(WSDD14Y, GFVD17Y, GFVD18Y, GFVD19Y, GFVD20Y, GFVD22Y, GFVD23Y)))) {
     totalFV <- haven::tagged_na("b")
   }
   else {
     totalFV <- sum(c(WSDD14Y, GFVD17Y, GFVD18Y, GFVD19Y, GFVD20Y, GFVD22Y, GFVD23Y), na.rm = TRUE) / 365
-    if (is.na(totalFV)) {
-      totalFV <- haven::tagged_na("b")
-    }
   }
   
   return(totalFV)
@@ -103,14 +102,13 @@ find_totalFV_cycles1and2 <- function(WSDD14Y, GFVD17Y, GFVD18Y, GFVD19Y, GFVD20Y
 #' @export
 find_totalFV_cycles3to6 <- function(WSDD34Y, WSDD35Y, GFVD17AY, GFVD17BY, GFVD17CY, GFVD17DY, GFVD18Y, GFVD19Y, GFVD20Y, GFVD22Y, GFVD23Y) {
   
+  totalFV <- 0
+  
   if (all(is.na(c(WSDD34Y, WSDD35Y, GFVD17AY, GFVD17BY, GFVD17CY, GFVD17DY, GFVD18Y, GFVD19Y, GFVD20Y, GFVD22Y, GFVD23Y)))) {
     totalFV <- haven::tagged_na("b")
   }
   else {
     totalFV <- sum(c(WSDD34Y, WSDD35Y, GFVD17AY, GFVD17BY, GFVD17CY, GFVD17DY, GFVD18Y, GFVD19Y, GFVD20Y, GFVD22Y, GFVD23Y), na.rm = TRUE) / 365
-    if (is.na(totalFV)) {
-      totalFV <- haven::tagged_na("b")
-    }
   }
   return(totalFV)
 }
@@ -138,10 +136,10 @@ find_totalFV_cycles3to6 <- function(WSDD34Y, WSDD35Y, GFVD17AY, GFVD17BY, GFVD17
 #' @export
 determine_poordiet <- function(totalFV) {
   
-  poordiet <- haven::tagged_na("b")
+  poordiet <- 0
   
   if (is.na(totalFV)) {
-    return(poordiet)
+    poordiet <- haven::tagged_na("b")
   }
   else {
     if (totalFV < 5) {
@@ -183,14 +181,18 @@ determine_poordiet <- function(totalFV) {
 #' 
 #' @export
 calculate_nonHDL <- function(LAB_CHOL, LAB_HDL) {
+  
   nonHDL <- 0
+  
   if (LAB_CHOL < 99.6 && LAB_HDL < 9.96 && !is.na(LAB_CHOL) && !is.na(LAB_HDL)) {
     nonHDL <- LAB_CHOL - LAB_HDL
   }
   else {
     nonHDL <- haven::tagged_na("b")
   }
+  
   return(nonHDL)
+  
 }
 
 #' Non-HDL Cholesterol Categorization
@@ -216,10 +218,10 @@ calculate_nonHDL <- function(LAB_CHOL, LAB_HDL) {
 #' @export
 categorize_nonHDL <- function(nonHDL) {
   
-  nonhdltodd <- haven::tagged_na("b")
+  nonhdltodd <- 0
   
   if (is.na(nonHDL)) {
-    return(nonhdltodd)
+    nonhdltodd <- haven::tagged_na("b")
   }
   else {
     if (nonHDL >= 4.3) {
