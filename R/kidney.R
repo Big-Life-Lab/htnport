@@ -43,7 +43,7 @@ calculate_GFR <- function(LAB_BCRE, PGDCGT, CLC_SEX, CLC_AGE) {
   GFR <- 0
   serumcreat <- 0
   
-  if (any(is.na(c(LAB_BCRE, PGDCGT, CLC_SEX, CLC_AGE))) || any(haven::is_tagged_na(c(LAB_BCRE, PGDCGT, CLC_SEX, CLC_AGE)))) {
+  if (any(!LAB_BCRE %in% 0:9995) || (any(!CLC_SEX %in% c(1, 2)) || any(!PGDCGT %in% 1:13)) || any(!CLC_AGE %in% 0:995)) {
     GFR <- haven::tagged_na("b") # GFR is NA if any non-responses found
   }
   else {
