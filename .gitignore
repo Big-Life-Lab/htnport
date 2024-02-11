@@ -83,3 +83,5 @@ packrat.lock
 .R/lintr_cache/
 
 .Rproj.user
+
+/.luarc.json

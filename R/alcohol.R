@@ -1,9 +1,13 @@
+library(logger)
+
 #' @title Calculate the low drink score for a CHMS respondent based on alcohol consumption.
 #'
 #' @param CLC_SEX An integer indicating the respondent's sex. 1 for male, 2 for female.
 #' @param ALCDWKY An integer representing the number of standard drinks consumed by the respondent in a week.
 #'
-#' @return An integer representing the low drink score:
+#' @return If data of the wrong type is inputted (eg. a string for ALCDWKY), the function would return NA and remind the user to ensure all inputs are numeric.
+#' If data is out of bounds (eg. 3 for CLC_SEX which only is 1 or 2), the function would return NA and remind the user that input data is out of bounds.
+#' Otherwise, when numeric data within proper range is inputted, the function returns an integer representing the low drink score:
 #'   - 1 for "Low risk" (0 points).
 #'   - 2 for "Marginal risk" (1-2 points).
 #'   - 3 for "Medium risk" (3-4 points).
@@ -20,6 +24,8 @@
 #' @note Step 2 is not included in this function because the questions in 
 #' step 2 are not asked in any of the CHMS cycles. The score is only based on 
 #' step 1.
+#' 
+#' See https://osf.io/eprg7/ for more details on the guideline and score.
 #'
 #' @examples
 #' 
@@ -29,8 +35,18 @@
 #' 
 #' @export
 low_drink_score_fun <- function(CLC_SEX, ALCDWKY) {
+  
+    if (!is.numeric(CLC_SEX) || !is.numeric(ALCDWKY)) {
+      log_warn("Input data must be numerics.")
+      return(haven::tagged_na("b"))
+    }
+    
+    if (any(!CLC_SEX %in% c(1, 2)) || any(!ALCDWKY %in% 0:84)) {
+      log_warn("Input data is out of bounds.")
+      return(haven::tagged_na("b"))
+    }
+  
     ## Step 1: How many standard drinks did you have in a week?
-    step1 <- NA
     if (CLC_SEX %in% c(1, 2) && ALCDWKY %in% 0:995) {
       if (ALCDWKY <= 10) {
         step1 <- 0
@@ -44,16 +60,14 @@ low_drink_score_fun <- function(CLC_SEX, ALCDWKY) {
         step1 <- 3
       } else if (ALCDWKY > 20) {
         step1 <- 3
-      } else {
-        step1 <- NA
       }
     }
     else {
-      low_drink_score <- haven::tagged_na("b")
+      step1 <- NA
     }
     
     ## Categorical score
-    low_drink_score <- NA
+    low_drink_score <- haven::tagged_na("b")
     if (!is.na(step1)) {
       if (step1 == 0) {
         low_drink_score <- 1
@@ -78,7 +92,9 @@ low_drink_score_fun <- function(CLC_SEX, ALCDWKY) {
 #' @param ALC_11 An integer indicating whether the respondent drank alcohol in the past year. 
 #'              1 for "Yes", 2 for "No".
 #'
-#' @return An integer representing the low drink score:
+#' @return If data of the wrong type is inputted (eg. a string for ALCDWKY), the function would return NA and remind the user to ensure all inputs are numeric.
+#' If data is out of bounds (eg. 3 for CLC_SEX which only is 1 or 2), the function would return NA and remind the user that input data is out of bounds.
+#' Otherwise, when numeric data within proper range is inputted, the function returns an integer representing the low drink score:
 #'   - 1 - Low risk - never drank (0 points)
 #'   - 2 - Low risk - former drinker (0 points)
 #'   - 3 - Marginal risk (1-2 points)
@@ -111,48 +127,63 @@ low_drink_score_fun <- function(CLC_SEX, ALCDWKY) {
 #' 
 #' @export
 low_drink_score_fun1 <- function(CLC_SEX, ALCDWKY, ALC_17, ALC_11) {
-   
-   low_drink_score1 <- haven::tagged_na("b")
   
-   ## Step 1: How many standard drinks did you have in a week?
-    step1 <- NA
-    if (CLC_SEX %in% c(1, 2) && ALCDWKY %in% 0:995 && ALC_17 %in% c(1, 2) && ALC_11 %in% c(1, 2)) {
-      if (ALCDWKY <= 10) {
-        step1 <- 0
-      } else if (CLC_SEX == 1 && ALCDWKY > 10 && ALCDWKY <= 15) {
-        step1 <- 0
-      } else if (CLC_SEX == 2 && ALCDWKY > 10 && ALCDWKY <= 15) {
-        step1 <- 1
-      } else if (CLC_SEX == 1 && ALCDWKY > 15 && ALCDWKY <= 20) {
-        step1 <- 1
-      } else if (CLC_SEX == 2 && ALCDWKY > 15 && ALCDWKY <= 20) {
-        step1 <- 3
-      } else if (ALCDWKY > 20) {
-        step1 <- 3
-      } else {
-        step1 <- NA
-      }
+  if (!is.numeric(CLC_SEX) || !is.numeric(ALCDWKY) || !is.numeric(ALC_17) || !is.numeric(ALC_11)) {
+    log_warn("Input data must be numerics.")
+    return(haven::tagged_na("b"))
+  }
+  
+  if (any(!CLC_SEX %in% c(1, 2)) || any(!ALCDWKY %in% c(0:84)) || any(!ALC_17 %in% c(1, 2)) || any(!ALC_11 %in% c(1, 2))) {
+    log_warn("Input data is out of bounds.")
+    return(haven::tagged_na("b"))
+  }
+  
+  ## Step 1: How many standard drinks did you have in a week?
+  step1 <- NA
+  
+  if (ALCDWKY <= 10) {
+    step1 <- 0
+  } else if (ALCDWKY > 10 && ALCDWKY <= 15) {
+    if (CLC_SEX == 1) {
+      step1 <- 0
+    } else {
+      step1 <- 1
     }
-    else {
+  } else if (ALCDWKY > 15 && ALCDWKY <= 20) {
+    if (CLC_SEX == 1) {
+      step1 <- 1
+    } else {
+      step1 <- 3
+    }
+  } else if (ALCDWKY > 20) {
+    if (CLC_SEX == 1) {
+      step1 <- 3
+    } else {
+      step1 <- 5
+    }
+  } 
+  
+  ## Categorical score
+  if (!is.na(step1) && (ALC_17 %in% c(1, 2)) && (ALC_11 %in% c(1, 2))) {
+    if (step1 == 0) {
+      if (ALC_17 == 2 && ALC_11 == 2) {
+      low_drink_score1 <- 1
+      }
+      else {
+      low_drink_score1 <- 2    
+      } 
+    } else if (step1 %in% c(1, 2)) {
+      low_drink_score1 <- 3
+    } else if (step1 %in% c(3, 4)) {
+      low_drink_score1 <- 4
+    } else if (step1 %in% 5:9) {
+      low_drink_score1 <- 5
+    } else {
       low_drink_score1 <- haven::tagged_na("b")
     }
-    
-    ## Categorical score
-    if (!is.na(step1) && ALC_17 %in% c(1, 2) && ALC_11 %in% c(1, 2)) {
-      if (step1 == 0 && ALC_17 == 2) {
-        low_drink_score1 <- 1
-      } else if (step1 == 0 && ALC_17 == 1) {
-        low_drink_score1 <- 2
-      } else if (step1 %in% c(1, 2)) {
-        low_drink_score1 <- 3
-      } else if (step1 %in% c(3, 4)) {
-        low_drink_score1 <- 4
-      } else if (step1 %in% 5:9) {
-        low_drink_score1 <- 5
-      } else {
-        low_drink_score1 <- haven::tagged_na("b")
-      }
-    }
-    
-    return(low_drink_score1)
+  } else {
+    low_drink_score1 <- haven::tagged_na("b")
   }
+  
+  return(low_drink_score1)
+}
