@@ -3,7 +3,7 @@ title: "Recodeflow test"
 format: html
 ---
 
-Loading required packages
+Loading required packages and functions
 ```{r}
 library(readr)
 library(here)
@@ -11,6 +11,12 @@ library(huiport)
 library(dplyr)
 library(recodeflow)
 library(haven)
+
+# Ensure to set working directory to your local directory of repo, then uncomment these
+# source("R/blood-pressure.R")
+# source("R/kidney.R")
+# source("R/get-descriptive-data.R")
+# source("R/create-descriptive-table.R")
 ```
 
 
