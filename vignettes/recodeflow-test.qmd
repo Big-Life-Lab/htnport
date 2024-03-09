@@ -118,6 +118,19 @@ my_variable_details <- read.csv(here("worksheets", "variable-details.csv"))
 logan <- rec_with_table(cycle5, c("lab_bcre", "pgdcgt", "clc_sex", "clc_age", "gfr", "ckd"), variable_details = my_variable_details)
 head(logan)
 
+# Temporary fix -> convert factored NAs into "NA(b)"
+recode_na_b <- function(column) {
+  # Convert the column to character if it's a factor
+  if (is.factor(column)) {
+    column <- as.character(column)
+  }
+  # Replace NAs with "NA(b)"
+  column[is.na(column)] <- "NA(b)"
+  return(column)
+}
+
+logan$ckd <- recode_na_b(logan$ckd)
+
 table1_data <- get_descriptive_data(
   logan,
   my_variables,
@@ -128,8 +141,6 @@ table1_data <- get_descriptive_data(
   list("all" = list("clc_sex"))
 )
 
-# Missing values in any raw variables (eg. blood creatine and ethnicity) and continuous derived variables (eg. glomerular filtration rate are properly recoded, but missing values in derived categorical variables (eg. having chronic kidney disease) are not recoded.
-# Ex: In the synthetic cycle5, there are 2 observations with missing data needed to compute GFR and thus CKD status which is derived based on GFR (see kidney.R). Therefore, there should be 2 missing GFRs and subsequently 2 missing CKDs, but only missing data for GFR is shown but not CKD. Why is that?
 create_descriptive_table( 
   table1_data,
   my_variables,

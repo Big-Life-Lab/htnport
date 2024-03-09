@@ -43,6 +43,19 @@ cycle6_table1_data <- recodeflow::rec_with_table(cycle6, recodeflow:::select_var
 cycles1to6_table1_data <- dplyr::bind_rows(cycle1_table1_data, cycle2_table1_data, cycle3_table1_data, cycle4_table1_data, cycle5_table1_data, cycle6_table1_data)
 cycles1to6_table1_data <- dplyr::filter(cycles1to6_table1_data, insample == 1)
 
+recode_na_b <- function(column) {
+  # Convert the column to character if it's a factor
+  if (is.factor(column)) {
+    column <- as.character(column)
+  }
+  # Replace NAs with "NA(b)"
+  column[is.na(column)] <- "NA(b)"
+  return(column)
+}
+
+selected_columns <- c("cardiov", "ckd", "diabx", "highbp14090", "incq", "incq1", "low_drink_score", "mpva150wk", "nonhdltodd", "poordiet")
+cycles1to6_table1_data[selected_columns] <- lapply(cycles1to6_table1_data[selected_columns], recode_na_b)
+
 huiport_table1_data <- get_descriptive_data(
   cycles1to6_table1_data,
   my_variables,
