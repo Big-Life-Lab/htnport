@@ -98,35 +98,10 @@ female_chol_data <- female_data %>% drop_na(nonhdl)
 plot(density(male_chol_data$nonhdl), main = "Non-HDL cholesterol distribution", xlab = "Non-HDL Cholesterol (mmol/L)", col = "blue", ylim = c(0, 0.4))
 lines(density(female_chol_data$nonhdl), col = "red")
 
-male_sodium_data <- male_data %>% drop_na(lab_sodium)
-female_sodium_data <- female_data %>% drop_na(lab_sodium)
-plot(density(male_sodium_data$lab_sodium), main = "Urinary sodium distribution", xlab = "Urinary sodium (mmol/L)", col = "blue")
-lines(density(female_sodium_data$lab_sodium), col = "red")
-
 male_alcohol_data <- male_data %>% drop_na(alcdwky)
 female_alcohol_data <- female_data %>% drop_na(alcdwky)
 plot(density(male_alcohol_data$alcdwky), main = "Alcohol distribution", xlab = "Number of alcoholic drinks per week", col = "blue", xlim = c(0, 30), ylim = c(0, 0.30))
 lines(density(female_alcohol_data$alcdwky), col = "red")
-
-male_ggt_data <- male_data %>% drop_na(lab_ggt)
-female_ggt_data <- female_data %>% drop_na(lab_ggt)
-plot(density(male_ggt_data$lab_ggt), main = "Blood gamma-glutamyltransferase distribution", xlab = "Blood gamma-glutamyltransferase (U/L)", col = "blue", xlim = c(0, 250), ylim = c(0, 0.055))
-lines(density(female_ggt_data$lab_ggt), col = "red")
-
-male_calcium_data <- male_data %>% drop_na(lab_ca)
-female_calcium_data <- female_data %>% drop_na(lab_ca)
-plot(density(male_calcium_data$lab_ca), main = "Blood calcium distribution", xlab = "Blood calcium (mmol/L)", col = "blue")
-lines(density(female_calcium_data$lab_ca), col = "red")
-
-male_vitd_data <- male_data %>% drop_na(lab_vids)
-female_vitd_data <- female_data %>% drop_na(lab_vids)
-plot(density(male_vitd_data$lab_vids), main = "Blood vitamin D distribution", xlab = "Blood vitamin D (nmol/L)", col = "blue")
-lines(density(female_vitd_data$lab_vids), col = "red")
-
-male_lead_data <- male_data %>% drop_na(lab_bpb)
-female_lead_data <- female_data %>% drop_na(lab_bpb)
-plot(density(male_lead_data$lab_bpb), main = "Blood lead distribution", xlab = "Blood lead (µmol/L)", col = "blue", xlim = c(0, 0.4), ylim = c(0, 14))
-lines(density(female_lead_data$lab_bpb), col = "red")
 
 male_sleep_data <- male_data %>% drop_na(slp_11)
 female_sleep_data <- female_data %>% drop_na(slp_11)
