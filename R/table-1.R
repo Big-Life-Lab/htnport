@@ -37,10 +37,10 @@ cycle1_table1_data <- recodeflow::rec_with_table(cycle1, recodeflow:::select_var
 cycle2_table1_data <- recodeflow::rec_with_table(cycle2, recodeflow:::select_vars_by_role(c("Recode", "Fam"), my_variables), variable_details = my_variable_details, log = TRUE)
 cycle3_table1_data <- recodeflow::rec_with_table(cycle3, recodeflow:::select_vars_by_role(c("Recode", "Fam"), my_variables), variable_details = my_variable_details, log = TRUE)
 cycle4_table1_data <- recodeflow::rec_with_table(cycle4, recodeflow:::select_vars_by_role(c("Recode", "Fam"), my_variables), variable_details = my_variable_details, log = TRUE)
-cycle5_table1_data <- recodeflow::rec_with_table(cycle5, recodeflow:::select_vars_by_role(c("Recode", "Sodium"), my_variables), variable_details = my_variable_details, log = TRUE)
-cycle6_table1_data <- recodeflow::rec_with_table(cycle6, recodeflow:::select_vars_by_role(c("Recode", "Sodium"), my_variables), variable_details = my_variable_details, log = TRUE)
+cycle5_table1_data <- recodeflow::rec_with_table(cycle5, recodeflow:::select_vars_by_role(c("Recode"), my_variables), variable_details = my_variable_details, log = TRUE)
+cycle6_table1_data <- recodeflow::rec_with_table(cycle6, recodeflow:::select_vars_by_role(c("Recode"), my_variables), variable_details = my_variable_details, log = TRUE)
 
-cycles1to6_table1_data <- dplyr::bind_rows(cycle1_table1_data, cycle2_table1_data, cycle3_table1_data, cycle4_table1_data, cycle5_table1_data, cycle6_table1_data)
+cycles1to6_table1_data <- cchsflow::merge_rec_data(cycle1_table1_data, cycle2_table1_data, cycle3_table1_data, cycle4_table1_data, cycle5_table1_data, cycle6_table1_data)
 cycles1to6_table1_data <- dplyr::filter(cycles1to6_table1_data, insample == 1)
 
 recode_na_b <- function(column) {
