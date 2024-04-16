@@ -131,6 +131,7 @@ recode_na_b <- function(column) {
 
 logan$ckd <- recode_na_b(logan$ckd)
 
+# Stratified table
 table1_data <- get_descriptive_data(
   logan,
   my_variables,
@@ -147,6 +148,23 @@ create_descriptive_table(
   my_variable_details,
   c("lab_bcre", "pgdcgt", "clc_sex", "clc_age", "gfr", "ckd"), 
   column_stratifier = c("clc_sex")
+)
+
+# Unstratified table
+table2_data <- get_descriptive_data(
+  logan,
+  my_variables,
+  my_variable_details,
+  # All the variables whose descriptive statistics we want
+  c("lab_bcre", "pgdcgt", "clc_sex", "clc_age", "gfr", "ckd"),
+  # Sets the stratifier
+  list("all" = list())
+)
+
+create_unstratified_descriptive_table( 
+  table2_data,
+  my_variables,
+  my_variable_details
 )
 ```
 
