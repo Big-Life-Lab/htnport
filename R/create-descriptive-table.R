@@ -199,7 +199,7 @@ create_descriptive_table <- function(
           variable,
           TRUE
         ) %>%
-        dplyr::filter(recEnd %in% c("NA::a", "NA::b"))
+        dplyr::filter(recEnd %in% c("NA::a", "NA::b", "NA::c"))
         for(missing_categories_index in seq_len(nrow(missing_categories))) {
           descriptive_table_variables <- c(descriptive_table_variables, missing_categories[missing_categories_index, "catLabel"])
           descriptive_table_type <- c(descriptive_table_type, "")

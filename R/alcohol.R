@@ -41,10 +41,10 @@ low_drink_score_fun <- function(CLC_SEX, ALCDWKY) {
   #   return(haven::tagged_na("b"))
   # }
 
-  if (any(!CLC_SEX %in% c(1, 2)) || any(!ALCDWKY %in% 0:995)) {
-    log_warn("Input data is out of bounds.")
-    return(haven::tagged_na("b"))
-  }
+  # if (any(!CLC_SEX %in% c(1, 2)) || any(!ALCDWKY %in% 0:995)) {
+  #   log_warn("Input data is out of bounds.")
+  #   return(haven::tagged_na("b"))
+  # }
   
   ## Step 1: How many standard drinks did you have in a week?
   if (CLC_SEX %in% c(1, 2) && ALCDWKY %in% 0:84) {
@@ -131,40 +131,43 @@ low_drink_score_fun <- function(CLC_SEX, ALCDWKY) {
 #' @export
 low_drink_score_fun1 <- function(CLC_SEX, ALCDWKY, ALC_17, ALC_11) {
   
-  if (!is.numeric(CLC_SEX) || !is.numeric(ALCDWKY) || !is.numeric(ALC_17) || !is.numeric(ALC_11)) {
-    log_warn("Input data must be numerics.")
-    return(haven::tagged_na("b"))
-  }
-  
-  if (any(!CLC_SEX %in% c(1, 2)) || any(!ALCDWKY %in% c(0:84)) || any(!ALC_17 %in% c(1, 2)) || any(!ALC_11 %in% c(1, 2))) {
-    log_warn("Input data is out of bounds.")
-    return(haven::tagged_na("b"))
-  }
+  # if (!is.numeric(CLC_SEX) || !is.numeric(ALCDWKY) || !is.numeric(ALC_17) || !is.numeric(ALC_11)) {
+  #   log_warn("Input data must be numerics.")
+  #   return(haven::tagged_na("b"))
+  # }
+  # 
+  # if (any(!CLC_SEX %in% c(1, 2)) || any(!ALCDWKY %in% c(0:84)) || any(!ALC_17 %in% c(1, 2)) || any(!ALC_11 %in% c(1, 2))) {
+  #   log_warn("Input data is out of bounds.")
+  #   return(haven::tagged_na("b"))
+  # }
   
   ## Step 1: How many standard drinks did you have in a week?
-  step1 <- NA
-  
-  if (ALCDWKY <= 10) {
-    step1 <- 0
-  } else if (ALCDWKY > 10 && ALCDWKY <= 15) {
-    if (CLC_SEX == 1) {
+  if (CLC_SEX %in% c(1, 2) && ALCDWKY %in% 0:84) {
+    if (ALCDWKY <= 10) {
       step1 <- 0
-    } else {
-      step1 <- 1
-    }
-  } else if (ALCDWKY > 15 && ALCDWKY <= 20) {
-    if (CLC_SEX == 1) {
-      step1 <- 1
-    } else {
-      step1 <- 3
-    }
-  } else if (ALCDWKY > 20) {
-    if (CLC_SEX == 1) {
-      step1 <- 3
-    } else {
-      step1 <- 5
-    }
-  } 
+    } else if (ALCDWKY > 10 && ALCDWKY <= 15) {
+      if (CLC_SEX == 1) {
+        step1 <- 0
+      } else {
+        step1 <- 1
+      }
+    } else if (ALCDWKY > 15 && ALCDWKY <= 20) {
+      if (CLC_SEX == 1) {
+        step1 <- 1
+      } else {
+        step1 <- 3
+      }
+    } else if (ALCDWKY > 20) {
+      if (CLC_SEX == 1) {
+        step1 <- 3
+      } else {
+        step1 <- 5
+      }
+    } 
+  }
+  else {
+    step1 <- NA
+  }
   
   ## Categorical score
   if (!is.na(step1) && (ALC_17 %in% c(1, 2)) && (ALC_11 %in% c(1, 2))) {

@@ -50,10 +50,11 @@ recode_na_b <- function(column) {
   }
   # Replace NAs with "NA(b)"
   column[is.na(column)] <- "NA(b)"
+  # Replace "NA(c)" with "NA(b)"
+  column[column == "NA(c)"] <- "NA(b)"
   return(column)
 }
 
-# selected_columns <- c("cardiov", "ckd", "diabx", "highbp14090", "incq", "incq1", "low_drink_score", "mpva150wk", "nonhdltodd", "poordiet")
 cycles1to6_table1_data$cardiov <- recode_na_b(cycles1to6_table1_data$cardiov)
 cycles1to6_table1_data$ckd <- recode_na_b(cycles1to6_table1_data$ckd)
 cycles1to6_table1_data$diabx <- recode_na_b(cycles1to6_table1_data$diabx)
@@ -90,61 +91,38 @@ create_descriptive_table(
   subjects_order = c("Age", "Sex", "Marital status", "Education", "Income", "Occupation", "Ethnicity", "Immigration", "Family history", "Exercise", "Diet", "Weight", "Height", "Chronic disease", "Alcohol", "Smoking", "Sleep", "General")
 )
 
-# cycles1to6_table1_data_summary <- as.data.frame(pastecs::stat.desc(cycles1to6_table1_data))
-# write.csv(cycles1to6_table1_data_summary, "P:/10619/Dropbox/2024/chmsflow/vignettes/Table 1/table1_data_summary.csv")
-# 
-# male_data <- filter(cycles1to6_table1_data, clc_sex == 1)
-# female_data <- filter(cycles1to6_table1_data, clc_sex == 2)
-# 
-# male__data_summary <- as.data.frame(pastecs::stat.desc(male_data))
-# female_data_summary <- as.data.frame(pastecs::stat.desc(female_data))
-# sex_stratified_data_summary <- dplyr::bind_rows(male__data_summary, female_data_summary)
-# write.csv(sex_stratified_data_summary, "P:/10619/Dropbox/2024/chmsflow/vignettes/Table 1/sex_stratified_table1_data_summary.csv")
-# 
-# selected_stratified_cycles1to6_table1_data <- cycles1to6_table1_data %>%
-#   group_by(clc_sex) %>%
-#   select(highbp14090, agegroup4, married, nohsgrad, incq1, pgdcgt, img_03, gen_055, smkdsty, cardiov, fambp, famcvd60, mvpa150wk, poordiet, hwmdbmi, diabx, ckd, nonhdltodd, low_drink_score1, spa_020, gen_040, gendmhi)
-# 
-# table1 <- dplyr::bind_rows(count(selected_stratified_cycles1to6_table1_data, highbp14090 == 1),
-#                            count(selected_stratified_cycles1to6_table1_data, agegroup4),
-#                            count(selected_stratified_cycles1to6_table1_data, married == 1),
-#                            count(selected_stratified_cycles1to6_table1_data, nohsgrad == 1),
-#                            count(selected_stratified_cycles1to6_table1_data, incq1 == 1),
-#                            count(selected_stratified_cycles1to6_table1_data, pgdcgt == 1),
-#                            count(selected_stratified_cycles1to6_table1_data, img_03 == 1),
-#                            count(selected_stratified_cycles1to6_table1_data, gen_055 == 1),
-#                            count(selected_stratified_cycles1to6_table1_data, smkdsty %in% c(1, 2, 3)),
-#                            count(selected_stratified_cycles1to6_table1_data, cardiov == 1),
-#                            count(selected_stratified_cycles1to6_table1_data, fambp == 1),
-#                            count(selected_stratified_cycles1to6_table1_data, famcvd60 == 1),
-#                            count(selected_stratified_cycles1to6_table1_data, mvpa150wk == 2),
-#                            count(selected_stratified_cycles1to6_table1_data, poordiet == 1),
-#                            count(selected_stratified_cycles1to6_table1_data, hwmdbmi >= 25),
-#                            count(selected_stratified_cycles1to6_table1_data, diabx == 1),
-#                            count(selected_stratified_cycles1to6_table1_data, ckd == 1),
-#                            count(selected_stratified_cycles1to6_table1_data, nonhdltodd == 1),
-#                            count(selected_stratified_cycles1to6_table1_data, low_drink_score1 %in% c(3, 4, 5)),
-#                            count(selected_stratified_cycles1to6_table1_data, spa_020 %in% c(3, 4, 5)),
-#                            count(selected_stratified_cycles1to6_table1_data, gen_040 %in% c(3, 4, 5)),
-#                            count(selected_stratified_cycles1to6_table1_data, gendmhi == 0))
-# 
-# sample_size <- sum(count(selected_stratified_cycles1to6_table1_data)$n)
-# 
-# table1 <- table1 %>%
-#   mutate(pct = (n/sample_size) * 100)
-# table1 <- recodeflow::set_data_labels(table1, variable_details = my_variable_details, variables_sheet = my_variables)
-# write.csv(table1, "P:/10619/Dropbox/2024/chmsflow/vignettes/Table 1/table1.csv")
-#
-# huiport_table1_data <- get_descriptive_data(
-#   cycles1to6_table1_data,
-#   my_variables,
-#   my_variable_details,
-#   # All the variables whose descriptive statistics we want
-#   recodeflow:::select_vars_by_role(
-#     c("Table 1"),
-#     my_variables
-#   ),
-#   # Sets the stratifier
-#   list("all" = list())
-# )
-# write.csv(huiport_table1_data, "P:/10619/Dropbox/2024/chmsflow/vignettes/Table 1/huiport_table1_data.csv")
+working_hours_x_status_data <- get_descriptive_data(
+  cycles1to6_table1_data,
+  my_variables,
+  my_variable_details,
+  # All the variables whose descriptive statistics we want
+  c("lmh_016"),
+  # Sets the stratifier
+  list("all" = list("lafdwsl"))
+)
+
+create_descriptive_table(
+  working_hours_x_status_data,
+  my_variables,
+  my_variable_details,
+  c("lmh_016"),
+  column_stratifier = c("lafdwsl")
+)
+
+working_hours_x_age_data <- get_descriptive_data(
+  cycles1to6_table1_data,
+  my_variables,
+  my_variable_details,
+  # All the variables whose descriptive statistics we want
+  c("lmh_016"),
+  # Sets the stratifier
+  list("all" = list("agegroup4"))
+)
+
+create_descriptive_table(
+  working_hours_x_age_data,
+  my_variables,
+  my_variable_details,
+  c("lmh_016"),
+  column_stratifier = c("agegroup4")
+)

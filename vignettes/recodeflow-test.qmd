@@ -168,3 +168,31 @@ create_unstratified_descriptive_table(
 )
 ```
 
+6. Not asked missing category
+
+```{r}
+my_variables <- read.csv(here("worksheets", "variables.csv"))
+my_variable_details <- read.csv(here("worksheets", "variable-details.csv"))
+
+cycle4 <- data.frame(slp_11 = c(8, 99.7, tagged_na("c")), fmh_15 = c(1, 6, tagged_na("c")), clc_sex = c(1, 1, 2))
+
+hello <- rec_with_table(cycle4, c("slp_11", "fmh_15", "clc_sex"), variable_details = my_variable_details)
+
+table_data <- get_descriptive_data(
+  hello,
+  my_variables,
+  my_variable_details,
+  # All the variables whose descriptive statistics we want
+  c("slp_11", "fmh_15"),
+  # Sets the stratifier
+  list("all" = list("clc_sex"))
+)
+
+create_descriptive_table( 
+  table_data,
+  my_variables,
+  my_variable_details,
+  c("slp_11", "fmh_15"),
+  column_stratifier = c("clc_sex")
+)
+```
