@@ -104,7 +104,7 @@ determine_hypertension <- function(BPMDPBPS, BPMDPBPD, CCC_32) {
   highdias90 <- NA
   highBP14090 <- haven::tagged_na("b")
   
-  if (is.na(BPMDPBPS) || is.na(BPMDPBPD) || is.na(CCC_32)) {
+  if (is.na(BPMDPBPS) || is.na(BPMDPBPD)) {
     return(highBP14090)
   }
   
@@ -169,7 +169,7 @@ determine_adjusted_hypertension <- function(SBP_adj, DBP_adj, CCC_32) {
   highdias90_adj <- NA
   highBP14090_adj <- haven::tagged_na("b")
   
-  if (is.na(SBP_adj) || is.na(DBP_adj) || is.na(CCC_32)) {
+  if (is.na(SBP_adj) || is.na(DBP_adj)) {
     return(highBP14090)
   }
   
@@ -235,7 +235,7 @@ determine_controlled_hypertension <- function(BPMDPBPS, BPMDPBPD, CCC_32) {
   highdias90 <- NA
   Control14090 <- haven::tagged_na("b")
   
-  if (is.na(BPMDPBPS) || is.na(BPMDPBPD) || is.na(CCC_32)) {
+  if (is.na(BPMDPBPS) || is.na(BPMDPBPD)) {
     return(highBP14090)
   }
   
@@ -302,7 +302,7 @@ determine_controlled_adjusted_hypertension <- function(SBP_adj, DBP_adj, CCC_32)
   highdias90_adj <- NA
   Control14090_adj <- haven::tagged_na("b")
   
-  if (is.na(SBP_adj) || is.na(DBP_adj) || is.na(CCC_32)) {
+  if (is.na(SBP_adj) || is.na(DBP_adj)) {
     return(Control14090_adj)
   }
   
