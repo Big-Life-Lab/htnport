@@ -105,7 +105,13 @@ determine_hypertension <- function(BPMDPBPS, BPMDPBPD, CCC_32) {
   highBP14090 <- haven::tagged_na("b")
   
   if (is.na(BPMDPBPS) || is.na(BPMDPBPD)) {
-    return(highBP14090)
+    if (CCC_32 == 1) {
+      highBP14090 <- 1
+      return(highBP14090)
+    }
+    else {
+      return(highBP14090)
+    }
   }
   
   # Check conditions and assign values to highsys140 and highdias90
@@ -170,7 +176,13 @@ determine_adjusted_hypertension <- function(SBP_adj, DBP_adj, CCC_32) {
   highBP14090_adj <- haven::tagged_na("b")
   
   if (is.na(SBP_adj) || is.na(DBP_adj)) {
-    return(highBP14090)
+    if (CCC_32 == 1) {
+      highBP14090_adj <- 1
+      return(highBP14090_adj)
+    }
+    else {
+      return(highBP14090_adj)
+    }
   }
   
   # Check conditions and assign values to highsys140_adj and highdias90_adj
@@ -236,7 +248,13 @@ determine_controlled_hypertension <- function(BPMDPBPS, BPMDPBPD, CCC_32) {
   Control14090 <- haven::tagged_na("b")
   
   if (is.na(BPMDPBPS) || is.na(BPMDPBPD)) {
-    return(highBP14090)
+    if (CCC_32 == 1) {
+      Control14090 <- 1
+      return(Control14090)
+    }
+    else {
+      return(Control14090)
+    }
   }
   
   # Check conditions and assign values to highsys140 and highdias90
@@ -303,7 +321,13 @@ determine_controlled_adjusted_hypertension <- function(SBP_adj, DBP_adj, CCC_32)
   Control14090_adj <- haven::tagged_na("b")
   
   if (is.na(SBP_adj) || is.na(DBP_adj)) {
-    return(Control14090_adj)
+    if (CCC_32 == 1) {
+      Control14090_adj <- 1
+      return(Control14090_adj)
+    }
+    else {
+      return(Control14090_adj)
+    }
   }
   
   # Check conditions and assign values to highsys140_adj and highdias90_adj
