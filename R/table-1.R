@@ -49,21 +49,14 @@ recode_na_b <- function(column) {
     column <- as.character(column)
   }
   # Replace NAs with "NA(b)"
-  column[is.na(column)] <- "NA(b)"
-  # Replace "NA(c)" with "NA(b)"
   column[column == "NA(c)"] <- "NA(b)"
   return(column)
 }
 
-cycles1to6_table1_data$cardiov <- recode_na_b(cycles1to6_table1_data$cardiov)
 cycles1to6_table1_data$ckd <- recode_na_b(cycles1to6_table1_data$ckd)
-cycles1to6_table1_data$diabx <- recode_na_b(cycles1to6_table1_data$diabx)
 cycles1to6_table1_data$highbp14090 <- recode_na_b(cycles1to6_table1_data$highbp14090)
-cycles1to6_table1_data$incq <- recode_na_b(cycles1to6_table1_data$incq)
-cycles1to6_table1_data$incq1 <- recode_na_b(cycles1to6_table1_data$incq1)
-cycles1to6_table1_data$low_drink_score <- recode_na_b(cycles1to6_table1_data$low_drink_score)
+cycles1to6_table1_data$low_drink_score1 <- recode_na_b(cycles1to6_table1_data$low_drink_score1)
 cycles1to6_table1_data$mvpa150wk <- recode_na_b(cycles1to6_table1_data$mvpa150wk)
-cycles1to6_table1_data$nonhdltodd <- recode_na_b(cycles1to6_table1_data$nonhdltodd)
 cycles1to6_table1_data$poordiet <- recode_na_b(cycles1to6_table1_data$poordiet)
 
 sex_stratified_huiport_table1_data <- get_descriptive_data(
@@ -88,7 +81,7 @@ create_descriptive_table(
     my_variables
   ),
   column_stratifier = c("clc_sex"),
-  subjects_order = c("Age", "Sex", "Marital status", "Education", "Income", "Occupation", "Ethnicity", "Immigration", "Family history", "Exercise", "Diet", "Weight", "Height", "Chronic disease", "Alcohol", "Smoking", "Sleep", "General")
+  subjects_order = c("Age", "Sex", "Marital status", "Education", "Occupation", "Family history", "Exercise", "Diet", "Weight", "Chronic disease", "Alcohol", "Smoking", "Sleep", "General")
 )
 
 working_hours_x_status_data <- get_descriptive_data(
@@ -125,4 +118,22 @@ create_descriptive_table(
   my_variable_details,
   c("lmh_016"),
   column_stratifier = c("agegroup4")
+)
+
+htn_data <- get_descriptive_data(
+  cycles1to6_table1_data,
+  my_variables,
+  my_variable_details,
+  # All the variables whose descriptive statistics we want
+  c("highbp14090"),
+  # Sets the stratifier
+  list("all" = list("clc_sex"))
+)
+
+create_descriptive_table(
+  htn_data,
+  my_variables,
+  my_variable_details,
+  c("highbp14090"),
+  column_stratifier = c("clc_sex")
 )
