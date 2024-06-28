@@ -7,6 +7,7 @@ library(readr)
 library(haven)
 library(cli)
 library(pastecs)
+library(mice)
 
 source("R/alcohol.R")
 source("R/blood-pressure.R")
@@ -21,6 +22,7 @@ source("R/smoking.R")
 
 source("R/get-descriptive-data.R")
 source("R/create-descriptive-table.R")
+source("R/impute-variables.R")
 
 my_variables <- read.csv("P:/10619/Dropbox/chmsflow/worksheets/variables.csv")
 my_variable_details <- read.csv("P:/10619/Dropbox/chmsflow/worksheets/variable-details.csv")
@@ -84,56 +86,35 @@ create_descriptive_table(
   subjects_order = c("Age", "Sex", "Marital status", "Education", "Occupation", "Family history", "Exercise", "Diet", "Weight", "Chronic disease", "Alcohol", "Smoking", "Sleep", "General")
 )
 
-working_hours_x_status_data <- get_descriptive_data(
-  cycles1to6_table1_data,
+# cycles1to6_table1_data$ckd[cycles1to6_table1_data$ckd %in% c("NA(a)", "NA(b)", "NA(c)")] <- NA
+# cycles1to6_table1_data$highbp14090[cycles1to6_table1_data$highbp14090 %in% c("NA(a)", "NA(b)", "NA(c)")] <- NA
+# cycles1to6_table1_data$low_drink_score1[cycles1to6_table1_data$low_drink_score1 %in% c("NA(a)", "NA(b)", "NA(c)")] <- NA
+# cycles1to6_table1_data$mvpa150wk[cycles1to6_table1_data$mvpa150wk %in% c("NA(a)", "NA(b)", "NA(c)")] <- NA
+# cycles1to6_table1_data$poordiet[cycles1to6_table1_data$poordiet %in% c("NA(a)", "NA(b)", "NA(c)")] <- NA
+
+imputed_cycles1to6_table1_data <- impute_variables(cycles1to6_table1_data, recodeflow:::select_vars_by_role(c("Table 1"), my_variables), c("cycle"))
+
+imputed_sex_stratified_huiport_table1_data <- get_descriptive_data(
+  imputed_cycles1to6_table1_data,
   my_variables,
   my_variable_details,
   # All the variables whose descriptive statistics we want
-  c("lmh_016"),
-  # Sets the stratifier
-  list("all" = list("lafdwsl"))
-)
-
-create_descriptive_table(
-  working_hours_x_status_data,
-  my_variables,
-  my_variable_details,
-  c("lmh_016"),
-  column_stratifier = c("lafdwsl")
-)
-
-working_hours_x_age_data <- get_descriptive_data(
-  cycles1to6_table1_data,
-  my_variables,
-  my_variable_details,
-  # All the variables whose descriptive statistics we want
-  c("lmh_016"),
-  # Sets the stratifier
-  list("all" = list("agegroup4"))
-)
-
-create_descriptive_table(
-  working_hours_x_age_data,
-  my_variables,
-  my_variable_details,
-  c("lmh_016"),
-  column_stratifier = c("agegroup4")
-)
-
-htn_data <- get_descriptive_data(
-  cycles1to6_table1_data,
-  my_variables,
-  my_variable_details,
-  # All the variables whose descriptive statistics we want
-  c("highbp14090"),
+  recodeflow:::select_vars_by_role(
+    c("Table 1"),
+    my_variables
+  ),
   # Sets the stratifier
   list("all" = list("clc_sex"))
 )
 
 create_descriptive_table(
-  htn_data,
+  imputed_sex_stratified_huiport_table1_data,
   my_variables,
   my_variable_details,
-  c("highbp14090"),
-  column_stratifier = c("clc_sex")
+  recodeflow:::select_vars_by_role(
+    c("Table 1"),
+    my_variables
+  ),
+  column_stratifier = c("clc_sex"),
+  subjects_order = c("Age", "Sex", "Marital status", "Education", "Occupation", "Family history", "Exercise", "Diet", "Weight", "Chronic disease", "Alcohol", "Smoking", "Sleep", "General")
 )

@@ -59,7 +59,6 @@ my_variable_details <- read.csv(here("worksheets", "variable-details.csv"))
 
 ```{r}
 # Recoding basic variables
-
 cycle6_ages <- recodeflow::rec_with_table(cycle6, "clc_age", variable_details = my_variable_details, log = TRUE)
 cycle6_sexes <- recodeflow::rec_with_table(cycle6, "clc_sex", variable_details = my_variable_details, log = TRUE)
 

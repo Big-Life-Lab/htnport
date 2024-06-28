@@ -82,10 +82,16 @@ adjust_DBP <- function(BPMDPBPD) {
 #' @param CCC_32 An integer indicating whether the respondent is on medication for hypertension.
 #'   - 1: Yes
 #'   - 2: No
+#' @param CCC_51 An optional integer indicating the presence of diabetes, affecting blood pressure thresholds.
+#'   - 1: Yes
+#'   - 2: No (default)
+#' @param CKD An optional integer indicating the presence of chronic kidney disease, affecting blood pressure thresholds.
+#'   - 1: Yes
+#'   - 2: No (default)
 #'
 #' @return An integer representing the hypertension status:
-#'   - 1: High blood pressure (BP ≥ 140/90 mmHg or on hypertension medication)
-#'   - 2: Normal blood pressure (BP < 140/90 mmHg and not on hypertension medication)
+#'   - 1: High blood pressure (BP ≥ 140/90 mmHg (or ≥ 130/80 mmHg if diabetes or CKD) or on hypertension medication)
+#'   - 2: Normal blood pressure (BP < 140/90 mmHg (or < 130/80 mmHg if diabetes or CKD) and not on hypertension medication)
 #'   - NA(b): Invalid input or non-response
 #'
 #' @examples
@@ -99,7 +105,7 @@ adjust_DBP <- function(BPMDPBPD) {
 #' # Output: 2 (Normal blood pressure as BP is below 140/90 mmHg and not on medication).
 #' 
 #' @export
-determine_hypertension <- function(BPMDPBPS, BPMDPBPD, CCC_32) {
+determine_hypertension <- function(BPMDPBPS, BPMDPBPD, CCC_32, CCC_51 = NULL, CKD = NULL) {
   highsys140 <- NA
   highdias90 <- NA
   highBP14090 <- haven::tagged_na("b")
@@ -108,29 +114,44 @@ determine_hypertension <- function(BPMDPBPS, BPMDPBPD, CCC_32) {
     if (CCC_32 == 1) {
       highBP14090 <- 1
       return(highBP14090)
-    }
-    else {
+    } else {
       return(highBP14090)
     }
   }
   
   # Check conditions and assign values to highsys140 and highdias90
-  if (140 <= BPMDPBPS && BPMDPBPS < 996) {
-    highsys140 <- 1
-  } else if (0 <= BPMDPBPS && BPMDPBPS < 140) {
-    highsys140 <- 2
-  }
-  else {
-    return(highBP14090)
-  }
-  
-  if (90 <= BPMDPBPD && BPMDPBPD < 996) {
-    highdias90 <- 1
-  } else if (0 <= BPMDPBPD && BPMDPBPD < 90) {
-    highdias90 <- 2
-  }
-  else {
-    return(highBP14090)
+  if ((!is.na(CCC_51) && CCC_51 == 1) || (!is.na(CKD) && CKD == 1)) {
+    if (130 <= BPMDPBPS && BPMDPBPS < 996) {
+      highsys140 <- 1
+    } else if (0 <= BPMDPBPS && BPMDPBPS < 130) {
+      highsys140 <- 2
+    } else {
+      return(highBP14090)
+    }
+    
+    if (80 <= BPMDPBPD && BPMDPBPD < 996) {
+      highdias90 <- 1
+    } else if (0 <= BPMDPBPD && BPMDPBPD < 80) {
+      highdias90 <- 2
+    } else {
+      return(highBP14090)
+    }
+  } else {
+    if (140 <= BPMDPBPS && BPMDPBPS < 996) {
+      highsys140 <- 1
+    } else if (0 <= BPMDPBPS && BPMDPBPS < 140) {
+      highsys140 <- 2
+    } else {
+      return(highBP14090)
+    }
+    
+    if (90 <= BPMDPBPD && BPMDPBPD < 996) {
+      highdias90 <- 1
+    } else if (0 <= BPMDPBPD && BPMDPBPD < 90) {
+      highdias90 <- 2
+    } else {
+      return(highBP14090)
+    }
   }
   
   # Calculate highBP14090
@@ -153,10 +174,16 @@ determine_hypertension <- function(BPMDPBPS, BPMDPBPD, CCC_32) {
 #' @param CCC_32 An integer indicating whether the respondent is on medication for hypertension.
 #'   - 1: Yes
 #'   - 2: No
+#' @param CCC_51 An optional integer indicating the presence of diabetes, affecting blood pressure thresholds.
+#'   - 1: Yes
+#'   - 2: No (default)
+#' @param CKD An optional integer indicating the presence of chronic kidney disease, affecting blood pressure thresholds.
+#'   - 1: Yes
+#'   - 2: No (default)
 #'
-#' @return An integer representing the adjusted hypertension status:
-#'   - 1: High blood pressure (adjusted BP ≥ 140/90 mmHg or on hypertension medication)
-#'   - 2: Normal blood pressure (adjusted BP < 140/90 mmHg and not on hypertension medication)
+#' @return An integer representing the hypertension status:
+#'   - 1: High blood pressure (adjusted BP ≥ 140/90 mmHg (or ≥ 130/80 mmHg if diabetes or CKD) or on hypertension medication)
+#'   - 2: Normal blood pressure (adjusted BP < 140/90 mmHg (or < 130/80 mmHg if diabetes or CKD) and not on hypertension medication)
 #'   - NA(b): Invalid input or non-response
 #'
 #' @examples
@@ -170,7 +197,7 @@ determine_hypertension <- function(BPMDPBPS, BPMDPBPD, CCC_32) {
 #' # Output: 2 (Normal blood pressure as adjusted BP is below 140/90 mmHg and not on medication).
 #' 
 #' @export
-determine_adjusted_hypertension <- function(SBP_adj, DBP_adj, CCC_32) {
+determine_adjusted_hypertension <- function(SBP_adj, DBP_adj, CCC_32, CCC_51 = NULL, CKD = NULL) {
   highsys140_adj <- NA
   highdias90_adj <- NA
   highBP14090_adj <- haven::tagged_na("b")
@@ -186,26 +213,46 @@ determine_adjusted_hypertension <- function(SBP_adj, DBP_adj, CCC_32) {
   }
   
   # Check conditions and assign values to highsys140_adj and highdias90_adj
-  if (140 <= SBP_adj && SBP_adj < 996) {
-    highsys140_adj <- 1
-  } else if (0 <= SBP_adj && SBP_adj < 140) {
-    highsys140_adj <- 2
+  if ((!is.na(CCC_51) && CCC_51 == 1) || (!is.na(CKD) && CKD == 1)) {
+    if (130 <= SBP_adj && SBP_adj < 996) {
+      highsys140_adj <- 1
+    } else if (0 <= SBP_adj && SBP_adj < 130) {
+      highsys140_adj <- 2
+    }
+    else {
+      return(highBP14090_adj)
+    }
+    
+    if (80 <= DBP_adj && DBP_adj < 996) {
+      highdias90_adj <- 1
+    } else if (0 <= DBP_adj && DBP_adj < 80) {
+      highdias90_adj <- 2
+    }
+    else {
+      return(highBP14090_adj)
+    }
   }
   else {
-    return(highBP14090_adj)
-  }
-  
-  if (90 <= DBP_adj && DBP_adj < 996) {
-    highdias90_adj <- 1
-  } else if (0 <= DBP_adj && DBP_adj < 90) {
-    highdias90_adj <- 2
-  }
-  else {
-    return(highBP14090_adj)
+    if (140 <= SBP_adj && SBP_adj < 996) {
+      highsys140_adj <- 1
+    } else if (0 <= SBP_adj && SBP_adj < 140) {
+      highsys140_adj <- 2
+    }
+    else {
+      return(highBP14090_adj)
+    }
+    
+    if (90 <= DBP_adj && DBP_adj < 996) {
+      highdias90_adj <- 1
+    } else if (0 <= DBP_adj && DBP_adj < 90) {
+      highdias90_adj <- 2
+    }
+    else {
+      return(highBP14090_adj)
+    }
   }
   
   # Initialize and calculate highBP14090_adj
-  
   if (highsys140_adj == 1 || highdias90_adj == 1 || CCC_32 == 1) {
     highBP14090_adj <- 1
   } else if (highsys140_adj == 2 && highdias90_adj == 2 && CCC_32 == 2) {
@@ -225,11 +272,17 @@ determine_adjusted_hypertension <- function(SBP_adj, DBP_adj, CCC_32) {
 #' @param CCC_32 An integer indicating whether the respondent is on medication for hypertension.
 #'   - 1: Yes
 #'   - 2: No
+#' @param CCC_51 An optional integer indicating the presence of diabetes, affecting blood pressure thresholds.
+#'   - 1: Yes
+#'   - 2: No (default)
+#' @param CKD An optional integer indicating the presence of chronic kidney disease, affecting blood pressure thresholds.
+#'   - 1: Yes
+#'   - 2: No (default)
 #'
-#' @return An integer representing the controlled hypertension status:
-#'   - 1: Hypertension not controlled (BP ≥ 140/90 mmHg or on hypertension medication).
-#'   - 2: Hypertension controlled (BP < 140/90 mmHg and on hypertension medication).
-#'   - NA(b): Invalid input or non-response.
+#' @return An integer representing the hypertension status:
+#'   - 1: Hypertension not controlled (BP ≥ 140/90 mmHg (or ≥ 130/80 mmHg if diabetes or CKD) or on hypertension medication)
+#'   - 2: Hypertension controlled (BP < 140/90 mmHg (or < 130/80 mmHg if diabetes or CKD) and not on hypertension medication)
+#'   - NA(b): Invalid input or non-response
 #'
 #' @examples
 #' 
@@ -242,7 +295,7 @@ determine_adjusted_hypertension <- function(SBP_adj, DBP_adj, CCC_32) {
 #' # Output: 2 (Hypertension controlled as BP is below 140/90 mmHg and on medication).
 #' 
 #' @export
-determine_controlled_hypertension <- function(BPMDPBPS, BPMDPBPD, CCC_32) {
+determine_controlled_hypertension <- function(BPMDPBPS, BPMDPBPD, CCC_32, CCC_51 = NULL, CKD = NULL) {
   highsys140 <- NA
   highdias90 <- NA
   Control14090 <- haven::tagged_na("b")
@@ -258,22 +311,38 @@ determine_controlled_hypertension <- function(BPMDPBPS, BPMDPBPD, CCC_32) {
   }
   
   # Check conditions and assign values to highsys140 and highdias90
-  if (140 <= BPMDPBPS && BPMDPBPS < 996) {
-    highsys140 <- 1
-  } else if (0 <= BPMDPBPS && BPMDPBPS < 140) {
-    highsys140 <- 2
-  }
-  else {
-    return(Control14090)
-  }
-  
-  if (90 <= BPMDPBPD && BPMDPBPD < 996) {
-    highdias90 <- 1
-  } else if (0 <= BPMDPBPD && BPMDPBPD < 90) {
-    highdias90 <- 2
-  }
-  else {
-    return(Control14090)
+  if ((!is.na(CCC_51) && CCC_51 == 1) || (!is.na(CKD) && CKD == 1)) {
+    if (130 <= BPMDPBPS && BPMDPBPS < 996) {
+      highsys140 <- 1
+    } else if (0 <= BPMDPBPS && BPMDPBPS < 130) {
+      highsys140 <- 2
+    } else {
+      return(highBP14090)
+    }
+    
+    if (80 <= BPMDPBPD && BPMDPBPD < 996) {
+      highdias90 <- 1
+    } else if (0 <= BPMDPBPD && BPMDPBPD < 80) {
+      highdias90 <- 2
+    } else {
+      return(highBP14090)
+    }
+  } else {
+    if (140 <= BPMDPBPS && BPMDPBPS < 996) {
+      highsys140 <- 1
+    } else if (0 <= BPMDPBPS && BPMDPBPS < 140) {
+      highsys140 <- 2
+    } else {
+      return(highBP14090)
+    }
+    
+    if (90 <= BPMDPBPD && BPMDPBPD < 996) {
+      highdias90 <- 1
+    } else if (0 <= BPMDPBPD && BPMDPBPD < 90) {
+      highdias90 <- 2
+    } else {
+      return(highBP14090)
+    }
   }
   
   # Check the conditions using nested ifelse statements
@@ -298,11 +367,17 @@ determine_controlled_hypertension <- function(BPMDPBPS, BPMDPBPD, CCC_32) {
 #' @param CCC_32 An integer indicating whether the respondent is on medication for hypertension.
 #'   - 1: Yes
 #'   - 2: No
+#' @param CCC_51 An optional integer indicating the presence of diabetes, affecting blood pressure thresholds.
+#'   - 1: Yes
+#'   - 2: No (default)
+#' @param CKD An optional integer indicating the presence of chronic kidney disease, affecting blood pressure thresholds.
+#'   - 1: Yes
+#'   - 2: No (default)
 #'
-#' @return An integer representing the controlled adjusted hypertension status:
-#'   - 1: Hypertension not controlled (adjusted BP ≥ 140/90 mmHg or on hypertension medication).
-#'   - 2: Hypertension controlled (adjusted BP < 140/90 mmHg and on hypertension medication).
-#'   - NA(b): Invalid input or non-response.
+#' @return An integer representing the hypertension status:
+#'   - 1: Hypertension not controlled (adjusted BP ≥ 140/90 mmHg (or ≥ 130/80 mmHg if diabetes or CKD) or on hypertension medication)
+#'   - 2: Hypertension controlled (adjusted BP < 140/90 mmHg (or < 130/80 mmHg if diabetes or CKD) and not on hypertension medication)
+#'   - NA(b): Invalid input or non-response
 #'
 #' @examples
 #' 
@@ -315,7 +390,7 @@ determine_controlled_hypertension <- function(BPMDPBPS, BPMDPBPD, CCC_32) {
 #' # Output: 2 (Hypertension controlled as adjusted BP is below 140/90 mmHg and on medication).
 #' 
 #' @export
-determine_controlled_adjusted_hypertension <- function(SBP_adj, DBP_adj, CCC_32) {
+determine_controlled_adjusted_hypertension <- function(SBP_adj, DBP_adj, CCC_32, CCC_51 = NULL, CKD = NULL) {
   highsys140_adj <- NA
   highdias90_adj <- NA
   Control14090_adj <- haven::tagged_na("b")
@@ -331,22 +406,43 @@ determine_controlled_adjusted_hypertension <- function(SBP_adj, DBP_adj, CCC_32)
   }
   
   # Check conditions and assign values to highsys140_adj and highdias90_adj
-  if (140 <= SBP_adj && SBP_adj < 996) {
-    highsys140_adj <- 1
-  } else if (0 <= SBP_adj && SBP_adj < 140) {
-    highsys140_adj <- 2
+  if ((!is.na(CCC_51) && CCC_51 == 1) || (!is.na(CKD) && CKD == 1)) {
+    if (130 <= SBP_adj && SBP_adj < 996) {
+      highsys140_adj <- 1
+    } else if (0 <= SBP_adj && SBP_adj < 130) {
+      highsys140_adj <- 2
+    }
+    else {
+      return(highBP14090_adj)
+    }
+    
+    if (80 <= DBP_adj && DBP_adj < 996) {
+      highdias90_adj <- 1
+    } else if (0 <= DBP_adj && DBP_adj < 80) {
+      highdias90_adj <- 2
+    }
+    else {
+      return(highBP14090_adj)
+    }
   }
   else {
-    return(Control14090_adj)
-  }
-  
-  if (90 <= DBP_adj && DBP_adj < 996) {
-    highdias90_adj <- 1
-  } else if (0 <= DBP_adj && DBP_adj < 90) {
-    highdias90_adj <- 2
-  }
-  else {
-    return(Control14090_adj)
+    if (140 <= SBP_adj && SBP_adj < 996) {
+      highsys140_adj <- 1
+    } else if (0 <= SBP_adj && SBP_adj < 140) {
+      highsys140_adj <- 2
+    }
+    else {
+      return(highBP14090_adj)
+    }
+    
+    if (90 <= DBP_adj && DBP_adj < 996) {
+      highdias90_adj <- 1
+    } else if (0 <= DBP_adj && DBP_adj < 90) {
+      highdias90_adj <- 2
+    }
+    else {
+      return(highBP14090_adj)
+    }
   }
   
   # Check the conditions using nested ifelse statements
