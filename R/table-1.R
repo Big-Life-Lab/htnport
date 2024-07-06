@@ -87,7 +87,6 @@ create_descriptive_table(
 )
 
 cycles1to6_table1_data$ckd[cycles1to6_table1_data$ckd %in% c("NA(a)", "NA(b)", "NA(c)")] <- NA
-cycles1to6_table1_data$highbp14090[cycles1to6_table1_data$highbp14090 %in% c("NA(a)", "NA(b)", "NA(c)")] <- NA
 cycles1to6_table1_data$low_drink_score1[cycles1to6_table1_data$low_drink_score1 %in% c("NA(a)", "NA(b)", "NA(c)")] <- NA
 cycles1to6_table1_data$mvpa150wk[cycles1to6_table1_data$mvpa150wk %in% c("NA(a)", "NA(b)", "NA(c)")] <- NA
 cycles1to6_table1_data$poordiet[cycles1to6_table1_data$poordiet %in% c("NA(a)", "NA(b)", "NA(c)")] <- NA
@@ -101,7 +100,7 @@ cycles1to6_table1_data %>%
   drop_na(gen_025) %>%
   drop_na(gen_045)
   
-imputed_cycles1to6_table1_data <- impute_variables(cycles1to6_table1_data, recodeflow:::select_vars_by_role(c("Impute"), my_variables), TBA)
+imputed_cycles1to6_table1_data <- impute_variables(cycles1to6_table1_data, recodeflow:::select_vars_by_role(c("Impute"), my_variables), c(highbp14090_adj, recodeflow:::select_vars_by_role(c("Predictor", "Cycle"))))
 
 imputed_sex_stratified_huiport_table1_data <- get_descriptive_data(
   imputed_cycles1to6_table1_data,

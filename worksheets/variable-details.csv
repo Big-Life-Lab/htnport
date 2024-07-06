@@ -282,6 +282,7 @@ control14090_adj,N/A,cat,"cycle1, cycle2, cycle3, cycle4, cycle5, cycle6","Deriv
 control14090_adj,control14090_adj_cat2_1,cat,"cycle1, cycle2, cycle3, cycle4, cycle5, cycle6","DerivedVar::[sbp_adj, dbp_adj, ccc_32, ccc_51, ckd]",N/A,1,2,Yes,Yes,N/A,N/A,N/A,Controlled (adjusted) hypertension 140/90,Controlled (adjusted) hypertension 140/90,
 control14090_adj,control14090_adj_cat2_2,cat,"cycle1, cycle2, cycle3, cycle4, cycle5, cycle6","DerivedVar::[sbp_adj, dbp_adj, ccc_32, ccc_51, ckd]",N/A,2,2,No,No,N/A,N/A,N/A,Controlled (adjusted) hypertension 140/90,Controlled (adjusted) hypertension 140/90,
 control14090_adj,control14090_adj_cat2_NA::b,cat,"cycle1, cycle2, cycle3, cycle4, cycle5, cycle6","DerivedVar::[sbp_adj, dbp_adj, ccc_32, ccc_51, ckd]",N/A,NA::b,N/A,missing,missing,N/A,N/A,N/A,Controlled (adjusted) hypertension 140/90,Controlled (adjusted) hypertension 140/90,
+cycle,N/A,cat,"cycle1, cycle2, cycle3, cycle4, cycle5, cycle6",DerivedVar::[data_name],N/A,Func::SurveyCycle.fun,6,N/A,N/A,N/A,N/A,N/A,CHMS cycle,CHMS cycle,
 cycle,N/A,cat,"cycle1, cycle2, cycle3, cycle4, cycle5, cycle6",DerivedVar::[data_name],N/A,cycle1,6,cycle1,CHMS Cycle 1,N/A,N/A,N/A,CHMS cycle,CHMS cycle,
 cycle,N/A,cat,"cycle1, cycle2, cycle3, cycle4, cycle5, cycle6",DerivedVar::[data_name],N/A,cycle2,6,cycle2,CHMS Cycle 2,N/A,N/A,N/A,CHMS cycle,CHMS cycle,
 cycle,N/A,cat,"cycle1, cycle2, cycle3, cycle4, cycle5, cycle6",DerivedVar::[data_name],N/A,cycle3,6,cycle3,CHMS Cycle 3,N/A,N/A,N/A,CHMS cycle,CHMS cycle,
