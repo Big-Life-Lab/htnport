@@ -88,7 +88,7 @@ prepare_imputation_dataset <- function(imputation_dataset) {
      Sys.getenv("R_CONFIG_ACTIVE") == "") {
     for(column_name in colnames(prepared_dataset)) {
       if(is.factor(prepared_dataset[[column_name]]) & 
-         sum(is_na(prepared_dataset[[column_name]])) == 1) {
+         sum(is.na(prepared_dataset[[column_name]])) == 1) {
         column <- prepared_dataset[[column_name]]
         column[sample(seq(1, nrow(prepared_dataset)), 10)] <- NA
         prepared_dataset[[column_name]] <- column

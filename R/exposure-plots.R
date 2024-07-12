@@ -1,14 +1,33 @@
+setwd("P:/10619/Dropbox/chmsflow")
+
 library(recodeflow)
 library(cchsflow)
 library(dplyr)
 library(readr)
 library(haven)
 library(cli)
-library(pastecs)
-library(tidyr)
+library(mice)
+library(broom)
 
-my_variables <- read.csv("P:/10619/Dropbox/Sept25/worksheets/variables.csv")
-my_variable_details <- read.csv("P:/10619/Dropbox/Sept25/worksheets/variable-details.csv")
+source("R/alcohol.R")
+source("R/blood-pressure.R")
+source("R/cholesterol-and-obesity.R")
+source("R/diabetes.R")
+source("R/diet.R")
+source("R/exercise.R")
+source("R/family-history.R")
+source("R/income.R")
+source("R/kidney.R")
+source("R/sample.R")
+source("R/smoking.R")
+source("R/working.R")
+
+source("R/get-descriptive-data.R")
+source("R/create-descriptive-table.R")
+source("R/impute-variables.R")
+
+my_variables <- read.csv("P:/10619/Dropbox/chmsflow/worksheets/variables.csv")
+my_variable_details <- read.csv("P:/10619/Dropbox/chmsflow/worksheets/variable-details.csv")
 
 cycle1 <- read_stata("data/cycle1/cycle1.dta")
 cycle2 <- read_stata("data/cycle2/cycle2.dta")
@@ -18,51 +37,48 @@ cycle5 <- read_stata("data/cycle5/cycle5.dta")
 cycle6 <- read_stata("data/cycle6/cycle6.dta")
 names(cycle6) <- tolower(names(cycle6)) 
 
-cycle1_table1_data <- recodeflow::rec_with_table(cycle1, recodeflow:::select_vars_by_role(c("Table 1", "Fam"), my_variables), variable_details = my_variable_details, log = TRUE)
-cycle2_table1_data <- recodeflow::rec_with_table(cycle2, recodeflow:::select_vars_by_role(c("Table 1", "Fam"), my_variables), variable_details = my_variable_details, log = TRUE)
-cycle3_table1_data <- recodeflow::rec_with_table(cycle3, recodeflow:::select_vars_by_role(c("Table 1", "Fam"), my_variables), variable_details = my_variable_details, log = TRUE)
-cycle4_table1_data <- recodeflow::rec_with_table(cycle4, recodeflow:::select_vars_by_role(c("Table 1", "Fam"), my_variables), variable_details = my_variable_details, log = TRUE)
-cycle5_table1_data <- recodeflow::rec_with_table(cycle5, recodeflow:::select_vars_by_role(c("Table 1", "Sodium"), my_variables), variable_details = my_variable_details, log = TRUE)
-cycle6_table1_data <- recodeflow::rec_with_table(cycle6, recodeflow:::select_vars_by_role(c("Table 1", "Sodium"), my_variables), variable_details = my_variable_details, log = TRUE)
+cycle1$cycle <- 1
+cycle2$cycle <- 2
+cycle3$cycle <- 3
+cycle4$cycle <- 4
+cycle5$cycle <- 5
+cycle6$cycle <- 6
 
-cycles1to6_table1_data <- cchsflow::merge_rec_data(cycle1_table1_data, cycle2_table1_data, cycle3_table1_data, cycle4_table1_data, cycle5_table1_data, cycle6_table1_data)
-cycles1to6_table1_data <- dplyr::filter(cycles1to6_table1_data, insample == 1)
+cycle1_data <- recodeflow::rec_with_table(cycle1, recodeflow:::select_vars_by_role(c("Recode", "Fam"), my_variables), variable_details = my_variable_details, log = TRUE)
+cycle2_data <- recodeflow::rec_with_table(cycle2, recodeflow:::select_vars_by_role(c("Recode", "Fam"), my_variables), variable_details = my_variable_details, log = TRUE)
+cycle3_data <- recodeflow::rec_with_table(cycle3, recodeflow:::select_vars_by_role(c("Recode", "Fam"), my_variables), variable_details = my_variable_details, log = TRUE)
+cycle4_data <- recodeflow::rec_with_table(cycle4, recodeflow:::select_vars_by_role(c("Recode", "Fam"), my_variables), variable_details = my_variable_details, log = TRUE)
+cycle5_data <- recodeflow::rec_with_table(cycle5, recodeflow:::select_vars_by_role(c("Recode"), my_variables), variable_details = my_variable_details, log = TRUE)
+cycle6_data <- recodeflow::rec_with_table(cycle6, recodeflow:::select_vars_by_role(c("Recode"), my_variables), variable_details = my_variable_details, log = TRUE)
 
-sbp_data <- cycles1to6_table1_data %>% drop_na(bpmdpbps)
-plot(density(sbp_data$bpmdpbps), main = "Systolic blood pressure distribution", xlab = "Systolic blood pressure (mmHg)")
+cycles1to6_data <- cchsflow::merge_rec_data(cycle1_data, cycle2_data, cycle3_data, cycle4_data, cycle5_data, cycle6_data)
+cycles1to6_data <- dplyr::filter(cycles1to6_data, insample == 1)
 
-dbp_data <- cycles1to6_table1_data %>% drop_na(bpmdpbpd)
-plot(density(dbp_data$bpmdpbpd), main = "Diastolic blood pressure distribution", xlab = "Diastolic blood pressure (mmHg)")
+tracey <- read_sas("data/From Tracy/CHMS_AM_validdays_1to3.sas7bdat")
+tracey$clinicid <-tracey$CLINICID
+tracey$mvpa_min <- tracey$avg_mvpa
+tracey$minperweek <- minperday_to_minperweek(tracey$mvpa_min)
+tracey <- subset(tracey, select = -c(CLINICID, avg_mvpa, adultPAG))
 
-male_data <- filter(cycles1to6_table1_data, clc_sex == 1)
-female_data <- filter(cycles1to6_table1_data, clc_sex == 2)
+cycles1to6_data <- dplyr::left_join(cycles1to6_data, tracey, by = c("clinicid"))
+cycles1to6_data <- cycles1to6_data %>%
+  mutate(mvpa_min = coalesce(mvpa_min.x, mvpa_min.y),
+         minperweek = coalesce(minperweek.x, minperweek.y)) %>%
+  mutate(mvpa_min = ifelse(is.na(mvpa_min), haven::tagged_na("b"), mvpa_min),
+         minperweek = ifelse(is.na(minperweek), haven::tagged_na("b"), minperweek)) %>%
+  select(-c(mvpa_min.x, mvpa_min.y, minperweek.x, minperweek.y))
+
+male_data <- filter(cycles1to6_data, clc_sex == 1)
+female_data <- filter(cycles1to6_data, clc_sex == 2)
 
 plot(density(male_data$clc_age), main = "Age distribution", xlab = "Age", col = "blue")
 lines(density(female_data$clc_age), col = "red")
 legend("topright", legend = c("Male", "Female"), col = c("blue", "red"), lty = 1:2, inset = 0.02, bg = 'white')
 
-male_income_data <- male_data %>% drop_na(adj_hh_inc)
-female_income_data <- female_data %>% drop_na(adj_hh_inc)
-plot(density(male_income_data$adj_hh_inc), main = "Household income distribution", xlab = "Household income ($)", col = "blue", xlim = c(0, 500000), ylim = c(0, 1.6e-05))
-lines(density(female_income_data$adj_hh_inc), col = "red")
-legend("topright", legend = c("Male", "Female"), col = c("blue", "red"), lty = 1:2, inset = 0.02, bg = 'white')
-
-male_work_hours_data <- male_data %>% drop_na(lmh_016)
-female_work_hours_data <- female_data %>% drop_na(lmh_016)
-plot(density(male_work_hours_data$lmh_016), main = "Working hours distribution", xlab = "Hours worked per week", col = "blue")
-lines(density(female_work_hours_data$lmh_016), col = "red")
-legend("topright", legend = c("Male", "Female"), col = c("blue", "red"), lty = 1:2, inset = 0.02, bg = 'white')
-
-male_smoking_data <- male_data %>% drop_na(pack_years_der)
-female_smoking_data <- female_data %>% drop_na(pack_years_der)
-plot(density(male_smoking_data$pack_years_der), main = "Smoking distribution", xlab = "Smoking pack-years", col = "blue")
-lines(density(female_smoking_data$pack_years_der), col = "red")
-legend("topright", legend = c("Male", "Female"), col = c("blue", "red"), lty = 1:2, inset = 0.02, bg = 'white')
-
-male_exercise_data <- male_data %>% drop_na(mvpa_min)
-female_exercise_data <- female_data %>% drop_na(mvpa_min)
-plot(density(male_exercise_data$mvpa_min), main = "Physical activity distribution", xlab = "Average minutes of exercise per day", col = "blue", xlim = c(0, 150), ylim = c(0, 0.050))
-lines(density(female_exercise_data$mvpa_min), col = "red")
+male_exercise_data <- male_data %>% drop_na(minperweek)
+female_exercise_data <- female_data %>% drop_na(minperweek)
+plot(density(male_exercise_data$minperweek), main = "Exercise distribution", xlab = "Average minutes of exercise per week", col = "blue", xlim = c(0, 150), ylim = c(0, 0.008))
+lines(density(female_exercise_data$minperweek), col = "red")
 legend("topright", legend = c("Male", "Female"), col = c("blue", "red"), lty = 1:2, inset = 0.02, bg = 'white')
 
 plot(density(male_data$totalfv), main = "Fruit and vegetable consumption distribution", xlab = "Times per day produce consumed", col = "blue")
@@ -75,46 +91,10 @@ plot(density(male_bmi_data$hwmdbmi), main = "BMI distribution", xlab = "BMI", co
 lines(density(female_bmi_data$hwmdbmi), col = "red")
 legend("topright", legend = c("Male", "Female"), col = c("blue", "red"), lty = 1:2, inset = 0.02, bg = 'white')
 
-male_height_data <- male_data %>% drop_na(hwm_11cm)
-female_height_data <- female_data %>% drop_na(hwm_11cm)
-plot(density(male_height_data$hwm_11cm), main = "Height distribution", xlab = "Height (cm)", col = "blue", ylim = c(0, 0.06))
-lines(density(female_height_data$hwm_11cm), col = "red")
-legend("topright", legend = c("Male", "Female"), col = c("blue", "red"), lty = 1:2, inset = 0.02, bg = 'white')
-
-male_weight_data <- male_data %>% drop_na(hwm_13kg)
-female_weight_data <- female_data %>% drop_na(hwm_13kg)
-plot(density(male_weight_data$hwm_13kg), main = "Weight distribution", xlab = "Weight (kg)", col = "blue")
-lines(density(female_weight_data$hwm_13kg), col = "red")
-legend("topright", legend = c("Male", "Female"), col = c("blue", "red"), lty = 1:2, inset = 0.02, bg = 'white')
-
-male_waist_circum_data <- male_data %>% drop_na(hwm_14cx)
-female_waist_circum_data <- female_data %>% drop_na(hwm_14cx)
-plot(density(male_waist_circum_data$hwm_14cx), main = "Waist circumference distribution", xlab = "Waist circumference (cm)", col = "blue")
-lines(density(female_waist_circum_data$hwm_14cx), col = "red")
-legend("topright", legend = c("Male", "Female"), col = c("blue", "red"), lty = 1:2, inset = 0.02, bg = 'white')
-
-male_diabetes_data <- male_data %>% drop_na(lab_hba1)
-female_diabetes_data <- female_data %>% drop_na(lab_hba1)
-plot(density(male_diabetes_data$lab_hba1), main = "HbA1C distribution", xlab = "HbA1C", col = "blue", xlim = c(0.04, 0.10))
-lines(density(female_diabetes_data$lab_hba1), col = "red")
-legend("topright", legend = c("Male", "Female"), col = c("blue", "red"), lty = 1:2, inset = 0.02, bg = 'white')
-
-male_gfr_data <- male_data %>% drop_na(gfr)
-female_gfr_data <- female_data %>% drop_na(gfr)
-plot(density(male_gfr_data$gfr), main = "GFR distribution", xlab = "GFR (mL/min)", col = "blue")
-lines(density(female_gfr_data$gfr), col = "red")
-legend("topright", legend = c("Male", "Female"), col = c("blue", "red"), lty = 1:2, inset = 0.02, bg = 'white')
-
-male_chol_data <- male_data %>% drop_na(nonhdl)
-female_chol_data <- female_data %>% drop_na(nonhdl)
-plot(density(male_chol_data$nonhdl), main = "Non-HDL cholesterol distribution", xlab = "Non-HDL Cholesterol (mmol/L)", col = "blue", ylim = c(0, 0.4))
-lines(density(female_chol_data$nonhdl), col = "red")
-legend("topright", legend = c("Male", "Female"), col = c("blue", "red"), lty = 1:2, inset = 0.02, bg = 'white')
-
-male_alcohol_data <- male_data %>% drop_na(alcdwky)
-female_alcohol_data <- female_data %>% drop_na(alcdwky)
-plot(density(male_alcohol_data$alcdwky), main = "Alcohol distribution", xlab = "Number of alcoholic drinks per week", col = "blue", xlim = c(0, 30), ylim = c(0, 0.30))
-lines(density(female_alcohol_data$alcdwky), col = "red")
+male_whr_data <- male_data %>% drop_na(whr)
+female_whr_data <- female_data %>% drop_na(whr)
+plot(density(male_whr_data$whr), main = "Waist-to-height ratio", xlab = "Waist-to-height ratio", col = "blue")
+lines(density(female_whr_data$whr), col = "red")
 legend("topright", legend = c("Male", "Female"), col = c("blue", "red"), lty = 1:2, inset = 0.02, bg = 'white')
 
 male_sleep_data <- male_data %>% drop_na(slp_11)

@@ -28,10 +28,10 @@ n <- 100  # Number of observations
 set.seed(123)  # Set seed for reproducibility
 
 # Generate random ages between 18 and 75, with some missing values [996-999]
-ages <- sample(c(18:75, 996:999), n, replace = TRUE)
+ages <- sample(c(18:75), n, replace = TRUE)
 
 # Generate random sexes (1 for male, 2 for female, with some missing values [6-9])
-sexes <- sample(c(1:2, 6:9), n, replace = TRUE)
+sexes <- sample(c(1:2), n, replace = TRUE)
 
 # Generate random systolic blood pressures between 80 and 215, with some missing values [996-999]
 systolic_bps <- sample(c(80:215, 996:999), n, replace = TRUE)
@@ -44,7 +44,6 @@ cycle6 <- data.frame(CLC_AGE = ages, CLC_SEX = sexes, bpmdpbps = systolic_bps, b
 
 # Print the first few rows of the cycle6 data
 print(head(cycle6))
-write_csv(cycle6, here::here("data", "cycle6.csv"))
 names(cycle6) <- tolower(names(cycle6)) # Putting all headers to lowercase to ensure easy recoding (cycle6 only)
 ```
 
