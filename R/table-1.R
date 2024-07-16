@@ -106,10 +106,6 @@ create_descriptive_table(
   column_stratifier = c("clc_sex"),
   subjects_order = c("Age", "Sex", "Marital status", "Education", "Occupation", "Family history", "Exercise", "Diet", "Weight", "Chronic disease", "Alcohol", "Smoking", "Sleep", "General")
 )
-
-cycles1to6_data$ckd[cycles1to6_data$ckd %in% c("NA(a)", "NA(b)", "NA(c)")] <- NA
-cycles1to6_data$low_drink_score1[cycles1to6_data$low_drink_score1 %in% c("NA(a)", "NA(b)", "NA(c)")] <- NA
-cycles1to6_data$working[cycles1to6_data$working %in% c("NA(a)", "NA(b)", "NA(c)")] <- NA
   
 imputed_cycles1to6_data <- impute_variables(cycles1to6_data, recodeflow:::select_vars_by_role(c("Predictor"), my_variables), recodeflow:::select_vars_by_role(c("imputation-predictor"), my_variables))
 
