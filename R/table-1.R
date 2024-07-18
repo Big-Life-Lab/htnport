@@ -17,14 +17,13 @@ source("R/diet.R")
 source("R/exercise.R")
 source("R/family-history.R")
 source("R/income.R")
+source("R/installation.R")
 source("R/kidney.R")
 source("R/sample.R")
 source("R/smoking.R")
-source("R/working.R")
 
 source("R/get-descriptive-data.R")
 source("R/create-descriptive-table.R")
-source("R/impute-variables.R")
 
 my_variables <- read.csv("P:/10619/Dropbox/chmsflow/worksheets/variables.csv")
 my_variable_details <- read.csv("P:/10619/Dropbox/chmsflow/worksheets/variable-details.csv")
@@ -66,7 +65,7 @@ cycles1to6_data <- cycles1to6_data %>%
          minperweek = coalesce(minperweek.x, minperweek.y)) %>%
   mutate(mvpa_min = ifelse(is.na(mvpa_min), haven::tagged_na("b"), mvpa_min),
          minperweek = ifelse(is.na(minperweek), haven::tagged_na("b"), minperweek)) %>%
-  select(-c(mvpa_min.x, mvpa_min.y, minperweek.x, minperweek.y))
+  select(c(clc_sex, recodeflow:::select_vars_by_role(c("imputation-predictor"), my_variables)))
 
 recode_na_b <- function(column) {
   # Convert the column to character if it's a factor
@@ -106,8 +105,28 @@ create_descriptive_table(
   column_stratifier = c("clc_sex"),
   subjects_order = c("Age", "Sex", "Marital status", "Education", "Occupation", "Family history", "Exercise", "Diet", "Weight", "Chronic disease", "Alcohol", "Smoking", "Sleep", "General")
 )
-  
-imputed_cycles1to6_data <- impute_variables(cycles1to6_data, recodeflow:::select_vars_by_role(c("Predictor"), my_variables), recodeflow:::select_vars_by_role(c("imputation-predictor"), my_variables))
+
+cycles1to6_data <- cchsflow::merge_rec_data(cycle1_data, cycle2_data, cycle3_data, cycle4_data, cycle5_data, cycle6_data)
+cycles1to6_data <- dplyr::filter(cycles1to6_data, insample == 1)
+
+tracey <- read_sas("data/From Tracy/CHMS_AM_validdays_1to3.sas7bdat")
+tracey$clinicid <-tracey$CLINICID
+tracey$mvpa_min <- tracey$avg_mvpa
+tracey$minperweek <- minperday_to_minperweek(tracey$mvpa_min)
+tracey <- subset(tracey, select = -c(CLINICID, avg_mvpa, adultPAG))
+
+cycles1to6_data <- dplyr::left_join(cycles1to6_data, tracey, by = c("clinicid"))
+cycles1to6_data <- cycles1to6_data %>%
+  mutate(mvpa_min = coalesce(mvpa_min.x, mvpa_min.y),
+         minperweek = coalesce(minperweek.x, minperweek.y)) %>%
+  mutate(mvpa_min = ifelse(is.na(mvpa_min), haven::tagged_na("b"), mvpa_min),
+         minperweek = ifelse(is.na(minperweek), haven::tagged_na("b"), minperweek)) %>%
+  select(c(clc_sex, recodeflow:::select_vars_by_role(c("imputation-predictor"), my_variables)))
+
+set.seed(123)
+imputed_cycles1to6_data <- impute_variables(cycles1to6_data, outcomes = recodeflow:::select_vars_by_role(c("Predictor"), my_variables), recodeflow:::select_vars_by_role(c("imputation-predictor"), my_variables))
+imputed_cycles1to6_data <- imputed_cycles1to6_data %>%
+  select(c(highbp14090_adj, recodeflow:::select_vars_by_role(c("Table 1"), my_variables)))
 
 imputed_table1_data <- get_descriptive_data(
   imputed_cycles1to6_data,

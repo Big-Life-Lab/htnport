@@ -2,7 +2,7 @@ setwd("P:/10619/Dropbox/chmsflow")
 
 source("R/table-1.R")
 
-table2_data <- get_descriptive_data(
+table2a_data <- get_descriptive_data(
   imputed_cycles1to6_data,
   my_variables,
   my_variable_details,
@@ -13,7 +13,7 @@ table2_data <- get_descriptive_data(
 )
 
 create_descriptive_table(
-  table2_data,
+  table2a_data,
   my_variables,
   my_variable_details,
   "highbp14090_adj",
@@ -47,7 +47,7 @@ create_descriptive_table(
 
 imputed_cycles1to6_data <- imputed_cycles1to6_data %>%
   mutate(highbp14090_adj = ifelse(highbp14090_adj == 2, 0, highbp14090_adj),
-         ccc_51 = ifelse(ccc_51 == 2, 0, ccc_51),
+         diab_m = ifelse(diab_m == 2, 0, diab_m),
          ckd = ifelse(ckd == 2, 0, ckd),
          fmh_15 = ifelse(fmh_15 == 2, 0, fmh_15),
          smoke = ifelse(smoke == 2, 0, smoke),
@@ -102,7 +102,7 @@ OR_df$OR_CI <- paste(df$Odds_Ratio, " (", df$CI_Lower, " - ", df$CI_Upper, ")", 
 
 OR_df <- OR_df %>%
   mutate(Variable = case_when(
-    Variable == "ccc_51_2" ~ "Diabetes",
+    Variable == "diab_m_2" ~ "Diabetes",
     Variable == "ckd_2" ~ "Chronic kidney disease",
     Variable == "clc_age_2" ~ "Age",
     Variable == "edudr04_2" ~ "Highest education level- Secondary",
