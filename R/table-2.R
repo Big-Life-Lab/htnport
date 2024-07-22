@@ -1,5 +1,7 @@
 setwd("P:/10619/Dropbox/chmsflow")
 
+library(survey)
+
 source("R/table-1.R")
 
 table2a_data <- get_descriptive_data(
@@ -53,87 +55,75 @@ imputed_cycles1to6_data <- imputed_cycles1to6_data %>%
          smoke = ifelse(smoke == 2, 0, smoke),
          working = ifelse(working == 2, 0, working))
 
-calculate_odds_ratios <- function(predictor) {
-  model <- glm(highbp14090_adj ~ get(predictor), data = imputed_cycles1to6_data, family = binomial)
-  odds_ratios <- exp(coef(model))
-  conf_int <- exp(confint(model))
-  return(list(odds_ratios = odds_ratios, conf_int = conf_int))
-}
+cat_variables <- c("ccc_51", "ckd", "edudr04", "fmh_15", "gendmhi", 
+               "gen_025", "gen_045", "low_drink_score1", "married", 
+               "smoke", "working")
+imputed_cycles1to6_data <- imputed_cycles1to6_data %>%
+  mutate(across(all_of(cat_variables), as.factor))
 
-predictors <- recodeflow:::select_vars_by_role("Predictor", my_variables)
-
+# synth_oh <- synth_oh %>%
+#   mutate(
+#     p_decayed = case_when(
+#       n_decayed > 0 ~ 1,
+#       n_decayed == 0 ~ 0,
+#       TRUE ~ NA
+#     ) %>%
+#       factor)
 male_data <- filter(imputed_cycles1to6_data, clc_sex == 1)
 female_data <- filter(imputed_cycles1to6_data, clc_sex == 2)
 
-male_ORs <- lapply(predictors, calculate_odds_ratios, data = male_data)
-female_ORs <- lapply(predictors, calculate_odds_ratios, data = female_data)
+weighted_male <- svydesign(
+    id = ~1,
+    weights = ~wgt_full,
+    data = male_data
+  )
 
-# Iterate over each predictor variable
-for (i in seq_along(predictors)) {
-  # Get number of levels in the predictor variable
-  num_levels <- length(male_ORs[[i]]$odds_ratios)
+weighted_female <- svydesign(
+  id = ~1,
+  weights = ~wgt_full,
+  data = female_data
+)
+
+# List of predictors
+predictors <- recodeflow:::select_vars_by_role(c("Predictor"), my_variables)
+
+# Function to fit crude models and return ORs and CIs for all levels of a predictor
+fit_crude_model <- function(predictor, design) {
+  formula <- as.formula(paste("highbp14090_adj ~", predictor))
+  model <- svyglm(formula, design = design, family = quasibinomial())
   
-  # Iterate over each level (excluding the reference level)
-  for (level in 2:num_levels) {
-    # Add Male ORs and CIs for this level
-    male_row <- data.frame(
-      Sex = "Male",
-      Variable = paste0(predictors[i], "_", level),  # Adjust Variable name for the level
-      Odds_Ratio = male_ORs[[i]]$odds_ratios[level],
-      CI_Lower = male_ORs[[i]]$conf_int[level, 1],
-      CI_Upper = male_ORs[[i]]$conf_int[level, 2]
-    )
-    male_OR_df <- rbind(male_OR_df, male_row)
-    
-    # Add Female ORs and CIs for this level
-    female_row <- data.frame(
-      Sex = "Female",
-      Variable = paste0(predictors[i], "_", level),  # Adjust Variable name for the level
-      Odds_Ratio = female_ORs[[i]]$odds_ratios[level],
-      CI_Lower = female_ORs[[i]]$conf_int[level, 1],
-      CI_Upper = female_ORs[[i]]$conf_int[level, 2]
-    )
-    female_OR_df <- rbind(female_OR_df, female_row)
-  }
+  # Extract coefficients and calculate ORs
+  coef_est <- coef(model)
+  or <- exp(coef_est)
+  
+  # Calculate confidence intervals
+  conf_int <- exp(confint(model))
+  
+  # Create a data frame with the results
+  # We use [-1] to exclude the intercept
+  results <- data.frame(
+    Variable = predictor,
+    Level = names(coef_est)[-1],
+    OR = or[-1],  # Exclude the intercept
+    CI_Lower = conf_int[-1, 1],
+    CI_Upper = conf_int[-1, 2]
+  )
+  return(results)
 }
 
-OR_df <- bind_rows(male_OR_df, female_OR_df)
-OR_df$OR_CI <- paste(df$Odds_Ratio, " (", df$CI_Lower, " - ", df$CI_Upper, ")", sep = "")
+# Fit crude models for males and extract ORs and CIs
+crude_models_male <- lapply(predictors, fit_crude_model, design = weighted_male)
+crude_models_male <- do.call(rbind, crude_models_male)
 
-OR_df <- OR_df %>%
-  mutate(Variable = case_when(
-    Variable == "diab_m_2" ~ "Diabetes",
-    Variable == "ckd_2" ~ "Chronic kidney disease",
-    Variable == "clc_age_2" ~ "Age",
-    Variable == "edudr04_2" ~ "Highest education level- Secondary",
-    Variable == "edudr04_3" ~ "Highest education level - Post-secondary",
-    Variable == "fmh_15_2" ~ "Hypertension family history",
-    Variable == "gendmhi_2" ~ "Self-related mental health - Good",
-    Variable == "gendmhi_3" ~ "Self-related mental health - Very good or excellent",
-    Variable == "gen_025_2" ~ "Stress - A bit",
-    Variable == "gen_025_3" ~ "Stress - Quite a bit or extremely",
-    Variable == "gen_045_2" ~ "Sense of belonging - Weak",
-    Variable == "hwmdbmi_2" ~ "Body mass index",
-    Variable == "low_drink_score1_2" ~ "Alcohol consumption level - Former drinker",
-    Variable == "low_drink_score1_3" ~ "Alcohol consumption level - Light drinker",
-    Variable == "low_drink_score1_4" ~ "Alcohol consumption level - Moderate to heavy drinker",
-    Variable == "married_2" ~ "Marital status - widowed, separated, or divorced",
-    Variable == "married_3" ~ "Marital status - Single",
-    Variable == "minperweek_2" ~ "Minutes of exercise per week",
-    Variable == "slp_11_2" ~ "Hours of sleep per day",
-    Variable == "smoke_2" ~ "Current smoker",
-    Variable == "totalfv_2" ~ "Daily fruit and vegetable consumption",
-    Variable == "whr_2" ~ "Waist-to-height ratio",
-    Variable == "working_2" ~ "Working status - Has a job",
-    TRUE ~ Variable  # Keep other values unchanged
-  ))
+# Fit crude models for females and extract ORs and CIs
+crude_models_female <- lapply(predictors, fit_crude_model, design = weighted_female)
+crude_models_female <- do.call(rbind, crude_models_female)
 
-OR_df <- select(OR_df, -c(Odds_Ratio, CI_Lower, CI_Upper))
+# Combine the data frames for males and females
+combined_crude_models <- bind_rows(
+  crude_models_male %>% mutate(Sex = "Male"),
+  crude_models_female %>% mutate(Sex = "Female")
+)
 
-table2c <- flextable(OR_df)
-table2c <- table2c %>%
-  set_table_properties(width = .8, layout = "autofit") %>%
-  set_header_labels(
-    OR_CI = "OR (95% CI)"
-  ) %>%
-  set_caption("Sex-statified bivariate association between hypertension and its risk factors")
+# Print the combined data frame
+flextable::flextable(combined_crude_models)

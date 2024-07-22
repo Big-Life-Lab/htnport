@@ -65,7 +65,7 @@ cycles1to6_data <- cycles1to6_data %>%
          minperweek = coalesce(minperweek.x, minperweek.y)) %>%
   mutate(mvpa_min = ifelse(is.na(mvpa_min), haven::tagged_na("b"), mvpa_min),
          minperweek = ifelse(is.na(minperweek), haven::tagged_na("b"), minperweek)) %>%
-  select(c(clc_sex, recodeflow:::select_vars_by_role(c("imputation-predictor"), my_variables)))
+  select(c(wgt_full, clc_sex, recodeflow:::select_vars_by_role(c("imputation-predictor"), my_variables)))
 
 recode_na_b <- function(column) {
   # Convert the column to character if it's a factor
@@ -121,7 +121,7 @@ cycles1to6_data <- cycles1to6_data %>%
          minperweek = coalesce(minperweek.x, minperweek.y)) %>%
   mutate(mvpa_min = ifelse(is.na(mvpa_min), haven::tagged_na("b"), mvpa_min),
          minperweek = ifelse(is.na(minperweek), haven::tagged_na("b"), minperweek)) %>%
-  select(c(clc_sex, recodeflow:::select_vars_by_role(c("imputation-predictor"), my_variables)))
+  select(c(wgt_full, clc_sex, recodeflow:::select_vars_by_role(c("imputation-predictor"), my_variables)))
 
 set.seed(123)
 imputed_cycles1to6_data <- impute_variables(cycles1to6_data, outcomes = recodeflow:::select_vars_by_role(c("Predictor"), my_variables), recodeflow:::select_vars_by_role(c("imputation-predictor"), my_variables))
