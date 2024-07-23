@@ -1,9 +1,13 @@
+# Set working directory at RDC
 setwd("P:/10619/Dropbox/chmsflow")
 
+# Load survey package
 library(survey)
 
+# Load this R file to obtain imputed dataset
 source("R/table-1.R")
 
+# Generate Table 2a - outcome x sex distribution
 table2a_data <- get_descriptive_data(
   imputed_cycles1to6_data,
   my_variables,
@@ -22,6 +26,7 @@ create_descriptive_table(
   column_stratifier = c("clc_sex")
 )
 
+# Generate Table 2b - predictor x outcome distribution
 table2b_data <- get_descriptive_data(
   imputed_cycles1to6_data,
   my_variables,
@@ -47,31 +52,58 @@ create_descriptive_table(
   subjects_order = c("Age", "Marital status", "Education", "Occupation", "Family history", "Exercise", "Diet", "Weight", "Chronic disease", "Alcohol", "Smoking", "Sleep", "General")
 )
 
+imputed_cycles1to6_data <- data.frame(
+  highbp14090_adj = sample(c(1, 2), 100, replace = TRUE),
+  diab_m = sample(c(1, 2), 100, replace = TRUE),
+  ckd = sample(c(1, 2), 100, replace = TRUE),
+  edudr04 = sample(c(1, 2, 3), 100, replace = TRUE),
+  fmh_15 = sample(c(1, 2), 100, replace = TRUE),
+  gendmhi = sample(c(1, 2, 3), 100, replace = TRUE),
+  gen_025 = sample(c(1, 2, 3), 100, replace = TRUE),
+  gen_045 = sample(c(1, 2), 100, replace = TRUE),
+  low_drink_score1 = sample(c(1, 2, 3, 4), 100, replace = TRUE),
+  married = sample(c(1, 2, 3), 100, replace = TRUE),
+  smoke = sample(c(1, 2), 100, replace = TRUE),
+  working = sample(c(1, 2), 100, replace = TRUE),
+  clc_sex = sample(c(1, 2), 100, replace = TRUE),
+  wgt_full = runif(100, 50, 100),
+  clc_age = runif(100, 18, 80),
+  hwmdbmi = runif(100, 18, 35),
+  minperweek = runif(100, 0, 300),
+  totalfv = runif(100, 0, 10),
+  whr = runif(100, 0.5, 1.0),
+  slp_11 = runif(100, 4, 10)
+)
+
+# Recode 2s as 0s in binary predictors and factorize all categorical predictors
 imputed_cycles1to6_data <- imputed_cycles1to6_data %>%
   mutate(highbp14090_adj = ifelse(highbp14090_adj == 2, 0, highbp14090_adj),
-         diab_m = ifelse(diab_m == 2, 0, diab_m),
          ckd = ifelse(ckd == 2, 0, ckd),
+         diab_m = ifelse(diab_m == 2, 0, diab_m),
          fmh_15 = ifelse(fmh_15 == 2, 0, fmh_15),
          smoke = ifelse(smoke == 2, 0, smoke),
-         working = ifelse(working == 2, 0, working))
+         edudr04 = case_when(
+           edudr04 == 1 ~ 2,
+           edudr04 == 2 ~ 1,
+           edudr04 == 3 ~ 0
+         ),
+         gendmhi = case_when(
+           gendmhi == 1 ~ 2,
+           gendmhi == 2 ~ 1,
+           gendmhi == 3 ~ 0
+         ))
 
-cat_variables <- c("ccc_51", "ckd", "edudr04", "fmh_15", "gendmhi", 
+cat_variables <- c("ckd", "diab_m", "edudr04", "fmh_15", "gendmhi", 
                "gen_025", "gen_045", "low_drink_score1", "married", 
                "smoke", "working")
 imputed_cycles1to6_data <- imputed_cycles1to6_data %>%
   mutate(across(all_of(cat_variables), as.factor))
 
-# synth_oh <- synth_oh %>%
-#   mutate(
-#     p_decayed = case_when(
-#       n_decayed > 0 ~ 1,
-#       n_decayed == 0 ~ 0,
-#       TRUE ~ NA
-#     ) %>%
-#       factor)
+# Separate male and female data
 male_data <- filter(imputed_cycles1to6_data, clc_sex == 1)
 female_data <- filter(imputed_cycles1to6_data, clc_sex == 2)
 
+# Apply survey weights to male and female data
 weighted_male <- svydesign(
     id = ~1,
     weights = ~wgt_full,
@@ -94,7 +126,7 @@ fit_crude_model <- function(predictor, design) {
   
   # Extract coefficients and calculate ORs
   coef_est <- coef(model)
-  or <- exp(coef_est)
+  or <- round(exp(coef_est), 2)
   
   # Calculate confidence intervals
   conf_int <- exp(confint(model))
@@ -105,9 +137,36 @@ fit_crude_model <- function(predictor, design) {
     Variable = predictor,
     Level = names(coef_est)[-1],
     OR = or[-1],  # Exclude the intercept
-    CI_Lower = conf_int[-1, 1],
-    CI_Upper = conf_int[-1, 2]
+    CI_Lower = round(conf_int[-1, 1], 2),
+    CI_Upper = round(conf_int[-1, 2], 2)
   )
+  
+  results <- results %>%
+    mutate(Level = recode(Level,
+                          "ckd1" = "Chronic kidney disease",
+                          "clc_age" = "Age",
+                          "diab_m1" = "Diabetes",
+                          "edudr041" = "High school graduate only",
+                          "edudr042" = "Did not graduate high school",
+                          "fmh_151" = "Family history for hypertension",
+                          "gendmhi1" = "Good (not excellent) mental health",
+                          "gendmhi2" = "Poor or fair mental health",
+                          "gen_0252" = "A bit stressed",
+                          "gen_0253" = "Quite a bit or extremely stressed",
+                          "gen_0452" = "Weak sense of belonging",
+                          "hwmdbmi" = "Body mass index",
+                          "low_drink_score12" = "Former drinker",
+                          "low_drink_score13" = "Light drinker",
+                          "low_drink_score14" = "Moderate to heavy drinker",
+                          "married2" = "Widowed, separated, or divorced",
+                          "married3" = "Single",
+                          "minperweek" = "Minutes of exercise per week",
+                          "slp_11" = "Sleep duration",
+                          "smoke1" = "Current smoker",
+                          "totalfv" = "Daily fruit and vegetable consumption",
+                          "whr" = "Waist-to-height ratio",
+                          "working2" = "Does not have a job"))
+  
   return(results)
 }
 
@@ -124,6 +183,25 @@ combined_crude_models <- bind_rows(
   crude_models_male %>% mutate(Sex = "Male"),
   crude_models_female %>% mutate(Sex = "Female")
 )
+
+# Define the custom order for the Level column
+custom_order <- c("Age", "Widowed, separated, or divorced", "Single", "High school graduate only", "Did not graduate high school", "Does not have a job",
+                  "Family history for hypertension", "Minutes of exercise per week", "Daily fruit and vegetable consumption", "Body mass index", "Waist-to-height ratio",
+                  "Diabetes", "Chronic kidney disease", "Former drinker", "Light drinker", "Moderate to heavy drinker", "Current smoker", "Sleep duration", 
+                  "Good (not excellent) mental health", "Poor or fair mental health", "A bit stressed", "Quite a bit or extremely stressed", "Weak sense of belonging"
+                  )
+
+# Combine custom order with the original order
+original_order <- unique(combined_crude_models$Level)
+final_order <- c(custom_order, setdiff(original_order, custom_order))
+
+# Convert the Level column to a factor with the specified levels
+combined_crude_models <- combined_crude_models %>%
+  mutate(Level = factor(Level, levels = final_order)) %>%
+  arrange(Level) %>%
+  select(-Variable)
+
+combined_crude_models <- combined_crude_models[c("Sex", "Level", "OR", "CI_Lower", "CI_Upper")]
 
 # Print the combined data frame
 flextable::flextable(combined_crude_models)
