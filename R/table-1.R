@@ -2,6 +2,8 @@
 setwd("P:/10619/Dropbox/chmsflow")
 
 # Load packages and functions
+source("R/installation.R")
+
 library(recodeflow)
 library(cchsflow)
 library(dplyr)
@@ -19,13 +21,13 @@ source("R/diet.R")
 source("R/exercise.R")
 source("R/family-history.R")
 source("R/income.R")
-source("R/installation.R")
 source("R/kidney.R")
 source("R/sample.R")
 source("R/smoking.R")
 
 source("R/get-descriptive-data.R")
 source("R/create-descriptive-table.R")
+source("R/impute-variables.R")
 
 # Load data and metadata
 my_variables <- read.csv("P:/10619/Dropbox/chmsflow/worksheets/variables.csv")

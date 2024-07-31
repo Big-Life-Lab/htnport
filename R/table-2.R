@@ -52,28 +52,28 @@ create_descriptive_table(
   subjects_order = c("Age", "Marital status", "Education", "Occupation", "Family history", "Exercise", "Diet", "Weight", "Chronic disease", "Alcohol", "Smoking", "Sleep", "General")
 )
 
-imputed_cycles1to6_data <- data.frame(
-  highbp14090_adj = sample(c(1, 2), 100, replace = TRUE),
-  diab_m = sample(c(1, 2), 100, replace = TRUE),
-  ckd = sample(c(1, 2), 100, replace = TRUE),
-  edudr04 = sample(c(1, 2, 3), 100, replace = TRUE),
-  fmh_15 = sample(c(1, 2), 100, replace = TRUE),
-  gendmhi = sample(c(1, 2, 3), 100, replace = TRUE),
-  gen_025 = sample(c(1, 2, 3), 100, replace = TRUE),
-  gen_045 = sample(c(1, 2), 100, replace = TRUE),
-  low_drink_score1 = sample(c(1, 2, 3, 4), 100, replace = TRUE),
-  married = sample(c(1, 2, 3), 100, replace = TRUE),
-  smoke = sample(c(1, 2), 100, replace = TRUE),
-  working = sample(c(1, 2), 100, replace = TRUE),
-  clc_sex = sample(c(1, 2), 100, replace = TRUE),
-  wgt_full = runif(100, 50, 100),
-  clc_age = runif(100, 18, 80),
-  hwmdbmi = runif(100, 18, 35),
-  minperweek = runif(100, 0, 300),
-  totalfv = runif(100, 0, 10),
-  whr = runif(100, 0.5, 1.0),
-  slp_11 = runif(100, 4, 10)
-)
+# imputed_cycles1to6_data <- data.frame(
+#   highbp14090_adj = sample(c(1, 2), 100, replace = TRUE),
+#   diab_m = sample(c(1, 2), 100, replace = TRUE),
+#   ckd = sample(c(1, 2), 100, replace = TRUE),
+#   edudr04 = sample(c(1, 2, 3), 100, replace = TRUE),
+#   fmh_15 = sample(c(1, 2), 100, replace = TRUE),
+#   gendmhi = sample(c(1, 2, 3), 100, replace = TRUE),
+#   gen_025 = sample(c(1, 2, 3), 100, replace = TRUE),
+#   gen_045 = sample(c(1, 2), 100, replace = TRUE),
+#   low_drink_score1 = sample(c(1, 2, 3, 4), 100, replace = TRUE),
+#   married = sample(c(1, 2, 3), 100, replace = TRUE),
+#   smoke = sample(c(1, 2), 100, replace = TRUE),
+#   working = sample(c(1, 2), 100, replace = TRUE),
+#   clc_sex = sample(c(1, 2), 100, replace = TRUE),
+#   wgt_full = runif(100, 50, 100),
+#   clc_age = runif(100, 18, 80),
+#   hwmdbmi = runif(100, 18, 35),
+#   minperweek = runif(100, 0, 300),
+#   totalfv = runif(100, 0, 10),
+#   whr = runif(100, 0.5, 1.0),
+#   slp_11 = runif(100, 4, 10)
+# )
 
 # Recode 2s as 0s in binary predictors and factorize all categorical predictors
 imputed_cycles1to6_data <- imputed_cycles1to6_data %>%
