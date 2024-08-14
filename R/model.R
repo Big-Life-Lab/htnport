@@ -37,42 +37,14 @@ imputed_cycles1to6_data <- imputed_cycles1to6_data %>%
 male_data <- filter(imputed_cycles1to6_data, clc_sex == 1)
 female_data <- filter(imputed_cycles1to6_data, clc_sex == 2)
 
-# Set seed for reproducibility
-set.seed(123)
+# Create train and test data for male and female
+male_train_data <- filter(male_data, cycle != 6)
+female_train_data <- filter(female_data, cycle != 6)
 
-# Ensure datasets the outcome column and check the total number of events
-male_total_events <- sum(male_data$highbp14090_adj == 1)
-female_total_events <- sum(female_data$highbp14090_adj == 1)
+male_test_data <- filter(male_data, cycle == 6)
+female_test_data <- filter(female_data, cycle == 6)
 
-# Split the data into training (70%) and testing (30%) while ensuring at least 792 events in each training set
-male_train_index <- createDataPartition(male_data$highbp14090_adj, p = 0.7, list = FALSE, times = 1)
-female_train_index <- createDataPartition(female_data$highbp14090_adj, p = 0.7, list = FALSE, times = 1)
-
-# Check the number of events in the training set
-male_train_data <- male_data[male_train_index, ]
-male_train_events <- sum(male_train_data$highbp14090_adj == 1)
-
-female_train_data <- female_data[female_train_index, ]
-female_train_events <- sum(female_train_data$highbp14090_adj == 1)
-
-# If the number of events in the training set is less than 792, adjust the sampling strategy
-while (male_train_events < 792) {
-  male_train_index <- createDataPartition(male_train_data$highbp14090_adj, p = 0.7, list = FALSE, times = 1)
-  male_train_data <- male_data[male_train_index, ]
-  male_train_events <- sum(male_train_data$highbp14090_ad == 1)
-}
-
-while (female_train_events < 792) {
-  female_train_index <- createDataPartition(female_train_data$highbp14090_adj, p = 0.7, list = FALSE, times = 1)
-  female_train_data <- female_data[female_train_index, ]
-  female_train_events <- sum(female_train_data$highbp14090_ad == 1)
-}
-
-# Get the test data
-male_test_data <- male_data[-male_train_index, ]
-female_test_data <- female_data[-female_train_index, ]
-
-# Apply survey weights to male and female data
+# Apply survey weights to male and female train data
 weighted_male <- svydesign(
   id = ~1,
   weights = ~wgt_full,
