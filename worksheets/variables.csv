@@ -200,7 +200,7 @@ smk_52,,Age started smoking daily,Age started smoking daily,Health behaviour,Smo
 smk_53,,Number of cigarettes per day (former daily smoker),Number of cigarettes smoked per day (former daily smoker),Health behaviour,Smoking,Continuous,cigarettes/day,"cycle1, cycle2, cycle3, cycle4, cycle5, cycle6",[smk_53],
 smkdstp,,Years stopped smoking,Number of years since stopping smoking completely - (D),Health behaviour,Smoking,Continuous,years,"cycle1, cycle2, cycle3, cycle4, cycle5, cycle6",[smkdstp],
 smkdsty,Recode,Smoking frequency,Type of smoker - (D),Health behaviour,Smoking,Categorical,N/A,"cycle1, cycle2, cycle3, cycle4, cycle5, cycle6",[smkdsty],
-smoke,"Recode, Table 1, Predictor, imputation-predictor",Current smoker,Current smoking status,Health behaviour,Smoking,Categorical,N/A,"cycle1, cycle2, cycle3, cycle4, cycle5, cycle6",[smkdsty],
+smoke,"Recode, Table 1, Predictor, imputation-predictor",Smoking status,Smoking status,Health behaviour,Smoking,Categorical,N/A,"cycle1, cycle2, cycle3, cycle4, cycle5, cycle6",[smkdsty],
 spa_020,,Trouble sleeping,Trouble going to sleep or staying asleep,Health behaviour,Sleep,Categorical,N/A,"cycle1, cycle2, cycle3, cycle4, cycle5, cycle6","cycle1::slp_12, cycle2::slp_12, cycle3::slp_12, cycle4::slp_12, [spa_020]",
 thi_01,,Household income,Household income - amount,Socioeconomic,Income,Continuous,$,"cycle1, cycle2, cycle3, cycle4, cycle5, cycle6","cycle1::inc_21, cycle2::inc_21, cycle5::inc_hhld, [thi_01]",
 thifimp4,,Household income imputation flag,Total household income imputation flag - (F),Socioeconomic,Income,Categorical,N/A,"cycle1, cycle2, cycle3, cycle4, cycle5, cycle6","cycle1::incfimp4, cycle2::incfimp4, cycle5::incfhhld, [thifimp4]",
