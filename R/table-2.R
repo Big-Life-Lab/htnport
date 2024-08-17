@@ -7,6 +7,32 @@ library(survey)
 # Load this R file to obtain imputed dataset
 source("R/table-1.R")
 
+# Synthetic dataset for test use outside RDC
+# imputed_cycles1to6_data <- data.frame(
+#   highbp14090_adj = sample(0:1, 9627, replace = TRUE), # Binary outcome
+#   ccc_51 = sample(0:1, 9627, replace = TRUE), # Binary
+#   ckd = sample(0:1, 9627, replace = TRUE), # Binary
+#   edudr04 = sample(2:0, 9627, replace = TRUE), # 3 categories
+#   fmh_15 = sample(0:1, 9627, replace = TRUE), # Binary
+#   gendmhi = sample(2:0, 9627, replace = TRUE), # 3 categories
+#   gen_025 = sample(2:0, 9627, replace = TRUE), # 3 categories
+#   gen_045 = sample(0:1, 9627, replace = TRUE), # Binary
+#   low_drink_score1 = sample(0:3, 9627, replace = TRUE), # 4 categories
+#   married = sample(2:0, 9627, replace = TRUE), # 3 categories
+#   smoke = sample(0:1, 9627, replace = TRUE), # Binary
+#   working = sample(0:1, 9627, replace = TRUE), # Binary
+#   clc_sex = sample(1:2, 9627, replace = TRUE), # Binary
+#   wgt_full = runif(9627, 0, 1), # Continuous weights
+#   clc_age = runif(9627, 18, 90), # Continuous
+#   hwmdbmi = runif(9627, 18, 40), # Continuous
+#   minperweek = runif(9627, 0, 2000), # Continuous
+#   totalfv = runif(9627, 0, 10), # Continuous
+#   whr = runif(9627, 0.5, 1.5), # Continuous
+#   slp_11 = runif(9627, 4, 12), # Continuous
+#   diab_m = sample(0:1, 9627, replace = TRUE), # Binary
+#   cycle = sample(1:6, 9627, replace = TRUE) # Cycle variable ranging from 1 to 6
+# )
+
 # Generate Table 2a - outcome x sex distribution
 table2a_data <- get_descriptive_data(
   imputed_cycles1to6_data,
@@ -51,29 +77,6 @@ create_descriptive_table(
   column_stratifier = c("highbp14090_adj"),
   subjects_order = c("Age", "Marital status", "Education", "Occupation", "Family history", "Exercise", "Diet", "Weight", "Chronic disease", "Alcohol", "Smoking", "Sleep", "General")
 )
-
-# imputed_cycles1to6_data <- data.frame(
-#   highbp14090_adj = sample(c(1, 2), 100, replace = TRUE),
-#   diab_m = sample(c(1, 2), 100, replace = TRUE),
-#   ckd = sample(c(1, 2), 100, replace = TRUE),
-#   edudr04 = sample(c(1, 2, 3), 100, replace = TRUE),
-#   fmh_15 = sample(c(1, 2), 100, replace = TRUE),
-#   gendmhi = sample(c(1, 2, 3), 100, replace = TRUE),
-#   gen_025 = sample(c(1, 2, 3), 100, replace = TRUE),
-#   gen_045 = sample(c(1, 2), 100, replace = TRUE),
-#   low_drink_score1 = sample(c(1, 2, 3, 4), 100, replace = TRUE),
-#   married = sample(c(1, 2, 3), 100, replace = TRUE),
-#   smoke = sample(c(1, 2), 100, replace = TRUE),
-#   working = sample(c(1, 2), 100, replace = TRUE),
-#   clc_sex = sample(c(1, 2), 100, replace = TRUE),
-#   wgt_full = runif(100, 50, 100),
-#   clc_age = runif(100, 18, 80),
-#   hwmdbmi = runif(100, 18, 35),
-#   minperweek = runif(100, 0, 300),
-#   totalfv = runif(100, 0, 10),
-#   whr = runif(100, 0.5, 1.0),
-#   slp_11 = runif(100, 4, 10)
-# )
 
 # Recode 2s as 0s in binary predictors and factorize all categorical predictors
 imputed_cycles1to6_data <- imputed_cycles1to6_data %>%
