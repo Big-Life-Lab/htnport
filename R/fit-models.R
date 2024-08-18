@@ -11,18 +11,18 @@ source("R/table-1.R")
 
 # Synthetic dataset for test use outside RDC
 # imputed_cycles1to6_data <- data.frame(
-#   highbp14090_adj = sample(0:1, 9627, replace = TRUE), # Binary outcome
-#   ccc_51 = sample(0:1, 9627, replace = TRUE), # Binary
-#   ckd = sample(0:1, 9627, replace = TRUE), # Binary
-#   edudr04 = sample(2:0, 9627, replace = TRUE), # 3 categories
-#   fmh_15 = sample(0:1, 9627, replace = TRUE), # Binary
-#   gendmhi = sample(2:0, 9627, replace = TRUE), # 3 categories
-#   gen_025 = sample(2:0, 9627, replace = TRUE), # 3 categories
-#   gen_045 = sample(0:1, 9627, replace = TRUE), # Binary
-#   low_drink_score1 = sample(0:3, 9627, replace = TRUE), # 4 categories
-#   married = sample(2:0, 9627, replace = TRUE), # 3 categories
-#   smoke = sample(0:1, 9627, replace = TRUE), # Binary
-#   working = sample(0:1, 9627, replace = TRUE), # Binary
+#   highbp14090_adj = sample(1:2, 9627, replace = TRUE), # Binary outcome
+#   ccc_51 = sample(1:2, 9627, replace = TRUE), # Binary
+#   ckd = sample(1:2, 9627, replace = TRUE), # Binary
+#   edudr04 = sample(1:3, 9627, replace = TRUE), # 3 categories
+#   fmh_15 = sample(1:2, 9627, replace = TRUE), # Binary
+#   gendmhi = sample(1:3, 9627, replace = TRUE), # 3 categories
+#   gen_025 = sample(1:3, 9627, replace = TRUE), # 3 categories
+#   gen_045 = sample(1:2, 9627, replace = TRUE), # Binary
+#   low_drink_score1 = sample(1:4, 9627, replace = TRUE), # 4 categories
+#   married = sample(1:3, 9627, replace = TRUE), # 3 categories
+#   smoke = sample(1:2, 9627, replace = TRUE), # Binary
+#   working = sample(1:2, 9627, replace = TRUE), # Binary
 #   clc_sex = sample(1:2, 9627, replace = TRUE), # Binary
 #   wgt_full = runif(9627, 0, 1), # Continuous weights
 #   clc_age = runif(9627, 18, 90), # Continuous
@@ -31,7 +31,7 @@ source("R/table-1.R")
 #   totalfv = runif(9627, 0, 10), # Continuous
 #   whr = runif(9627, 0.5, 1.5), # Continuous
 #   slp_11 = runif(9627, 4, 12), # Continuous
-#   diab_m = sample(0:1, 9627, replace = TRUE), # Binary
+#   diab_m = sample(1:2, 9627, replace = TRUE), # Binary
 #   cycle = sample(1:6, 9627, replace = TRUE) # Cycle variable ranging from 1 to 6
 # )
 
@@ -97,8 +97,23 @@ female_model <- svyglm(highbp14090_adj ~ rcs(clc_age, 4) + married + edudr04 + w
                        design = weighted_female, family = quasibinomial())
 
 # Multicollinearity assessment
-vif(male_model)
-vif(female_model)
+calculate_simplified_vif <- function(design) {
+  # Define the simplified formula without interaction and spline terms
+  simplified_formula <- highbp14090_adj ~ clc_age + married + edudr04 + working + gendmhi + gen_025 + gen_045 + fmh_15 +
+  hwmdbmi + whr + low_drink_score1 + minperweek + smoke + slp_11 + totalfv + diab_m + ckd
+  
+  # Fit the simplified model
+  simplified_model <- svyglm(simplified_formula, design = design, family = quasibinomial())
+  
+  # Calculate VIF for the simplified model
+  vif_values <- vif(simplified_model)
+  
+  # Return the VIF values
+  return(vif_values)
+}
+
+calculate_simplified_vif(design = weighted_male)
+calculate_simplified_vif(design = weighted_female)
 
 # Function to calculate R²
 calculate_r2 <- function(model) {
