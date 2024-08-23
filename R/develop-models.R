@@ -115,14 +115,31 @@ calculate_simplified_vif <- function(design) {
 calculate_simplified_vif(design = weighted_male)
 calculate_simplified_vif(design = weighted_female)
 
-# Function to calculate R²
-calculate_r2 <- function(model) {
-  1 - (sum(residuals(model)^2) / sum((model$y - mean(model$y))^2))
+# Function to calculate Nagelkerke's R²
+calculate_nagelkerke_r2 <- function(model, data) {
+  # Get the number of observations
+  n <- nrow(data)
+  
+  # Get the log-likelihood of the fitted model
+  fitted_model_fit <- glm(formula = model$formula, data = data, family = binomial())
+  log_likelihood_fitted <- logLik(fitted_model_fit)[1]
+  
+  # Get the log-likelihood of the null model
+  null_model_fit <- glm(highbp14090_adj ~ 1, data = data, family = binomial())
+  log_likelihood_null <- logLik(null_model_fit)[1]
+  
+  # Calculate the likelihood ratio statistic (LR)
+  LR <- 2 * (log_likelihood_fitted - log_likelihood_null)
+  
+  # Calculate Nagelkerke's R2 using the formula
+  nagelkerke_r2 <- (1 - exp(-LR / n)) / (1 - exp(-(-2 * log_likelihood_null) / n))
+  
+  return(nagelkerke_r2)
 }
 
 # Stepdown procedure by Harrell and Ambler
-stepdown <- function(full_model) {
-  initial_r2 <- calculate_r2(full_model)
+stepdown <- function(full_model, data, threshold = 0.95) {
+  initial_r2 <- calculate_nagelkerke_r2(full_model, data)
   current_model <- full_model
   current_r2 <- initial_r2
   removed_terms <- c()
@@ -133,25 +150,23 @@ stepdown <- function(full_model) {
   # Iteratively remove terms and check R²
   while (length(terms_in_model) > 0) {
     r2_drop <- sapply(terms_in_model, function(term) {
-      reduced_model <- update(current_model, as.formula(paste(". ~ . -", term)))
-      calculate_r2(reduced_model)
+      reduced_model <- try(update(current_model, as.formula(paste(". ~ . -", term))), silent = TRUE)
+      if (inherits(reduced_model, "try-error")) return(Inf)
+      calculate_nagelkerke_r2(reduced_model, data)
     })
     
     # Identify the term with the least impact on R²
-    min_r2_drop <- min(r2_drop)
-    term_to_remove <- terms_in_model[which.min(r2_drop)]
+    term_to_remove <- terms_in_model[which.max(r2_drop)]
+    max_r2_drop <- r2_drop[which.max(r2_drop)]
     
-    # Update model by removing the term
-    current_model <- update(current_model, as.formula(paste(". ~ . -", term_to_remove)))
-    current_r2 <- min_r2_drop
-    terms_in_model <- setdiff(terms_in_model, term_to_remove)
-    removed_terms <- c(removed_terms, term_to_remove)
-    
-    # Check if the current R² is still above 95% of the initial R²
-    if (current_r2 < 0.95 * initial_r2) {
-      # Stop removing terms and revert the last removal
-      current_model <- update(current_model, as.formula(paste(". ~ . +", term_to_remove)))
+    # Check if the current R² after removing the term is still above the threshold
+    if (max_r2_drop < threshold * initial_r2) {
       break
+    } else {
+      current_model <- update(current_model, as.formula(paste(". ~ . -", term_to_remove)))
+      terms_in_model <- setdiff(terms_in_model, term_to_remove)
+      removed_terms <- c(removed_terms, term_to_remove)
+      current_r2 <- max_r2_drop
     }
   }
   
@@ -159,8 +174,8 @@ stepdown <- function(full_model) {
 }
 
 # Apply stepdown function to male and female models
-male_reduced_model <- stepdown(male_model)
-female_reduced_model <- stepdown(female_model)
+male_reduced_model <- stepdown(male_model, male_train_data)
+female_reduced_model <- stepdown(female_model, female_train_data)
 
 # Function to perform Likelihood Ratio Test (LRT) for svyglm models
 lrt_svyglm <- function(full_model, reduced_model) {

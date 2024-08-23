@@ -6,8 +6,9 @@ library(dplyr)
 library(rms)
 library(pROC)
 library(ggplot2)
+library(FSelectorRcpp)
 
-# Load this R file to obtain all datasets and reduced models
+# Load this R file to obtain all datasets and reduced models, as well as Nagelkerke's R2 function
 source("R/develop-models.R")
 
 # Generate predictions for male and female models
@@ -24,26 +25,7 @@ female_train_predictions <- generate_predictions(female_reduced_model, female_tr
 female_test_predictions <- generate_predictions(female_reduced_model, female_test_data)
 female_combined_predictions <- generate_predictions(female_reduced_model, female_data)
 
-calculate_nagelkerke_r2 <- function(model, data) {
-  # Get the number of observations
-  n <- nrow(data)
-  
-  # Get the log-likelihood of the fitted model
-  log_likelihood_fitted <- logLik(model)[1]
-  
-  # Get the log-likelihood of the null model
-  null_model_fit <- glm(highbp14090_adj ~ 1, data = data, family = binomial())
-  log_likelihood_null <- logLik(null_model_fit)[1]
-  
-  # Calculate the likelihood ratio statistic (LR)
-  LR <- 2 * (log_likelihood_fitted - log_likelihood_null)
-  
-  # Calculate Nagelkerke's R2 using the formula
-  nagelkerke_r2 <- (1 - exp(-LR / n)) / (1 - exp(-(-2 * log_likelihood_null) / n))
-  
-  return(nagelkerke_r2)
-}
-
+# Nagelkerke's R2
 male_train_nagelkerke_r2 <- calculate_nagelkerke_r2(male_reduced_model, male_train_data)
 male_test_nagelkerke_r2 <- calculate_nagelkerke_r2(male_reduced_model, male_test_data)
 male_combined_nagelkerke_r2 <- calculate_nagelkerke_r2(male_reduced_model, male_data)
@@ -192,3 +174,44 @@ plot_calibration(male_data, male_combined_predictions, "Calibration Plot for Mal
 plot_calibration(female_train_data, female_train_predictions, "Calibration Plot for Female Train Data")
 plot_calibration(female_test_data, female_test_predictions, "Calibration Plot for Female Test Data")
 plot_calibration(female_data, female_combined_predictions, "Calibration Plot for Female Combined Data")
+
+# Information gain
+# Define the function to extract variable names from rcs terms
+extract_variable_from_rcs <- function(term) {
+  # Use regular expression to extract the variable name from rcs
+  variable_name <- gsub("rcs\\(([^,]+),\\s*\\d+\\)", "\\1", term)
+  return(variable_name)
+}
+
+# Define the function to exclude interaction terms and simplify rcs terms
+exclude_interactions_and_simplify_rcs <- function(model) {
+  # Extract the formula from the model
+  formula <- formula(model)
+  
+  # Get terms object from the formula
+  terms_obj <- terms(formula)
+  
+  # Extract term labels
+  term_labels <- attr(terms_obj, "term.labels")
+  
+  # Identify interaction terms (terms containing ":")
+  interaction_terms <- grep(":", term_labels, value = TRUE)
+  
+  # Exclude interaction terms to get only main predictors
+  main_predictors <- setdiff(term_labels, interaction_terms)
+  
+  # Replace rcs terms with just the variable names
+  simplified_predictors <- sapply(main_predictors, extract_variable_from_rcs)
+  
+  # Remove duplicates, which might arise if multiple rcs terms refer to the same variable
+  simplified_predictors <- unique(simplified_predictors)
+  
+  # Construct new formula with only simplified predictors
+  new_formula <- as.formula(paste("highbp14090_adj", "~", paste(simplified_predictors, collapse = " + ")))
+  
+  # Return the new formula
+  return(new_formula)
+}
+
+information_gain(exclude_interactions_and_simplify_rcs(male_reduced_model), male_data)
+information_gain(exclude_interactions_and_simplify_rcs(female_reduced_model), female_data)
