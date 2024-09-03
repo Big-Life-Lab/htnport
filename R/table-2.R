@@ -8,30 +8,30 @@ library(survey)
 source("R/table-1.R")
 
 # Synthetic dataset for test use outside RDC
-# imputed_cycles1to6_data <- data.frame(
-#   highbp14090_adj = sample(1:2, 9627, replace = TRUE), # Binary outcome
-#   ccc_51 = sample(1:2, 9627, replace = TRUE), # Binary
-#   ckd = sample(1:2, 9627, replace = TRUE), # Binary
-#   edudr04 = sample(1:3, 9627, replace = TRUE), # 3 categories
-#   fmh_15 = sample(1:2, 9627, replace = TRUE), # Binary
-#   gendmhi = sample(1:3, 9627, replace = TRUE), # 3 categories
-#   gen_025 = sample(1:3, 9627, replace = TRUE), # 3 categories
-#   gen_045 = sample(1:2, 9627, replace = TRUE), # Binary
-#   low_drink_score1 = sample(1:4, 9627, replace = TRUE), # 4 categories
-#   married = sample(1:3, 9627, replace = TRUE), # 3 categories
-#   smoke = sample(1:2, 9627, replace = TRUE), # Binary
-#   working = sample(1:2, 9627, replace = TRUE), # Binary
-#   clc_sex = sample(1:2, 9627, replace = TRUE), # Binary
-#   wgt_full = runif(9627, 0, 1), # Continuous weights
-#   clc_age = runif(9627, 18, 90), # Continuous
-#   hwmdbmi = runif(9627, 18, 40), # Continuous
-#   minperweek = runif(9627, 0, 2000), # Continuous
-#   totalfv = runif(9627, 0, 10), # Continuous
-#   whr = runif(9627, 0.5, 1.5), # Continuous
-#   slp_11 = runif(9627, 4, 12), # Continuous
-#   diab_m = sample(1:2, 9627, replace = TRUE), # Binary
-#   cycle = sample(1:6, 9627, replace = TRUE) # Cycle variable ranging from 1 to 6
-# )
+imputed_cycles1to6_data <- data.frame(
+  highbp14090_adj = sample(1:2, 9627, replace = TRUE), # Binary outcome
+  ccc_51 = sample(1:2, 9627, replace = TRUE), # Binary
+  ckd = sample(1:2, 9627, replace = TRUE), # Binary
+  edudr04 = sample(1:3, 9627, replace = TRUE), # 3 categories
+  fmh_15 = sample(1:2, 9627, replace = TRUE), # Binary
+  gendmhi = sample(1:3, 9627, replace = TRUE), # 3 categories
+  gen_025 = sample(1:2, 9627, replace = TRUE), # 3 categories
+  gen_045 = sample(1:2, 9627, replace = TRUE), # Binary
+  low_drink_score1 = sample(1:4, 9627, replace = TRUE), # 4 categories
+  married = sample(1:3, 9627, replace = TRUE), # 3 categories
+  smoke = sample(1:2, 9627, replace = TRUE), # Binary
+  working = sample(1:2, 9627, replace = TRUE), # Binary
+  clc_sex = sample(1:2, 9627, replace = TRUE), # Binary
+  wgt_full = runif(9627, 0, 1), # Continuous weights
+  clc_age = runif(9627, 18, 90), # Continuous
+  hwmdbmi = runif(9627, 18, 40), # Continuous
+  minperweek = runif(9627, 0, 2000), # Continuous
+  totalfv = runif(9627, 0, 10), # Continuous
+  whr = runif(9627, 0.5, 1.5), # Continuous
+  slp_11 = runif(9627, 4, 12), # Continuous
+  diab_m = sample(1:2, 9627, replace = TRUE), # Binary
+  cycle = sample(1:6, 9627, replace = TRUE) # Cycle variable ranging from 1 to 6
+)
 
 # Generate Table 2a - outcome x sex distribution
 table2a_data <- get_descriptive_data(
@@ -94,6 +94,11 @@ imputed_cycles1to6_data <- imputed_cycles1to6_data %>%
            gendmhi == 1 ~ 2,
            gendmhi == 2 ~ 1,
            gendmhi == 3 ~ 0
+         ),
+         snoke = case_when(
+           smoke == 1 ~ 2,
+           smoke == 2 ~ 1,
+           smoke == 3 ~ 0
          ))
 
 cat_variables <- c("ckd", "diab_m", "edudr04", "fmh_15", "gendmhi", 
@@ -152,10 +157,9 @@ fit_crude_model <- function(predictor, design) {
                           "edudr041" = "High school graduate only",
                           "edudr042" = "Did not graduate high school",
                           "fmh_151" = "Family history for hypertension",
-                          "gendmhi1" = "Good (not excellent) mental health",
-                          "gendmhi2" = "Poor or fair mental health",
-                          "gen_0252" = "A bit stressed",
-                          "gen_0253" = "Quite a bit or extremely stressed",
+                          "gendmhi1" = "Fair or good mental health",
+                          "gendmhi2" = "Poor mental health",
+                          "gen_0252" = "Quite a bit or extremely stressed",
                           "gen_0452" = "Weak sense of belonging",
                           "hwmdbmi" = "Body mass index",
                           "low_drink_score12" = "Former drinker",
@@ -165,7 +169,8 @@ fit_crude_model <- function(predictor, design) {
                           "married3" = "Single",
                           "minperweek" = "Minutes of exercise per week",
                           "slp_11" = "Sleep duration",
-                          "smoke1" = "Current smoker",
+                          "smoke1" = "Former smoker",
+                          "smoke2" = "Current smoker",
                           "totalfv" = "Daily fruit and vegetable consumption",
                           "whr" = "Waist-to-height ratio",
                           "working2" = "Does not have a job"))
@@ -191,7 +196,7 @@ combined_crude_models <- bind_rows(
 custom_order <- c("Age", "Widowed, separated, or divorced", "Single", "High school graduate only", "Did not graduate high school", "Does not have a job",
                   "Family history for hypertension", "Minutes of exercise per week", "Daily fruit and vegetable consumption", "Body mass index", "Waist-to-height ratio",
                   "Diabetes", "Chronic kidney disease", "Former drinker", "Light drinker", "Moderate to heavy drinker", "Current smoker", "Sleep duration", 
-                  "Good (not excellent) mental health", "Poor or fair mental health", "A bit stressed", "Quite a bit or extremely stressed", "Weak sense of belonging"
+                  "Fair or good mental health", "Poor mental health", "Quite a bit or extremely stressed", "Weak sense of belonging"
                   )
 
 # Combine custom order with the original order

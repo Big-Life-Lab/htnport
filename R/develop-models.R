@@ -17,7 +17,7 @@ source("R/table-1.R")
 #   edudr04 = sample(1:3, 9627, replace = TRUE), # 3 categories
 #   fmh_15 = sample(1:2, 9627, replace = TRUE), # Binary
 #   gendmhi = sample(1:3, 9627, replace = TRUE), # 3 categories
-#   gen_025 = sample(1:3, 9627, replace = TRUE), # 3 categories
+#   gen_025 = sample(1:2, 9627, replace = TRUE), # 3 categories
 #   gen_045 = sample(1:2, 9627, replace = TRUE), # Binary
 #   low_drink_score1 = sample(1:4, 9627, replace = TRUE), # 4 categories
 #   married = sample(1:3, 9627, replace = TRUE), # 3 categories
@@ -114,6 +114,19 @@ calculate_simplified_vif <- function(design) {
 
 calculate_simplified_vif(design = weighted_male)
 calculate_simplified_vif(design = weighted_female)
+
+# Refit male and female models without whr if high collinearity detected
+# male_model <- svyglm(highbp14090_adj ~ rcs(clc_age, 4) + married + edudr04 + working + gendmhi + gen_025 + gen_045 + fmh_15 +
+#                        rcs(hwmdbmi, 3) + low_drink_score1 + rcs(minperweek, 3) + smoke + slp_11 + totalfv + diab_m + 
+#                        ckd + rcs(clc_age, 4)*gen_045 + rcs(clc_age, 4)*rcs(hwmdbmi, 3) + rcs(clc_age, 4)*rcs(minperweek, 3) +
+#                        rcs(clc_age, 4)*smoke + rcs(clc_age, 4)*slp_11 + rcs(clc_age, 4)*diab_m + rcs(clc_age, 4)*ckd, 
+#                      design = weighted_male, family = quasibinomial())
+# 
+# female_model <- svyglm(highbp14090_adj ~ rcs(clc_age, 4) + married + edudr04 + working + gendmhi + gen_025 + gen_045 + fmh_15 +
+#                        rcs(hwmdbmi, 3) + low_drink_score1 + rcs(minperweek, 3) + smoke + slp_11 + totalfv + diab_m + 
+#                        ckd + rcs(clc_age, 4)*gen_045 + rcs(clc_age, 4)*rcs(hwmdbmi, 3) + rcs(clc_age, 4)*rcs(minperweek, 3) +
+#                        rcs(clc_age, 4)*smoke + rcs(clc_age, 4)*slp_11 + rcs(clc_age, 4)*diab_m + rcs(clc_age, 4)*ckd, 
+#                      design = weighted_female, family = quasibinomial())
 
 # Function to calculate Nagelkerke's R²
 calculate_nagelkerke_r2 <- function(model, data) {
