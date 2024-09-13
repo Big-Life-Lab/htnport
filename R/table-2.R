@@ -2,36 +2,71 @@
 setwd("P:/10619/Dropbox/chmsflow")
 
 # Load survey package
+library(dplyr)
+library(e1071)
 library(survey)
 
 # Load this R file to obtain imputed dataset
 source("R/table-1.R")
 
 # Synthetic dataset for test use outside RDC
-imputed_cycles1to6_data <- data.frame(
-  highbp14090_adj = sample(1:2, 9627, replace = TRUE), # Binary outcome
-  ccc_51 = sample(1:2, 9627, replace = TRUE), # Binary
-  ckd = sample(1:2, 9627, replace = TRUE), # Binary
-  edudr04 = sample(1:3, 9627, replace = TRUE), # 3 categories
-  fmh_15 = sample(1:2, 9627, replace = TRUE), # Binary
-  gendmhi = sample(1:3, 9627, replace = TRUE), # 3 categories
-  gen_025 = sample(1:2, 9627, replace = TRUE), # 3 categories
-  gen_045 = sample(1:2, 9627, replace = TRUE), # Binary
-  low_drink_score1 = sample(1:4, 9627, replace = TRUE), # 4 categories
-  married = sample(1:3, 9627, replace = TRUE), # 3 categories
-  smoke = sample(1:2, 9627, replace = TRUE), # Binary
-  working = sample(1:2, 9627, replace = TRUE), # Binary
-  clc_sex = sample(1:2, 9627, replace = TRUE), # Binary
-  wgt_full = runif(9627, 0, 1), # Continuous weights
-  clc_age = runif(9627, 18, 90), # Continuous
-  hwmdbmi = runif(9627, 18, 40), # Continuous
-  minperweek = runif(9627, 0, 2000), # Continuous
-  totalfv = runif(9627, 0, 10), # Continuous
-  whr = runif(9627, 0.5, 1.5), # Continuous
-  slp_11 = runif(9627, 4, 12), # Continuous
-  diab_m = sample(1:2, 9627, replace = TRUE), # Binary
-  cycle = sample(1:6, 9627, replace = TRUE) # Cycle variable ranging from 1 to 6
-)
+# imputed_cycles1to6_data <- data.frame(
+#   highbp14090_adj = sample(1:2, 9627, replace = TRUE), # Binary outcome
+#   ccc_51 = sample(1:2, 9627, replace = TRUE), # Binary
+#   ckd = sample(1:2, 9627, replace = TRUE), # Binary
+#   edudr04 = sample(1:3, 9627, replace = TRUE), # 3 categories
+#   fmh_15 = sample(1:2, 9627, replace = TRUE), # Binary
+#   gendmhi = sample(1:3, 9627, replace = TRUE), # 3 categories
+#   gen_025 = sample(1:2, 9627, replace = TRUE), # 3 categories
+#   gen_045 = sample(1:2, 9627, replace = TRUE), # Binary
+#   low_drink_score1 = sample(1:4, 9627, replace = TRUE), # 4 categories
+#   married = sample(1:3, 9627, replace = TRUE), # 3 categories
+#   smoke = sample(1:2, 9627, replace = TRUE), # Binary
+#   working = sample(1:2, 9627, replace = TRUE), # Binary
+#   clc_sex = sample(1:2, 9627, replace = TRUE), # Binary
+#   wgt_full = runif(9627, 0, 1), # Continuous weights
+#   clc_age = runif(9627, 18, 90), # Continuous
+#   hwmdbmi = runif(9627, 18, 40), # Continuous
+#   minperweek = runif(9627, 0, 2000), # Continuous
+#   totalfv = runif(9627, 0, 10), # Continuous
+#   whr = runif(9627, 0.5, 1.5), # Continuous
+#   slp_11 = runif(9627, 4, 12), # Continuous
+#   diab_m = sample(1:2, 9627, replace = TRUE), # Binary
+#   cycle = sample(1:6, 9627, replace = TRUE) # Cycle variable ranging from 1 to 6
+# )
+
+# Truncate skewed continuous variables if necessary
+truncate_skewed <- function(df, threshold = 0.995, skew_threshold = 1) {
+  
+  # Create a copy of the dataframe to avoid overwriting the original
+  df_truncated <- df
+  
+  # Loop over all the numeric columns
+  for (col in c("clc_age", "hwmdbmi", "minperweek", "totalfv", "whr", "slp_11")) {
+    if (is.numeric(df[[col]])) {
+      
+      # Calculate skewness
+      skewness_value <- skewness(df[[col]], na.rm = TRUE)
+      
+      # Check if the variable is skewed
+      if (abs(skewness_value) > skew_threshold) {
+        
+        # Calculate the 99.5th percentile
+        quantile_value <- quantile(df[[col]], threshold, na.rm = TRUE)
+        
+        # Truncate the variable
+        df_truncated[[col]] <- ifelse(df[[col]] > quantile_value, quantile_value, df[[col]])
+        
+        # Print message indicating that the column was truncated
+        message(paste("Truncated column:", col, "| Skewness:", round(skewness_value, 2)))
+      }
+    }
+  }
+  
+  return(df_truncated)
+}
+
+imputed_cycles1to6_data <- truncate_skewed(imputed_cycles1to6_data)
 
 # Generate Table 2a - outcome x sex distribution
 table2a_data <- get_descriptive_data(

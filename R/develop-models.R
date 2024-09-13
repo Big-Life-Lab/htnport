@@ -3,6 +3,7 @@ setwd("P:/10619/Dropbox/chmsflow")
 
 # Load required packages
 library(dplyr)
+library(e1071)
 library(survey)
 library(rms)
 
@@ -34,6 +35,39 @@ source("R/table-1.R")
 #   diab_m = sample(1:2, 9627, replace = TRUE), # Binary
 #   cycle = sample(1:6, 9627, replace = TRUE) # Cycle variable ranging from 1 to 6
 # )
+
+# Truncate skewed continuous variables if necessary
+truncate_skewed <- function(df, threshold = 0.995, skew_threshold = 1) {
+  
+  # Create a copy of the dataframe to avoid overwriting the original
+  df_truncated <- df
+  
+  # Loop over all the numeric columns
+  for (col in c("clc_age", "hwmdbmi", "minperweek", "totalfv", "whr", "slp_11")) {
+    if (is.numeric(df[[col]])) {
+      
+      # Calculate skewness
+      skewness_value <- skewness(df[[col]], na.rm = TRUE)
+      
+      # Check if the variable is skewed
+      if (abs(skewness_value) > skew_threshold) {
+        
+        # Calculate the 99.5th percentile
+        quantile_value <- quantile(df[[col]], threshold, na.rm = TRUE)
+        
+        # Truncate the variable
+        df_truncated[[col]] <- ifelse(df[[col]] > quantile_value, quantile_value, df[[col]])
+        
+        # Print message indicating that the column was truncated
+        message(paste("Truncated column:", col, "| Skewness:", round(skewness_value, 2)))
+      }
+    }
+  }
+  
+  return(df_truncated)
+}
+
+imputed_cycles1to6_data <- truncate_skewed(imputed_cycles1to6_data)
 
 # Recode 2s as 0s in binary predictors and factorize all categorical predictors
 imputed_cycles1to6_data <- imputed_cycles1to6_data %>%
@@ -114,6 +148,13 @@ calculate_simplified_vif <- function(design) {
 
 calculate_simplified_vif(design = weighted_male)
 calculate_simplified_vif(design = weighted_female)
+
+# Linearity assessment for slp_11 and totalfv
+plot(male_train_data$slp_11, male_model$fitted.values) 
+plot(male_train_data$totalfv, male_model$fitted.values) 
+
+plot(female_train_data$slp_11, female_model$fitted.values) 
+plot(female_train_data$totalfv, female_model$fitted.values) 
 
 # Refit male and female models without whr if high collinearity detected
 # male_model <- svyglm(highbp14090_adj ~ rcs(clc_age, 4) + married + edudr04 + working + gendmhi + gen_025 + gen_045 + fmh_15 +
