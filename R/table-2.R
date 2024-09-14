@@ -32,7 +32,9 @@ source("R/table-1.R")
 #   whr = runif(9627, 0.5, 1.5), # Continuous
 #   slp_11 = runif(9627, 4, 12), # Continuous
 #   diab_m = sample(1:2, 9627, replace = TRUE), # Binary
-#   cycle = sample(1:6, 9627, replace = TRUE) # Cycle variable ranging from 1 to 6
+#   cycle = sample(1:6, 9627, replace = TRUE), # Cycle variable ranging from 1 to 6
+#   anymed = sample(0:1, 9627, replace = TRUE), # Binary
+#   ccc_32 = sample(0:1, 9627, replace = TRUE), # Binary
 # )
 
 # Truncate skewed continuous variables if necessary
@@ -111,6 +113,25 @@ create_descriptive_table(
   ),
   column_stratifier = c("highbp14090_adj"),
   subjects_order = c("Age", "Marital status", "Education", "Occupation", "Family history", "Exercise", "Diet", "Weight", "Chronic disease", "Alcohol", "Smoking", "Sleep", "General")
+)
+
+# Generate Table 2c - meds distribution
+table2c_data <- get_descriptive_data(
+  imputed_cycles1to6_data,
+  my_variables,
+  my_variable_details,
+  # All the variables whose descriptive statistics we want
+  "ccc_32",
+  # Sets the stratifier
+  list("all" = list("anymed"))
+)
+
+create_descriptive_table(
+  table2c_data,
+  my_variables,
+  my_variable_details,
+  "ccc_32",
+  column_stratifier = c("anymed")
 )
 
 # Recode 2s as 0s in binary predictors and factorize all categorical predictors
