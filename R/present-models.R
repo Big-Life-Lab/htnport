@@ -3,11 +3,12 @@ setwd("P:/10619/Dropbox/chmsflow")
 
 # Load required packages
 library(iml)
+library(ggplot2)
 
 # Load this R file to obtain all datasets and reduced models
 source("R/develop-models.R")
 
-# Define function to calculate and plot SHAP values
+# Define function to calculate and plot SHAP values for a given individual
 generate_shap_values <- function(model, data, observation) {
   
   # Create the Predictor object with 'response' to get probabilities
