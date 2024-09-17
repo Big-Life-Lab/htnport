@@ -101,16 +101,24 @@ cycle1 <- data.frame(
   mhr_235b = c(3, 2, 1, 4)
 ) # wide data
 
+# Count the number of columns in cycle1, excluding the clinicid column
+num_vars_cycle1 <- ncol(cycle1) - 1
+
+# Replicate rows for each clinicid to match the number of columns in cycle1
+clinicids <- unique(cycle1$clinicid)
+n_clinicids <- length(clinicids)
+
+# Create cycle3 with replicated rows
 cycle3 <- data.frame(
-  clinicid = c(1, 1, 1, 1),
-  meucatc = c("C07AA05", "C09AA06", "C08CA01", "A10BC02"),
-  npi_25b = c(2, 3, 1, 3)
+  clinicid = rep(clinicids, each = num_vars_cycle1),
+  meucatc = rep(c("C07AA05", "C09AA06", "C08CA01", "A10BC02"), length.out = num_vars_cycle1 * n_clinicids),
+  npi_25b = rep(c(2, 3, 1, 3), length.out = num_vars_cycle1 * n_clinicids)
 ) # long data
 ```
 
-2. Recode medication variables.
+2. Recode medication variables for individual cycles.
 ```{r}
-# Recoding basic variables from cycles 1 and 3.
+# Recoding basic variables from cycles 1 and 3
 cycle1_prescription_data <- rec_with_table(cycle1, c("clinicid", "atc_101a", "mhr_101b"), variable_details = my_variable_details)
 head(cycle1_prescription_data)
 
@@ -119,10 +127,35 @@ head(cycle3_prescription_data)
 
 # Recoding derived variable acemed for cycle1. Select vars by role used to avoid writing all med variables in one line
 cycle1_ace_prescription_data <- rec_with_table(cycle1, c("clinicid", recodeflow:::select_vars_by_role("Drugs", my_variables)), variable_details = my_variable_details)
-head(select(cycle1_ace_prescription_data, clinicid, acemed)) # 3 out of the 4 participants take ACE inhibitors
+head(select(cycle1_ace_prescription_data, clinicid, acemed)) 
 
 # Recoding derived variable acemed for cycle3. Much simpler function used here.
 cycle3_ace_prescription_data <- rec_with_table(cycle3, c("clinicid", "meucatc", "npi_25b", "acemed"), variable_details = my_variable_details)
-head(cycle3_ace_prescription_data) # 1 out of the participant's 4 medications is ACE inhibitors 
+head(cycle3_ace_prescription_data)
+```
+
+3. Merge recoded medication data
+```{r}
+# Aggregating recoded cycle3 data by clinicid
+cycle3_ace_prescription_data <- cycle3_ace_prescription_data %>%
+  group_by(clinicid) %>%
+  summarize(
+    meucatc = paste(unique(meucatc), collapse = ", "),  # Concatenate unique values of meucatc
+    npi_25b = paste(unique(npi_25b), collapse = ", "),  # Concatenate unique values of npi_25b
+    acemed = max(as.numeric(as.character(acemed))) # Find maximum of acemed
+  )
+head(cycle3_ace_prescription_data)
+
+# De-factorizing acemed variable in recoded cycle1 data
+cycle1_ace_prescription_data$acemed <- as.numeric(as.character(cycle1_ace_prescription_data$acemed))
+
+# Merging recoded cycle1 and cycle3 data, and ensuring one acemed column in the end
+cycles1and3_ace_prescription_data <- left_join(cycle1_ace_prescription_data, cycle3_ace_prescription_data, by = "clinicid")
+head(cycles1and3_ace_prescription_data)
+
+cycles1and3_ace_prescription_data <- cycles1and3_ace_prescription_data %>%
+  mutate(acemed = pmax(acemed.x, acemed.y)) %>%
+  select(-c(acemed.x, acemed.y))
+head(cycles1and3_ace_prescription_data)
 ```
 
