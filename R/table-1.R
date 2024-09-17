@@ -29,10 +29,27 @@ source("R/get-descriptive-data.R")
 source("R/create-descriptive-table.R")
 source("R/impute-variables.R")
 
-# Load data and metadata
+# Load metadata
 my_variables <- read.csv("P:/10619/Dropbox/chmsflow/worksheets/variables.csv")
 my_variable_details <- read.csv("P:/10619/Dropbox/chmsflow/worksheets/variable-details.csv")
 
+# Load medication data - make them have same name as cycle to recode med vars
+cycle1 <- read_stata("data/cycle3/cycle1-meds.dta")
+cycle2 <- read_stata("data/cycle3/cycle2-meds.dta")
+cycle3 <- read_stata("data/cycle3/cycle3-meds.dta")
+cycle4 <- read_stata("data/cycle4/cycle4-meds.dta")
+cycle5 <- read_stata("data/cycle5/cycle5-meds.dta")
+cycle6 <- read_stata("data/cycle6/cycle6-meds.dta")
+names(cycle6) <- tolower(names(cycle6)) 
+
+cycle1_prescription_data <- rec_with_table(cycle1, c("clinicid", recodeflow:::select_vars_by_role("Drugs", my_variables)), variable_details = my_variable_details)
+cycle2_prescription_data <- rec_with_table(cycle2, c("clinicid", recodeflow:::select_vars_by_role("Drugs", my_variables)), variable_details = my_variable_details)
+cycle3_prescription_data <- rec_with_table(cycle3, c("clinicid", "meucatc", "npi_25b", "anymed", "diab_drug"), variable_details = my_variable_details)
+cycle4_prescription_data <- rec_with_table(cycle4, c("clinicid", "meucatc", "npi_25b", "anymed", "diab_drug"), variable_details = my_variable_details)
+cycle5_prescription_data <- rec_with_table(cycle5, c("clinicid", "meucatc", "npi_25b", "anymed", "diab_drug"), variable_details = my_variable_details)
+cycle6_prescription_data <- rec_with_table(cycle6, c("clinicid", "meucatc", "npi_25b", "anymed", "diab_drug"), variable_details = my_variable_details)
+
+# Load overall data with correct names
 cycle1 <- read_stata("data/cycle1/cycle1.dta")
 cycle2 <- read_stata("data/cycle2/cycle2.dta")
 cycle3 <- read_stata("data/cycle3/cycle3.dta")
@@ -48,6 +65,49 @@ cycle3$cycle <- 3
 cycle4$cycle <- 4
 cycle5$cycle <- 5
 cycle6$cycle <- 6
+
+# Derive outcome medication criterion in medication data of first two cycles and merge that data to overall data
+cycle1_prescription_data$anymed2 <- as.numeric(as.character(cycle1_prescription_data$anymed))
+cycle2_prescription_data$anymed2 <- as.numeric(as.character(cycle1_prescription_data$anymed))
+
+cycle1_prescription_data$diab_drug2 <- as.numeric(as.character(cycle1_prescription_data$diab_drug))
+cycle2_prescription_data$diab_drug2 <- as.numeric(as.character(cycle1_prescription_data$diab_drug))
+
+cycle1_prescription_data <- select(cycle1_prescription_data, clinicid, anymed2, diab_drug2)
+cycle2_prescription_data <- select(cycle2_prescription_data, clinicid, anymed2, diab_drug2)
+
+cycle1 <- merge(cycle1, cycle1_prescription_data, by = "clinicid")
+cycle2 <- merge(cycle2, cycle2_prescription_data, by = "clinicid")
+
+# Flatten medication data for latter four cycles and merge that data to overall data
+process_long_prescription_data <- function(cycle_data, cycle_prescription_data) {
+  
+  # Step 1: Group and summarize the prescription data
+  cycle_prescription_data <- cycle_prescription_data %>%
+    group_by(clinicid) %>%
+    summarize(
+      meucatc = paste(unique(meucatc), collapse = ", "),   # Concatenate unique values of meucatc
+      npi_25b = paste(unique(npi_25b), collapse = ", "),   # Concatenate unique values of npi_25b
+      anymed = max(as.numeric(as.character(anymed))),      # Find the maximum of anymed
+      diab_drug = max(as.numeric(as.character(diab_drug))) # Find the maximum of diab_drug
+    )
+  
+  # Step 2: Merge the summarized data back to the original cycle_data
+  cycle_data <- merge(cycle_data, cycle_prescription_data, by = "clinicid")
+  
+  # Step 3: Create 'anymed2' and 'diab_drug2', and clean up columns
+  cycle_data <- cycle_data %>%
+    mutate(anymed2 = pmax(anymed.x, anymed.y, na.rm = TRUE)) %>%
+    mutate(diab_drug2 = pmax(diab_drug.x, diab_drug.y, na.rm = TRUE)) %>%
+    select(-c(anymed.x, anymed.y, diab_drug.x, diab_drug.y))
+  
+  return(cycle_data)
+}
+
+cycle3 <- process_long_prescription_data(cycle3, cycle3_prescription_data)
+cycle4 <- process_long_prescription_data(cycle4, cycle4_prescription_data)
+cycle5 <- process_long_prescription_data(cycle5, cycle5_prescription_data)
+cycle6 <- process_long_prescription_data(cycle6, cycle6_prescription_data)
 
 # Recode variables, combine cycles, and obtain sample
 cycle1_data <- recodeflow::rec_with_table(cycle1, recodeflow:::select_vars_by_role(c("Recode", "Fam"), my_variables), variable_details = my_variable_details, log = TRUE)

@@ -79,7 +79,7 @@ adjust_DBP <- function(BPMDPBPD) {
 #'
 #' @param BPMDPBPS An integer representing the systolic blood pressure measurement of the respondent.
 #' @param BPMDPBPD An integer representing the diastolic blood pressure measurement of the respondent.
-#' @param ANYMED An integer indicating whether the respondent is on medication for hypertension.
+#' @param ANYMED2 An integer indicating whether the respondent is on medication for hypertension.
 #'   - 1: Yes
 #'   - 0: No
 #' @param DIABX An optional integer indicating the presence of diabetes, affecting blood pressure thresholds.
@@ -97,21 +97,21 @@ adjust_DBP <- function(BPMDPBPD) {
 #' @examples
 #' 
 #' # Example 1: Determine hypertension status for a respondent with systolic BP = 150, diastolic BP = 95, and on medication.
-#' determine_hypertension(BPMDPBPS = 150, BPMDPBPD = 95, ANYMED = 1)
+#' determine_hypertension(BPMDPBPS = 150, BPMDPBPD = 95, ANYMED2 = 1)
 #' # Output: 1 (High blood pressure due to systolic BP, diastolic BP, and medication usage).
 #'
 #' # Example 2: Determine hypertension status for a respondent with systolic BP = 120, diastolic BP = 80, and not on medication.
-#' determine_hypertension(BPMDPBPS = 120, BPMDPBPD = 80, ANYMED = 2)
+#' determine_hypertension(BPMDPBPS = 120, BPMDPBPD = 80, ANYMED2 = 2)
 #' # Output: 2 (Normal blood pressure as BP is below 140/90 mmHg and not on medication).
 #' 
 #' @export
-determine_hypertension <- function(BPMDPBPS, BPMDPBPD, ANYMED, DIABX = NULL, CKD = NULL) {
+determine_hypertension <- function(BPMDPBPS, BPMDPBPD, ANYMED2, DIABX = NULL, CKD = NULL) {
   highsys140 <- NA
   highdias90 <- NA
   highBP14090 <- haven::tagged_na("b")
   
   if (is.na(BPMDPBPS) || is.na(BPMDPBPD)) {
-    if (ANYMED == 1) {
+    if (ANYMED2 == 1) {
       highBP14090 <- 1
       return(highBP14090)
     } else {
@@ -155,9 +155,9 @@ determine_hypertension <- function(BPMDPBPS, BPMDPBPD, ANYMED, DIABX = NULL, CKD
   }
   
   # Calculate highBP14090
-  if (highsys140 == 1 || highdias90 == 1 || ANYMED == 1) {
+  if (highsys140 == 1 || highdias90 == 1 || ANYMED2 == 1) {
     highBP14090 <- 1
-  } else if (highsys140 == 2 && highdias90 == 2 && ANYMED == 0) {
+  } else if (highsys140 == 2 && highdias90 == 2 && ANYMED2 == 0) {
     highBP14090 <- 2
   }
   
@@ -171,7 +171,7 @@ determine_hypertension <- function(BPMDPBPS, BPMDPBPD, ANYMED, DIABX = NULL, CKD
 #'
 #' @param SBP_adj An integer representing the adjusted systolic blood pressure measurement of the respondent.
 #' @param DBP_adj An integer representing the adjusted diastolic blood pressure measurement of the respondent.
-#' @param ANYMED An integer indicating whether the respondent is on medication for hypertension.
+#' @param ANYMED2 An integer indicating whether the respondent is on medication for hypertension.
 #'   - 1: Yes
 #'   - 0: No
 #' @param DIABX An optional integer indicating the presence of diabetes, affecting blood pressure thresholds.
@@ -189,21 +189,21 @@ determine_hypertension <- function(BPMDPBPS, BPMDPBPD, ANYMED, DIABX = NULL, CKD
 #' @examples
 #' 
 #' # Example 1: Determine adjusted hypertension status for a respondent with adjusted systolic BP = 150, adjusted diastolic BP = 95, and on medication.
-#' determine_adjusted_hypertension(SBP_adj = 150, DBP_adj = 95, ANYMED = 1)
+#' determine_adjusted_hypertension(SBP_adj = 150, DBP_adj = 95, ANYMED2 = 1)
 #' # Output: 1 (High blood pressure due to adjusted systolic BP, adjusted diastolic BP, and medication usage).
 #'
 #' # Example 2: Determine adjusted hypertension status for a respondent with adjusted systolic BP = 120, adjusted diastolic BP = 80, and not on medication.
-#' determine_adjusted_hypertension(SBP_adj = 120, DBP_adj = 80, ANYMED = 2)
+#' determine_adjusted_hypertension(SBP_adj = 120, DBP_adj = 80, ANYMED2 = 2)
 #' # Output: 2 (Normal blood pressure as adjusted BP is below 140/90 mmHg and not on medication).
 #' 
 #' @export
-determine_adjusted_hypertension <- function(SBP_adj, DBP_adj, ANYMED, DIABX = NULL, CKD = NULL) {
+determine_adjusted_hypertension <- function(SBP_adj, DBP_adj, ANYMED2, DIABX = NULL, CKD = NULL) {
   highsys140_adj <- NA
   highdias90_adj <- NA
   highBP14090_adj <- haven::tagged_na("b")
   
   if (is.na(SBP_adj) || is.na(DBP_adj)) {
-    if (ANYMED == 1) {
+    if (ANYMED2 == 1) {
       highBP14090_adj <- 1
       return(highBP14090_adj)
     }
@@ -253,9 +253,9 @@ determine_adjusted_hypertension <- function(SBP_adj, DBP_adj, ANYMED, DIABX = NU
   }
   
   # Initialize and calculate highBP14090_adj
-  if (highsys140_adj == 1 || highdias90_adj == 1 || ANYMED == 1) {
+  if (highsys140_adj == 1 || highdias90_adj == 1 || ANYMED2 == 1) {
     highBP14090_adj <- 1
-  } else if (highsys140_adj == 2 && highdias90_adj == 2 && ANYMED == 0) {
+  } else if (highsys140_adj == 2 && highdias90_adj == 2 && ANYMED2 == 0) {
     highBP14090_adj <- 2
   }
   
@@ -269,7 +269,7 @@ determine_adjusted_hypertension <- function(SBP_adj, DBP_adj, ANYMED, DIABX = NU
 #'
 #' @param BPMDPBPS An integer representing the systolic blood pressure measurement of the respondent.
 #' @param BPMDPBPD An integer representing the diastolic blood pressure measurement of the respondent.
-#' @param ANYMED An integer indicating whether the respondent is on medication for hypertension.
+#' @param ANYMED2 An integer indicating whether the respondent is on medication for hypertension.
 #'   - 1: Yes
 #'   - 0: No
 #' @param DIABX An optional integer indicating the presence of diabetes, affecting blood pressure thresholds.
@@ -287,21 +287,21 @@ determine_adjusted_hypertension <- function(SBP_adj, DBP_adj, ANYMED, DIABX = NU
 #' @examples
 #' 
 #' # Example 1: Determine controlled hypertension status for a respondent with systolic BP = 150, diastolic BP = 95, and on medication.
-#' determine_controlled_hypertension(BPMDPBPS = 150, BPMDPBPD = 95, ANYMED = 1)
+#' determine_controlled_hypertension(BPMDPBPS = 150, BPMDPBPD = 95, ANYMED2 = 1)
 #' # Output: 1 (Hypertension not controlled due to systolic BP, diastolic BP, and medication usage).
 #'
 #' # Example 2: Determine controlled hypertension status for a respondent with systolic BP = 120, diastolic BP = 80, and on medication.
-#' determine_controlled_hypertension(BPMDPBPS = 120, BPMDPBPD = 80, ANYMED = 1)
+#' determine_controlled_hypertension(BPMDPBPS = 120, BPMDPBPD = 80, ANYMED2 = 1)
 #' # Output: 2 (Hypertension controlled as BP is below 140/90 mmHg and on medication).
 #' 
 #' @export
-determine_controlled_hypertension <- function(BPMDPBPS, BPMDPBPD, ANYMED, DIABX = NULL, CKD = NULL) {
+determine_controlled_hypertension <- function(BPMDPBPS, BPMDPBPD, ANYMED2, DIABX = NULL, CKD = NULL) {
   highsys140 <- NA
   highdias90 <- NA
   Control14090 <- haven::tagged_na("b")
   
   if (is.na(BPMDPBPS) || is.na(BPMDPBPD)) {
-    if (ANYMED == 1) {
+    if (ANYMED2 == 1) {
       Control14090 <- 1
       return(Control14090)
     }
@@ -346,7 +346,7 @@ determine_controlled_hypertension <- function(BPMDPBPS, BPMDPBPD, ANYMED, DIABX 
   }
   
   # Check the conditions using nested ifelse statements
-  if (ANYMED == 1) {
+  if (ANYMED2 == 1) {
     Control14090 <- ifelse(highsys140 == 1 || highdias90 == 1, 2,
                            ifelse(highsys140 == 2 && highdias90 == 2, 1, NA))
   }
@@ -364,7 +364,7 @@ determine_controlled_hypertension <- function(BPMDPBPS, BPMDPBPD, ANYMED, DIABX 
 #'
 #' @param SBP_adj An integer representing the adjusted systolic blood pressure measurement of the respondent.
 #' @param DBP_adj An integer representing the adjusted diastolic blood pressure measurement of the respondent.
-#' @param ANYMED An integer indicating whether the respondent is on medication for hypertension.
+#' @param ANYMED2 An integer indicating whether the respondent is on medication for hypertension.
 #'   - 1: Yes
 #'   - 0: No
 #' @param DIABX An optional integer indicating the presence of diabetes, affecting blood pressure thresholds.
@@ -382,21 +382,21 @@ determine_controlled_hypertension <- function(BPMDPBPS, BPMDPBPD, ANYMED, DIABX 
 #' @examples
 #' 
 #' # Example 1: Determine controlled adjusted hypertension status for a respondent with adjusted systolic BP = 150, adjusted diastolic BP = 95, and on medication.
-#' determine_controlled_adjusted_hypertension(SBP_adj = 150, DBP_adj = 95, ANYMED = 1)
+#' determine_controlled_adjusted_hypertension(SBP_adj = 150, DBP_adj = 95, ANYMED2 = 1)
 #' # Output: 1 (Hypertension not controlled due to adjusted systolic BP, adjusted diastolic BP, and medication usage).
 #'
 #' # Example 2: Determine controlled adjusted hypertension status for a respondent with adjusted systolic BP = 120, adjusted diastolic BP = 80, and on medication.
-#' determine_controlled_adjusted_hypertension(SBP_adj = 120, DBP_adj = 80, ANYMED = 1)
+#' determine_controlled_adjusted_hypertension(SBP_adj = 120, DBP_adj = 80, ANYMED2 = 1)
 #' # Output: 2 (Hypertension controlled as adjusted BP is below 140/90 mmHg and on medication).
 #' 
 #' @export
-determine_controlled_adjusted_hypertension <- function(SBP_adj, DBP_adj, ANYMED, DIABX = NULL, CKD = NULL) {
+determine_controlled_adjusted_hypertension <- function(SBP_adj, DBP_adj, ANYMED2, DIABX = NULL, CKD = NULL) {
   highsys140_adj <- NA
   highdias90_adj <- NA
   Control14090_adj <- haven::tagged_na("b")
   
   if (is.na(SBP_adj) || is.na(DBP_adj)) {
-    if (ANYMED == 1) {
+    if (ANYMED2 == 1) {
       Control14090_adj <- 1
       return(Control14090_adj)
     }
@@ -446,7 +446,7 @@ determine_controlled_adjusted_hypertension <- function(SBP_adj, DBP_adj, ANYMED,
   }
   
   # Check the conditions using nested ifelse statements
-  if (ANYMED == 1) {
+  if (ANYMED2 == 1) {
     Control14090_adj <- ifelse(highsys140_adj == 1 || highdias90_adj == 1, 2,
                                ifelse(highsys140_adj == 2 && highdias90_adj == 2, 1, NA))
   }
