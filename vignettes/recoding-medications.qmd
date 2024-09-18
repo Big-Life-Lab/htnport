@@ -13,12 +13,23 @@ my_variables <- read.csv(here("worksheets", "variables.csv"))
 my_variable_details <- read.csv(here("worksheets", "variable-details.csv"))
 
 source(here("R", "medications.R"), local = knitr::knit_global())
+source(here("R", "diabetes.R"), local = knitr::knit_global())
+source(here("R", "kidney.R"), local = knitr::knit_global())
+source(here("R", "blood-pressure.R"), local = knitr::knit_global())
 ```
 
 1. Create synthetic data for cycle 1 and cycle 3.
 ```{r}
 cycle1 <- data.frame(
   clinicid = c(1, 2, 3, 4),
+  clc_age = c(20, 30, 40, 50),
+  clc_sex = c(1, 2, 1, 2),
+  sdcdcgt = c(1, 1, 1, 2),
+  lab_hba1 = c(0.07, 0.06, 0.05, 0.04),
+  lab_bcre = c(20, 30, 40, 50),
+  bpmdpbps = c(140, 130, 120, 110),
+  bpmdpbpd = c(95, 85, 75, 65),
+  ccc_51 = c(1, 2, 2, 2),
   atc_101a = c("C07AA05", "C09AA06", "C08CA01", "A10BC02"),
   atc_102a = c("A01AB05", "C09AA02", "C07AB02", "C03AA03"),
   atc_103a = c("C02CC07", "C08CA06", "C07AB07", "C07AB03"),
@@ -111,9 +122,17 @@ n_clinicids <- length(clinicids)
 # Create cycle3 with replicated rows
 cycle3 <- data.frame(
   clinicid = rep(clinicids, each = num_vars_cycle1),
+  clc_age = rep(c(20, 30, 40, 50), each = num_vars_cycle1),
+  clc_sex = rep(c(1, 2, 1, 2), each = num_vars_cycle1),
+  pgdcgt = rep(c(1, 1, 1, 2), each = num_vars_cycle1),
+  lab_hba1 = rep(c(0.07, 0.06, 0.05, 0.04), each = num_vars_cycle1),
+  lab_bcre = rep(c(20, 30, 40, 50), each = num_vars_cycle1),
+  bpmdpbps = rep(c(140, 130, 120, 110), each = num_vars_cycle1),
+  bpmdpbpd = rep(c(95, 85, 75, 65), each = num_vars_cycle1),
+  ccc_51 = rep(c(1, 2, 2, 2), each = num_vars_cycle1),
   meucatc = rep(c("C07AA05", "C09AA06", "C08CA01", "A10BC02"), length.out = num_vars_cycle1 * n_clinicids),
   npi_25b = rep(c(2, 3, 1, 3), length.out = num_vars_cycle1 * n_clinicids)
-) # long data
+) # long data - only med data is long in cycles 3-6; rest is actually wide but made long for this purpose
 ```
 
 2. Recode medication variables for individual cycles.
@@ -150,7 +169,7 @@ head(cycle3_ace_prescription_data)
 cycle1_ace_prescription_data$acemed <- as.numeric(as.character(cycle1_ace_prescription_data$acemed))
 
 # Merging recoded cycle1 and cycle3 data, and ensuring one acemed column in the end
-cycles1and3_ace_prescription_data <- left_join(cycle1_ace_prescription_data, cycle3_ace_prescription_data, by = "clinicid")
+cycles1and3_ace_prescription_data <- merge(cycle1_ace_prescription_data, cycle3_ace_prescription_data, by = "clinicid")
 head(cycles1and3_ace_prescription_data)
 
 cycles1and3_ace_prescription_data <- cycles1and3_ace_prescription_data %>%
@@ -159,7 +178,24 @@ cycles1and3_ace_prescription_data <- cycles1and3_ace_prescription_data %>%
 head(cycles1and3_ace_prescription_data)
 ```
 
-# Recoding derived variable acemed for cycle3. Much simpler function used here.
-cycle3_ace_prescription_data <- rec_with_table(cycle3, c("clinicid", "meucatc", "npi_25b", "acemed"), variable_details = my_variable_details)
-head(cycle3_ace_prescription_data) # 1 out of the participant's 4 medications is ACE inhibitors 
+4. Determine hypertension status by recoding medications 
+```{r}
+# Recode medication variables first - anymed for hypertension and diab_drug for diabetes which is involved in determining HTN
+cycle1_htn_prescription_data <- rec_with_table(cycle1, c("clinicid", recodeflow:::select_vars_by_role("Drugs", my_variables)), variable_details = my_variable_details)
+head(cycle1_htn_prescription_data)
+
+# Create/copy dummy medication variable from recoded medication variable
+cycle1_htn_prescription_data$anymed2 <- as.numeric(as.character(cycle1_htn_prescription_data$anymed))
+cycle1_htn_prescription_data$diab_drug2 <- as.numeric(as.character(cycle1_htn_prescription_data$diab_drug))
+cycle1_htn_prescription_data <- select(cycle1_htn_prescription_data, clinicid, anymed2, diab_drug2)
+
+# Merge medication data with original data
+cycle1 <- merge(cycle1, cycle1_htn_prescription_data, by = "clinicid")
+head(cycle1)
+
+# Recode hypertension (and diabetes) status using recoded, dummy medication variables
+cycle1_htn_data <- rec_with_table(cycle1, c(recodeflow:::select_vars_by_role("Test", my_variables)), variable_details = my_variable_details)
+head(cycle1_htn_data)
+
+# For cycles 3-6, flatten the recoded medication data (see section #3), merge that flattened data with original data, and then create dummy variables before recoding hypertension (and diabtetes) status 
 ```
