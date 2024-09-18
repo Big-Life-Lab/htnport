@@ -40,31 +40,34 @@
 #' @export
 calculate_GFR <- function(LAB_BCRE, PGDCGT, CLC_SEX, CLC_AGE) {
   
-  GFR <- haven::tagged_na("b")
+  GFR <- 0
   serumcreat <- 0
   
-  if (!is.na(LAB_BCRE) && !is.na(PGDCGT) && !is.na(CLC_SEX) && !is.na(CLC_AGE)) {
-    serumcreat = LAB_BCRE / 88.4 # Proceeds without non-responses
+  if (any(!LAB_BCRE %in% 0:9995) || (any(!CLC_SEX %in% c(1, 2)) || any(!PGDCGT %in% 1:13)) || any(!CLC_AGE %in% 0:995)) {
+    GFR <- haven::tagged_na("b") # GFR is NA if any non-responses found
   }
   else {
-    GFR = NA # GFR is NA if any non-responses found
-    return(GFR)
+    serumcreat <- LAB_BCRE / 88.4 # Proceeds without non-responses
+    
+    if (!is.na(CLC_SEX) && !is.na(PGDCGT) && serumcreat != 0) {
+      if (CLC_SEX == 2 && PGDCGT == 2) {
+        GFR <- 175 * ((serumcreat)^(-1.154)) * ((CLC_AGE)^(-0.203)) * (0.742) * (1.210) # female and black
+      }
+      else if (CLC_SEX == 2 && PGDCGT != 2) {
+        GFR <- 175 * ((serumcreat)^(-1.154)) * ((CLC_AGE)^(-0.203)) * (0.742) # female and not black
+      }
+      else if (CLC_SEX == 1 && PGDCGT == 2) {
+        GFR <- 175 * ((serumcreat)^(-1.154)) * ((CLC_AGE)^(-0.203)) * (1.210) # male and black
+      }
+      else if (CLC_SEX == 1 && PGDCGT != 2) {
+        GFR <- 175 * ((serumcreat)^(-1.154)) * ((CLC_AGE)^(-0.203)) # male and not black
+      }
+    } else {
+      GFR <- haven::tagged_na("b")  # Handle case where CLC_SEX or PGDCGT is NA or serumcreat is 0
+    }
   }
   
-  if (CLC_SEX == 2 && PGDCGT == 2) {
-    GFR = 175 * ((serumcreat)^(-1.154)) * ((CLC_AGE)^(-0.203)) * (0.742) * (1.210) # female and black
-  }
-  else if (CLC_SEX == 2 && PGDCGT != 2) {
-    GFR = 175 * ((serumcreat)^(-1.154)) * ((CLC_AGE)^(-0.203)) * (0.742) # female and not black
-  }
-  else if (CLC_SEX == 1 && PGDCGT == 2) {
-    GFR = 175 * ((serumcreat)^(-1.154)) * ((CLC_AGE)^(-0.203)) * (1.210) # male and black
-  }
-  else if (CLC_SEX == 1 && PGDCGT != 2) {
-    GFR = 175 * ((serumcreat)^(-1.154)) * ((CLC_AGE)^(-0.203)) # male and not black
-  }
   return(GFR)
-  
 }
 
 #' Categorize Glomerular Filtration Rate (GFR) to Chronic Kidney Disease (CKD) Stage
@@ -90,10 +93,10 @@ calculate_GFR <- function(LAB_BCRE, PGDCGT, CLC_SEX, CLC_AGE) {
 #' @export
 categorize_GFR_to_CKD <- function(GFR) {
   
-  CKD <- haven::tagged_na("b")
+  CKD <- 0
   
   if (is.na(GFR)) {
-    return(CKD)
+    CKD <- haven::tagged_na("b")
   }
   else {
     if (GFR <= 60) {
