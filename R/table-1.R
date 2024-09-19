@@ -192,13 +192,11 @@ cycles1to6_data <- cycles1to6_data %>%
          minperweek = coalesce(minperweek.x, minperweek.y)) %>%
   mutate(mvpa_min = ifelse(is.na(mvpa_min), haven::tagged_na("b"), mvpa_min),
          minperweek = ifelse(is.na(minperweek), haven::tagged_na("b"), minperweek)) %>%
-  select(c(wgt_full, clc_sex, recodeflow:::select_vars_by_role(c("imputation-predictor"), my_variables)))
+  select(c(wgt_full, clc_sex, recodeflow:::select_vars_by_role(c("imputation-predictor"), my_variables), ccc_61, ccc_63, ccc_81, cardiov, anymed2, ccc_32))
 
 # Impute data
 set.seed(123)
 imputed_cycles1to6_data <- impute_variables(cycles1to6_data, outcomes = recodeflow:::select_vars_by_role(c("Predictor"), my_variables), recodeflow:::select_vars_by_role(c("imputation-predictor"), my_variables))
-imputed_cycles1to6_data <- imputed_cycles1to6_data %>%
-  select(c(cycle, highbp14090_adj, anymed, ccc_32, recodeflow:::select_vars_by_role(c("Table 1"), my_variables)))
 
 # Generate imputed Table 1
 imputed_table1_data <- get_descriptive_data(

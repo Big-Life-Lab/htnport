@@ -32,7 +32,7 @@ source("R/table-1.R")
 #   totalfv = runif(9627, 0, 10), # Continuous
 #   whr = runif(9627, 0.5, 1.5), # Continuous
 #   slp_11 = runif(9627, 4, 12), # Continuous
-#   diab_m = sample(1:2, 9627, replace = TRUE), # Binary
+#   diabx = sample(1:2, 9627, replace = TRUE), # Binary
 #   cycle = sample(1:6, 9627, replace = TRUE) # Cycle variable ranging from 1 to 6
 # )
 
@@ -73,7 +73,7 @@ imputed_cycles1to6_data <- truncate_skewed(imputed_cycles1to6_data)
 imputed_cycles1to6_data <- imputed_cycles1to6_data %>%
   mutate(highbp14090_adj = ifelse(highbp14090_adj == 2, 0, highbp14090_adj),
          ckd = ifelse(ckd == 2, 0, ckd),
-         diab_m = ifelse(diab_m == 2, 0, diab_m),
+         diabx = ifelse(diabx == 2, 0, diabx),
          fmh_15 = ifelse(fmh_15 == 2, 0, fmh_15),
          smoke = ifelse(smoke == 2, 0, smoke),
          edudr04 = case_when(
@@ -87,7 +87,7 @@ imputed_cycles1to6_data <- imputed_cycles1to6_data %>%
            gendmhi == 3 ~ 0
          ))
 
-cat_variables <- c("ckd", "diab_m", "edudr04", "fmh_15", "gendmhi", 
+cat_variables <- c("ckd", "diabx", "edudr04", "fmh_15", "gendmhi", 
                    "gen_025", "gen_045", "low_drink_score1", "married", 
                    "smoke", "working")
 imputed_cycles1to6_data <- imputed_cycles1to6_data %>%
@@ -119,22 +119,22 @@ weighted_female <- svydesign(
 
 # Fit male and female models
 male_model <- svyglm(highbp14090_adj ~ rcs(clc_age, 4) + married + edudr04 + working + gendmhi + gen_025 + gen_045 + fmh_15 +
-                       rcs(hwmdbmi, 3) + rcs(whr, 3) + low_drink_score1 + rcs(minperweek, 3) + smoke + slp_11 + totalfv + diab_m + 
+                       rcs(hwmdbmi, 3) + rcs(whr, 3) + low_drink_score1 + rcs(minperweek, 3) + smoke + slp_11 + totalfv + diabx + 
                        ckd + rcs(clc_age, 4)*gen_045 + rcs(clc_age, 4)*rcs(hwmdbmi, 3) + rcs(clc_age, 4)*rcs(whr, 3) + rcs(clc_age, 4)*rcs(minperweek, 3) +
-                       rcs(clc_age, 4)*smoke + rcs(clc_age, 4)*slp_11 + rcs(clc_age, 4)*diab_m + rcs(clc_age, 4)*ckd + rcs(hwmdbmi, 3)*rcs(whr, 3), 
+                       rcs(clc_age, 4)*smoke + rcs(clc_age, 4)*slp_11 + rcs(clc_age, 4)*diabx + rcs(clc_age, 4)*ckd + rcs(hwmdbmi, 3)*rcs(whr, 3), 
                      design = weighted_male, family = quasibinomial())
 
 female_model <- svyglm(highbp14090_adj ~ rcs(clc_age, 4) + married + edudr04 + working + gendmhi + gen_025 + gen_045 + fmh_15 +
-                         rcs(hwmdbmi, 3) + rcs(whr, 3) + low_drink_score1 + rcs(minperweek, 3) + smoke + slp_11 + totalfv + diab_m + 
+                         rcs(hwmdbmi, 3) + rcs(whr, 3) + low_drink_score1 + rcs(minperweek, 3) + smoke + slp_11 + totalfv + diabx + 
                          ckd + rcs(clc_age, 4)*gen_045 + rcs(clc_age, 4)*rcs(hwmdbmi, 3) + rcs(clc_age, 4)*rcs(whr, 3) + rcs(clc_age, 4)*rcs(minperweek, 3) +
-                         rcs(clc_age, 4)*smoke + rcs(clc_age, 4)*slp_11 + rcs(clc_age, 4)*diab_m + rcs(clc_age, 4)*ckd + rcs(hwmdbmi, 3)*rcs(whr, 3), 
+                         rcs(clc_age, 4)*smoke + rcs(clc_age, 4)*slp_11 + rcs(clc_age, 4)*diabx + rcs(clc_age, 4)*ckd + rcs(hwmdbmi, 3)*rcs(whr, 3), 
                        design = weighted_female, family = quasibinomial())
 
 # Multicollinearity assessment
 calculate_simplified_vif <- function(design) {
   # Define the simplified formula without interaction and spline terms
   simplified_formula <- highbp14090_adj ~ clc_age + married + edudr04 + working + gendmhi + gen_025 + gen_045 + fmh_15 +
-  hwmdbmi + whr + low_drink_score1 + minperweek + smoke + slp_11 + totalfv + diab_m + ckd
+  hwmdbmi + whr + low_drink_score1 + minperweek + smoke + slp_11 + totalfv + diabx + ckd
   
   # Fit the simplified model
   simplified_model <- svyglm(simplified_formula, design = design, family = quasibinomial())
@@ -158,15 +158,15 @@ plot(female_train_data$totalfv, female_model$fitted.values)
 
 # Refit male and female models without whr if high collinearity detected
 # male_model <- svyglm(highbp14090_adj ~ rcs(clc_age, 4) + married + edudr04 + working + gendmhi + gen_025 + gen_045 + fmh_15 +
-#                        rcs(hwmdbmi, 3) + low_drink_score1 + rcs(minperweek, 3) + smoke + slp_11 + totalfv + diab_m + 
+#                        rcs(hwmdbmi, 3) + low_drink_score1 + rcs(minperweek, 3) + smoke + slp_11 + totalfv + diabx + 
 #                        ckd + rcs(clc_age, 4)*gen_045 + rcs(clc_age, 4)*rcs(hwmdbmi, 3) + rcs(clc_age, 4)*rcs(minperweek, 3) +
-#                        rcs(clc_age, 4)*smoke + rcs(clc_age, 4)*slp_11 + rcs(clc_age, 4)*diab_m + rcs(clc_age, 4)*ckd, 
+#                        rcs(clc_age, 4)*smoke + rcs(clc_age, 4)*slp_11 + rcs(clc_age, 4)*diabx + rcs(clc_age, 4)*ckd, 
 #                      design = weighted_male, family = quasibinomial())
 # 
 # female_model <- svyglm(highbp14090_adj ~ rcs(clc_age, 4) + married + edudr04 + working + gendmhi + gen_025 + gen_045 + fmh_15 +
-#                        rcs(hwmdbmi, 3) + low_drink_score1 + rcs(minperweek, 3) + smoke + slp_11 + totalfv + diab_m + 
+#                        rcs(hwmdbmi, 3) + low_drink_score1 + rcs(minperweek, 3) + smoke + slp_11 + totalfv + diabx + 
 #                        ckd + rcs(clc_age, 4)*gen_045 + rcs(clc_age, 4)*rcs(hwmdbmi, 3) + rcs(clc_age, 4)*rcs(minperweek, 3) +
-#                        rcs(clc_age, 4)*smoke + rcs(clc_age, 4)*slp_11 + rcs(clc_age, 4)*diab_m + rcs(clc_age, 4)*ckd, 
+#                        rcs(clc_age, 4)*smoke + rcs(clc_age, 4)*slp_11 + rcs(clc_age, 4)*diabx + rcs(clc_age, 4)*ckd, 
 #                      design = weighted_female, family = quasibinomial())
 
 # Function to calculate Nagelkerke's R²

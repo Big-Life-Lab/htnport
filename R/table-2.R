@@ -31,10 +31,11 @@ source("R/table-1.R")
 #   totalfv = runif(9627, 0, 10), # Continuous
 #   whr = runif(9627, 0.5, 1.5), # Continuous
 #   slp_11 = runif(9627, 4, 12), # Continuous
-#   diab_m = sample(1:2, 9627, replace = TRUE), # Binary
+#   diabx = sample(1:2, 9627, replace = TRUE), # Binary
 #   cycle = sample(1:6, 9627, replace = TRUE), # Cycle variable ranging from 1 to 6
-#   anymed = sample(0:1, 9627, replace = TRUE), # Binary
-#   ccc_32 = sample(0:1, 9627, replace = TRUE), # Binary
+#   anymed2 = sample(0:1, 9627, replace = TRUE), # Binary
+#   ccc_32 = sample(1:2, 9627, replace = TRUE), # Binary
+#   cardiov = sample(1:2, 9627, replace = TRUE) # Binary
 # )
 
 # Truncate skewed continuous variables if necessary
@@ -123,7 +124,7 @@ table2c_data <- get_descriptive_data(
   # All the variables whose descriptive statistics we want
   "ccc_32",
   # Sets the stratifier
-  list("all" = list("anymed"))
+  list("all" = list("anymed2"))
 )
 
 create_descriptive_table(
@@ -131,14 +132,30 @@ create_descriptive_table(
   my_variables,
   my_variable_details,
   "ccc_32",
-  column_stratifier = c("anymed")
+  column_stratifier = c("anymed2")
 )
+
+# Generate Table 2d - misclassified meds distribution for chronic conditions
+imputed_cycles1to6_data$misclassified_meds <- ifelse(imputed_cycles1to6_data$anymed2 == 1 & imputed_cycles1to6_data$ccc_32 == 2, 1, 0)
+
+table2d_data <- imputed_cycles1to6_data %>%
+  group_by(misclassified_meds) %>%
+  summarise(
+    diabx_1_count = sum(diabx == 1, na.rm = TRUE),
+    diabx_2_count = sum(diabx == 2, na.rm = TRUE),
+    cardiov_1_count = sum(cardiov == 1, na.rm = TRUE),
+    cardiov_2_count = sum(cardiov == 2, na.rm = TRUE),
+    ckd_1_count = sum(ckd == 1, na.rm = TRUE),
+    ckd_2_count = sum(ckd == 2, na.rm = TRUE)
+  )
+
+flextable::flextable(table2d_data)
 
 # Recode 2s as 0s in binary predictors and factorize all categorical predictors
 imputed_cycles1to6_data <- imputed_cycles1to6_data %>%
   mutate(highbp14090_adj = ifelse(highbp14090_adj == 2, 0, highbp14090_adj),
          ckd = ifelse(ckd == 2, 0, ckd),
-         diab_m = ifelse(diab_m == 2, 0, diab_m),
+         diabx = ifelse(diabx == 2, 0, diabx),
          fmh_15 = ifelse(fmh_15 == 2, 0, fmh_15),
          smoke = ifelse(smoke == 2, 0, smoke),
          edudr04 = case_when(
@@ -157,7 +174,7 @@ imputed_cycles1to6_data <- imputed_cycles1to6_data %>%
            smoke == 3 ~ 0
          ))
 
-cat_variables <- c("ckd", "diab_m", "edudr04", "fmh_15", "gendmhi", 
+cat_variables <- c("ckd", "diabx", "edudr04", "fmh_15", "gendmhi", 
                "gen_025", "gen_045", "low_drink_score1", "married", 
                "smoke", "working")
 imputed_cycles1to6_data <- imputed_cycles1to6_data %>%
@@ -209,7 +226,7 @@ fit_crude_model <- function(predictor, design) {
     mutate(Level = recode(Level,
                           "ckd1" = "Chronic kidney disease",
                           "clc_age" = "Age",
-                          "diab_m1" = "Diabetes",
+                          "diabx1" = "Diabetes",
                           "edudr041" = "High school graduate only",
                           "edudr042" = "Did not graduate high school",
                           "fmh_151" = "Family history for hypertension",

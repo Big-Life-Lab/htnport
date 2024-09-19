@@ -11,8 +11,8 @@
 #'               2 for "No" if the person did not have a stroke.
 #'
 #' @return An integer indicating the CVD personal history: 1 for "Yes" if the person had heart disease, heart attack,
-#'         or stroke; 2 for "No" if the person had neither of the conditions; and NA if any of the input variables is a
-#'         non-response, unless one of the conditions is present (i.e., one of the input variables is equal to 1).
+#'         or stroke; 2 for "No" if the person had neither of the conditions; and NA if all the input variables are a
+#'         non-response.
 #' 
 #' @examples
 #' 
@@ -31,7 +31,7 @@ determine_CVD_Personal_History <- function(CCC_61, CCC_63, CCC_81) {
   else if ((!is.na(CCC_61) && CCC_61 == 1) || (!is.na(CCC_63) && CCC_63 == 1) || (!is.na(CCC_81) && CCC_81 == 1)) {
     cardiov <- 1
   }
-  else if ((!is.na(CCC_61) && CCC_61 == 2) || (!is.na(CCC_63) && CCC_63 == 2) || (!is.na(CCC_81) && CCC_81 == 2)) {
+  else {
     cardiov <- 2
   }
   
