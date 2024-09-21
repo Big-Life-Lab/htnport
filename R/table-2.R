@@ -1,7 +1,7 @@
 # Set working directory at RDC
 setwd("P:/10619/Dropbox/chmsflow")
 
-# Load survey package
+# Load packages
 library(dplyr)
 library(e1071)
 library(survey)

@@ -22,6 +22,7 @@ source("R/exercise.R")
 source("R/family-history.R")
 source("R/income.R")
 source("R/kidney.R")
+source("R/medications.R")
 source("R/sample.R")
 source("R/smoking.R")
 
