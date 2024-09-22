@@ -145,7 +145,7 @@ cycle3_prescription_data <- rec_with_table(cycle3, c("clinicid", "meucatc", "npi
 head(cycle3_prescription_data)
 
 # Recoding derived variable acemed for cycle1. Select vars by role used to avoid writing all med variables in one line
-cycle1_ace_prescription_data <- rec_with_table(cycle1, c("clinicid", recodeflow:::select_vars_by_role("Drugs", my_variables)), variable_details = my_variable_details)
+cycle1_ace_prescription_data <- rec_with_table(cycle1, c("clinicid", "acemed", recodeflow:::select_vars_by_role("Drugs", my_variables)), variable_details = my_variable_details)
 head(select(cycle1_ace_prescription_data, clinicid, acemed)) 
 
 # Recoding derived variable acemed for cycle3. Much simpler function used here.
