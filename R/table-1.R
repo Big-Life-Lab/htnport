@@ -98,9 +98,9 @@ process_long_prescription_data <- function(cycle_data, cycle_prescription_data) 
   
   # Step 3: Create 'anymed2' and 'diab_drug2', and clean up columns
   cycle_data <- cycle_data %>%
-    mutate(anymed2 = pmax(anymed.x, anymed.y, na.rm = TRUE)) %>%
-    mutate(diab_drug2 = pmax(diab_drug.x, diab_drug.y, na.rm = TRUE)) %>%
-    select(-c(anymed.x, anymed.y, diab_drug.x, diab_drug.y))
+    mutate(anymed2 = anymed) %>%
+    mutate(diab_drug2 = diab_drug) %>%
+    select(-c(anymed, diab_drug))
   
   return(cycle_data)
 }
