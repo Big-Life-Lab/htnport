@@ -38,39 +38,6 @@ source("R/table-1.R")
 #   cardiov = sample(1:2, 9627, replace = TRUE) # Binary
 # )
 
-# Truncate skewed continuous variables if necessary
-truncate_skewed <- function(df, threshold = 0.995, skew_threshold = 1) {
-  
-  # Create a copy of the dataframe to avoid overwriting the original
-  df_truncated <- df
-  
-  # Loop over all the numeric columns
-  for (col in c("clc_age", "hwmdbmi", "minperweek", "totalfv", "whr", "slp_11")) {
-    if (is.numeric(df[[col]])) {
-      
-      # Calculate skewness
-      skewness_value <- skewness(df[[col]], na.rm = TRUE)
-      
-      # Check if the variable is skewed
-      if (abs(skewness_value) > skew_threshold) {
-        
-        # Calculate the 99.5th percentile
-        quantile_value <- quantile(df[[col]], threshold, na.rm = TRUE)
-        
-        # Truncate the variable
-        df_truncated[[col]] <- ifelse(df[[col]] > quantile_value, quantile_value, df[[col]])
-        
-        # Print message indicating that the column was truncated
-        message(paste("Truncated column:", col, "| Skewness:", round(skewness_value, 2)))
-      }
-    }
-  }
-  
-  return(df_truncated)
-}
-
-imputed_cycles1to6_data <- truncate_skewed(imputed_cycles1to6_data)
-
 # Generate Table 2a - outcome x sex distribution
 table2a_data <- get_descriptive_data(
   imputed_cycles1to6_data,
@@ -150,6 +117,39 @@ table2d_data <- imputed_cycles1to6_data %>%
   )
 
 flextable::flextable(table2d_data)
+
+# Truncate skewed continuous variables if necessary
+truncate_skewed <- function(df, threshold = 0.995, skew_threshold = 1) {
+  
+  # Create a copy of the dataframe to avoid overwriting the original
+  df_truncated <- df
+  
+  # Loop over all the numeric columns
+  for (col in c("clc_age", "hwmdbmi", "minperweek", "totalfv", "whr", "slp_11")) {
+    if (is.numeric(df[[col]])) {
+      
+      # Calculate skewness
+      skewness_value <- skewness(df[[col]], na.rm = TRUE)
+      
+      # Check if the variable is skewed
+      if (abs(skewness_value) > skew_threshold) {
+        
+        # Calculate the 99.5th percentile
+        quantile_value <- quantile(df[[col]], threshold, na.rm = TRUE)
+        
+        # Truncate the variable
+        df_truncated[[col]] <- ifelse(df[[col]] > quantile_value, quantile_value, df[[col]])
+        
+        # Print message indicating that the column was truncated
+        message(paste("Truncated column:", col, "| Skewness:", round(skewness_value, 2)))
+      }
+    }
+  }
+  
+  return(df_truncated)
+}
+
+imputed_cycles1to6_data <- truncate_skewed(imputed_cycles1to6_data)
 
 # Recode 2s as 0s in binary predictors and factorize all categorical predictors
 imputed_cycles1to6_data <- imputed_cycles1to6_data %>%

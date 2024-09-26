@@ -74,6 +74,7 @@ install.packages(file.path(package_dir, "splines.zip"), repos = NULL, type = "wi
 install.packages(file.path(package_dir, "stats.zip"), repos = NULL, type = "win.binary")
 install.packages(file.path(package_dir, "stringi.zip"), repos = NULL, type = "win.binary")
 install.packages(file.path(package_dir, "stringr.zip"), repos = NULL, type = "win.binary")
+install.packages(file.path(package_dir, "survey.zip"), repos = NULL, type = "win.binary")
 install.packages(file.path(package_dir, "survival.zip"), repos = NULL, type = "win.binary")
 install.packages(file.path(package_dir, "systemfonts.zip"), repos = NULL, type = "win.binary")
 install.packages(file.path(package_dir, "tibble.zip"), repos = NULL, type = "win.binary")

@@ -1,116 +1,72 @@
 # Set working directory at RDC
 setwd("P:/10619/Dropbox/chmsflow")
 
-# Load packages and functions
-library(recodeflow)
-library(cchsflow)
-library(dplyr)
-library(readr)
-library(haven)
-library(cli)
-library(mice)
-library(broom)
+# Load required packages
+library(survey)
 
-source("R/alcohol.R")
-source("R/blood-pressure.R")
-source("R/cholesterol-and-obesity.R")
-source("R/diabetes.R")
-source("R/diet.R")
-source("R/exercise.R")
-source("R/family-history.R")
-source("R/income.R")
-source("R/installation.R")
-source("R/kidney.R")
-source("R/sample.R")
-source("R/smoking.R")
+# Load required file to obtain imputed dataset
+source("R/table-1.R")
 
-source("R/get-descriptive-data.R")
-source("R/create-descriptive-table.R")
-
-# Load data and metadata
-my_variables <- read.csv("P:/10619/Dropbox/chmsflow/worksheets/variables.csv")
-my_variable_details <- read.csv("P:/10619/Dropbox/chmsflow/worksheets/variable-details.csv")
-
-cycle1 <- read_stata("data/cycle1/cycle1.dta")
-cycle2 <- read_stata("data/cycle2/cycle2.dta")
-cycle3 <- read_stata("data/cycle3/cycle3.dta")
-cycle4 <- read_stata("data/cycle4/cycle4.dta")
-cycle5 <- read_stata("data/cycle5/cycle5.dta")
-cycle6 <- read_stata("data/cycle6/cycle6.dta")
-names(cycle6) <- tolower(names(cycle6)) 
-
-# Assign cycle variable to each cycle for imputation purposes
-cycle1$cycle <- 1
-cycle2$cycle <- 2
-cycle3$cycle <- 3
-cycle4$cycle <- 4
-cycle5$cycle <- 5
-cycle6$cycle <- 6
-
-# Recode variables, combine cycles, and obtain sample
-cycle1_data <- recodeflow::rec_with_table(cycle1, recodeflow:::select_vars_by_role(c("Recode", "Fam"), my_variables), variable_details = my_variable_details, log = TRUE)
-cycle2_data <- recodeflow::rec_with_table(cycle2, recodeflow:::select_vars_by_role(c("Recode", "Fam"), my_variables), variable_details = my_variable_details, log = TRUE)
-cycle3_data <- recodeflow::rec_with_table(cycle3, recodeflow:::select_vars_by_role(c("Recode", "Fam"), my_variables), variable_details = my_variable_details, log = TRUE)
-cycle4_data <- recodeflow::rec_with_table(cycle4, recodeflow:::select_vars_by_role(c("Recode", "Fam"), my_variables), variable_details = my_variable_details, log = TRUE)
-cycle5_data <- recodeflow::rec_with_table(cycle5, recodeflow:::select_vars_by_role(c("Recode"), my_variables), variable_details = my_variable_details, log = TRUE)
-cycle6_data <- recodeflow::rec_with_table(cycle6, recodeflow:::select_vars_by_role(c("Recode"), my_variables), variable_details = my_variable_details, log = TRUE)
-
-cycles1to6_data <- cchsflow::merge_rec_data(cycle1_data, cycle2_data, cycle3_data, cycle4_data, cycle5_data, cycle6_data)
-cycles1to6_data <- dplyr::filter(cycles1to6_data, insample == 1)
-
-# Load and merge extra accelerometer data to sample data
-tracey <- read_sas("data/From Tracy/CHMS_AM_validdays_1to3.sas7bdat")
-tracey$clinicid <-tracey$CLINICID
-tracey$mvpa_min <- tracey$avg_mvpa
-tracey$minperweek <- minperday_to_minperweek(tracey$mvpa_min)
-tracey <- subset(tracey, select = -c(CLINICID, avg_mvpa, adultPAG))
-
-cycles1to6_data <- dplyr::left_join(cycles1to6_data, tracey, by = c("clinicid"))
-cycles1to6_data <- cycles1to6_data %>%
-  mutate(mvpa_min = coalesce(mvpa_min.x, mvpa_min.y),
-         minperweek = coalesce(minperweek.x, minperweek.y)) %>%
-  mutate(mvpa_min = ifelse(is.na(mvpa_min), haven::tagged_na("b"), mvpa_min),
-         minperweek = ifelse(is.na(minperweek), haven::tagged_na("b"), minperweek)) %>%
-  select(c(wgt_full, clc_sex, recodeflow:::select_vars_by_role(c("imputation-predictor"), my_variables)))
+# Synthetic dataset for test use outside RDC
+# imputed_cycles1to6_data <- data.frame(
+#   highbp14090_adj = sample(1:2, 9627, replace = TRUE), # Binary outcome
+#   ccc_51 = sample(1:2, 9627, replace = TRUE), # Binary
+#   ckd = sample(1:2, 9627, replace = TRUE), # Binary
+#   edudr04 = sample(1:3, 9627, replace = TRUE), # 3 categories
+#   fmh_15 = sample(1:2, 9627, replace = TRUE), # Binary
+#   gendmhi = sample(1:3, 9627, replace = TRUE), # 3 categories
+#   gen_025 = sample(1:2, 9627, replace = TRUE), # 3 categories
+#   gen_045 = sample(1:2, 9627, replace = TRUE), # Binary
+#   low_drink_score1 = sample(1:4, 9627, replace = TRUE), # 4 categories
+#   married = sample(1:3, 9627, replace = TRUE), # 3 categories
+#   smoke = sample(1:2, 9627, replace = TRUE), # Binary
+#   working = sample(1:2, 9627, replace = TRUE), # Binary
+#   clc_sex = sample(1:2, 9627, replace = TRUE), # Binary
+#   wgt_full = runif(9627, 0, 1), # Continuous weights
+#   clc_age = runif(9627, 18, 90), # Continuous
+#   hwmdbmi = runif(9627, 18, 40), # Continuous
+#   minperweek = runif(9627, 0, 2000), # Continuous
+#   totalfv = runif(9627, 0, 10), # Continuous
+#   whr = runif(9627, 0.5, 1.5), # Continuous
+#   slp_11 = runif(9627, 4, 12), # Continuous
+#   diabx = sample(1:2, 9627, replace = TRUE), # Binary
+#   cycle = sample(1:6, 9627, replace = TRUE) # Cycle variable ranging from 1 to 6
+# )
 
 # Separate male and female data
-male_data <- filter(cycles1to6_data, clc_sex == 1)
-female_data <- filter(cycles1to6_data, clc_sex == 2)
+male_data <- filter(imputed_cycles1to6_data, clc_sex == 1)
+female_data <- filter(imputed_cycles1to6_data, clc_sex == 2)
 
-# Density plots for age
-plot(density(male_data$clc_age), main = "Age distribution", xlab = "Age", col = "blue")
-lines(density(female_data$clc_age), col = "red")
+# Create survey design objects for male and female data
+male_svy <- svydesign(ids = ~1, data = male_data, weights = ~wgt_full)
+female_svy <- svydesign(ids = ~1, data = female_data, weights = ~wgt_full)
+
+# Weighted density plot for age
+plot(svysmooth(~clc_age, design = male_svy), col = "blue", main = "Age distribution", xlab = "Age")
+lines(svysmooth(~clc_age, design = female_svy), col = "red")
 legend("topright", legend = c("Male", "Female"), col = c("blue", "red"), lty = 1:2, inset = 0.02, bg = 'white')
 
-# Density plots for physical activity minutes
-male_exercise_data <- male_data %>% drop_na(minperweek)
-female_exercise_data <- female_data %>% drop_na(minperweek)
-plot(density(male_exercise_data$minperweek), main = "Exercise distribution", xlab = "Average minutes of exercise per week", col = "blue", xlim = c(0, 150), ylim = c(0, 0.008))
-lines(density(female_exercise_data$minperweek), col = "red")
+# Weighted density plot for physical activity minutes
+plot(svysmooth(~minperweek, design = male_svy), col = "blue", main = "Exercise distribution", xlab = "Average minutes of exercise per week", xlim = c(0, 150))
+lines(svysmooth(~minperweek, design = female_svy), col = "red")
 legend("topright", legend = c("Male", "Female"), col = c("blue", "red"), lty = 1:2, inset = 0.02, bg = 'white')
 
-# Density plots for total fruit and vegetable consumption
-plot(density(male_data$totalfv), main = "Fruit and vegetable consumption distribution", xlab = "Times per day produce consumed", col = "blue")
-lines(density(female_data$totalfv), col = "red")
+# Weighted density plot for total fruit and vegetable consumption
+plot(svysmooth(~totalfv, design = male_svy), col = "blue", main = "Fruit and vegetable consumption distribution", xlab = "Times per day produce consumed")
+lines(svysmooth(~totalfv, design = female_svy), col = "red")
 legend("topright", legend = c("Male", "Female"), col = c("blue", "red"), lty = 1:2, inset = 0.02, bg = 'white')
 
-# Density plots for body mass index
-male_bmi_data <- male_data %>% drop_na(hwmdbmi)
-female_bmi_data <- female_data %>% drop_na(hwmdbmi)
-plot(density(male_bmi_data$hwmdbmi), main = "BMI distribution", xlab = "BMI", col = "blue")
-lines(density(female_bmi_data$hwmdbmi), col = "red")
+# Weighted density plot for body mass index
+plot(svysmooth(~hwmdbmi, design = male_svy), col = "blue", main = "BMI distribution", xlab = "BMI")
+lines(svysmooth(~hwmdbmi, design = female_svy), col = "red")
 legend("topright", legend = c("Male", "Female"), col = c("blue", "red"), lty = 1:2, inset = 0.02, bg = 'white')
 
-# Density plots for waist-to-height ratio
-male_whr_data <- male_data %>% drop_na(whr)
-female_whr_data <- female_data %>% drop_na(whr)
-plot(density(male_whr_data$whr), main = "Waist-to-height ratio", xlab = "Waist-to-height ratio", col = "blue")
-lines(density(female_whr_data$whr), col = "red")
+# Weighted density plot for waist-to-height ratio
+plot(svysmooth(~whr, design = male_svy), col = "blue", main = "Waist-to-height ratio", xlab = "Waist-to-height ratio")
+lines(svysmooth(~whr, design = female_svy), col = "red")
 legend("topright", legend = c("Male", "Female"), col = c("blue", "red"), lty = 1:2, inset = 0.02, bg = 'white')
 
-# Density plots for sleep duration
-male_sleep_data <- male_data %>% drop_na(slp_11)
-female_sleep_data <- female_data %>% drop_na(slp_11)
-plot(density(male_sleep_data$slp_11), main = "Sleep distribution", xlab = "Hours slept per night", col = "blue")
-lines(density(female_sleep_data$slp_11), col = "red")
+# Weighted density plot for sleep duration
+plot(svysmooth(~slp_11, design = male_svy), col = "blue", main = "Sleep distribution", xlab = "Hours slept per night")
+lines(svysmooth(~slp_11, design = female_svy), col = "red")
 legend("topright", legend = c("Male", "Female"), col = c("blue", "red"), lty = 1:2, inset = 0.02, bg = 'white')
