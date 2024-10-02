@@ -1,11 +1,11 @@
 # Set working directory at RDC
 setwd("P:/10619/Dropbox/chmsflow")
 
-# Load required packages
-library(survey)
-
 # Load required file to obtain imputed dataset
 source("R/table-1.R")
+
+# Load new packages
+library(survey)
 
 # Synthetic dataset for test use outside RDC
 # imputed_cycles1to6_data <- data.frame(
@@ -42,31 +42,49 @@ male_svy <- svydesign(ids = ~1, data = male_data, weights = ~wgt_full)
 female_svy <- svydesign(ids = ~1, data = female_data, weights = ~wgt_full)
 
 # Weighted density plot for age
-plot(svysmooth(~clc_age, design = male_svy), col = "blue", main = "Age distribution", xlab = "Age")
-lines(svysmooth(~clc_age, design = female_svy), col = "red")
+male_age <- svysmooth(~clc_age, design = male_svy)
+female_age <- svysmooth(~clc_age, design = female_svy)
+
+plot(male_age$clc_age$x, male_age$clc_age$y, col = "blue", main = "Age distribution", xlab = "Age", ylab = "Density")
+points(female_age$clc_age$x, female_age$clc_age$y, col = "red")
 legend("topright", legend = c("Male", "Female"), col = c("blue", "red"), lty = 1:2, inset = 0.02, bg = 'white')
 
 # Weighted density plot for physical activity minutes
-plot(svysmooth(~minperweek, design = male_svy), col = "blue", main = "Exercise distribution", xlab = "Average minutes of exercise per week", xlim = c(0, 150))
-lines(svysmooth(~minperweek, design = female_svy), col = "red")
+male_exercise <- svysmooth(~minperweek, design = male_svy)
+female_exercise <- svysmooth(~minperweek, design = female_svy)
+
+plot(male_exercise$minperweek$x, male_exercise$minperweek$y, col = "blue", main = "Exercise distribution", xlab = "Average minutes of exercise per week", ylab = "Density")
+points(female_exercise$minperweek$x, female_exercise$minperweek$y, col = "red")
 legend("topright", legend = c("Male", "Female"), col = c("blue", "red"), lty = 1:2, inset = 0.02, bg = 'white')
 
 # Weighted density plot for total fruit and vegetable consumption
-plot(svysmooth(~totalfv, design = male_svy), col = "blue", main = "Fruit and vegetable consumption distribution", xlab = "Times per day produce consumed")
-lines(svysmooth(~totalfv, design = female_svy), col = "red")
+male_fv <- svysmooth(~totalfv, design = male_svy)
+female_fv <- svysmooth(~totalfv, design = female_svy)
+
+plot(male_fv$totalfv$x, male_fv$totalfv$y, col = "blue", main = "Fruit and vegetable consumption distribution", xlab = "Times per day produce consumed", ylab = "Density")
+points(female_fv$totalfv$x, female_fv$totalfv$y, col = "red")
 legend("topright", legend = c("Male", "Female"), col = c("blue", "red"), lty = 1:2, inset = 0.02, bg = 'white')
 
 # Weighted density plot for body mass index
-plot(svysmooth(~hwmdbmi, design = male_svy), col = "blue", main = "BMI distribution", xlab = "BMI")
-lines(svysmooth(~hwmdbmi, design = female_svy), col = "red")
+male_bmi <- svysmooth(~hwmdbmi, design = male_svy)
+female_bmi <- svysmooth(~hwmdbmi, design = female_svy)
+
+plot(male_bmi$hwmdbmi$x, male_bmi$hwmdbmi$y, col = "blue", main = "BMI distribution", xlab = "BMI", ylab = "Density")
+points(female_bmi$hwmdbmi$x, female_bmi$hwmdbmi$y, col = "red")
 legend("topright", legend = c("Male", "Female"), col = c("blue", "red"), lty = 1:2, inset = 0.02, bg = 'white')
 
 # Weighted density plot for waist-to-height ratio
-plot(svysmooth(~whr, design = male_svy), col = "blue", main = "Waist-to-height ratio", xlab = "Waist-to-height ratio")
-lines(svysmooth(~whr, design = female_svy), col = "red")
+male_whr <- svysmooth(~whr, design = male_svy)
+female_whr <- svysmooth(~whr, design = female_svy)
+
+plot(male_whr$whr$x, male_whr$whr$y, col = "blue", main = "Waist-to-height ratio", xlab = "Waist-to-height ratio", ylab = "Density")
+points(female_whr$whr$x, female_whr$whr$y, col = "red")
 legend("topright", legend = c("Male", "Female"), col = c("blue", "red"), lty = 1:2, inset = 0.02, bg = 'white')
 
 # Weighted density plot for sleep duration
-plot(svysmooth(~slp_11, design = male_svy), col = "blue", main = "Sleep distribution", xlab = "Hours slept per night")
-lines(svysmooth(~slp_11, design = female_svy), col = "red")
+male_sleep <- svysmooth(~slp_11, design = male_svy)
+female_sleep <- svysmooth(~slp_11, design = female_svy)
+
+plot(male_sleep$slp_11$x, male_sleep$slp_11$y, col = "blue", main = "Sleep distribution", xlab = "Hours slept per night", ylab = "Density")
+points(female_sleep$slp_11$x, female_sleep$slp_11$y, col = "red")
 legend("topright", legend = c("Male", "Female"), col = c("blue", "red"), lty = 1:2, inset = 0.02, bg = 'white')

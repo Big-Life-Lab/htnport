@@ -1,15 +1,13 @@
 # Set working directory at RDC
 setwd("P:/10619/Dropbox/chmsflow")
 
-# Load required packages
-library(dplyr)
-library(rms)
+# Load this R file to obtain all datasets and reduced models, as well as Nagelkerke's R2 function
+source("R/develop-models.R")
+
+# Load new packages
 library(pROC)
 library(ggplot2)
 library(FSelectorRcpp)
-
-# Load this R file to obtain all datasets and reduced models, as well as Nagelkerke's R2 function
-source("R/develop-models.R")
 
 # Generate predicted_probabilities for male and female models
 generate_predicted_probabilities <- function(model, data) {

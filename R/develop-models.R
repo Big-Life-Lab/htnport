@@ -1,14 +1,13 @@
 # Set working directory at RDC
 setwd("P:/10619/Dropbox/chmsflow")
 
-# Load required packages
-library(dplyr)
+# Load this R file to obtain imputed dataset
+source("R/table-1.R")
+
+# Load new packages
 library(e1071)
 library(survey)
 library(rms)
-
-# Load this R file to obtain imputed dataset
-source("R/table-1.R")
 
 # Synthetic dataset for test use outside RDC
 # imputed_cycles1to6_data <- data.frame(
@@ -22,7 +21,7 @@ source("R/table-1.R")
 #   gen_045 = sample(1:2, 9627, replace = TRUE), # Binary
 #   low_drink_score1 = sample(1:4, 9627, replace = TRUE), # 4 categories
 #   married = sample(1:3, 9627, replace = TRUE), # 3 categories
-#   smoke = sample(1:2, 9627, replace = TRUE), # Binary
+#   smoke = sample(1:3, 9627, replace = TRUE), # Binary
 #   working = sample(1:2, 9627, replace = TRUE), # Binary
 #   clc_sex = sample(1:2, 9627, replace = TRUE), # Binary
 #   wgt_full = runif(9627, 0, 1), # Continuous weights
@@ -75,7 +74,6 @@ imputed_cycles1to6_data <- imputed_cycles1to6_data %>%
          ckd = ifelse(ckd == 2, 0, ckd),
          diabx = ifelse(diabx == 2, 0, diabx),
          fmh_15 = ifelse(fmh_15 == 2, 0, fmh_15),
-         smoke = ifelse(smoke == 2, 0, smoke),
          edudr04 = case_when(
            edudr04 == 1 ~ 2,
            edudr04 == 2 ~ 1,
@@ -85,6 +83,11 @@ imputed_cycles1to6_data <- imputed_cycles1to6_data %>%
            gendmhi == 1 ~ 2,
            gendmhi == 2 ~ 1,
            gendmhi == 3 ~ 0
+         ),
+         smoke = case_when(
+           smoke == 1 ~ 2,
+           smoke == 2 ~ 1,
+           smoke == 3 ~ 0
          ))
 
 cat_variables <- c("ckd", "diabx", "edudr04", "fmh_15", "gendmhi", 
@@ -185,7 +188,7 @@ calculate_nagelkerke_r2 <- function(model, data) {
   # Calculate the likelihood ratio statistic (LR)
   LR <- 2 * (log_likelihood_fitted - log_likelihood_null)
   
-  # Calculate Nagelkerke's R2 using the formula
+  # Calculate Nagelkerke's R² using the formula
   nagelkerke_r2 <- (1 - exp(-LR / n)) / (1 - exp(-(-2 * log_likelihood_null) / n))
   
   return(nagelkerke_r2)

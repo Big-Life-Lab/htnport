@@ -1,13 +1,12 @@
 # Set working directory at RDC
 setwd("P:/10619/Dropbox/chmsflow")
 
-# Load packages
-library(dplyr)
-library(e1071)
-library(survey)
-
 # Load this R file to obtain imputed dataset
 source("R/table-1.R")
+
+# Load new packages
+library(e1071)
+library(survey)
 
 # Synthetic dataset for test use outside RDC
 # imputed_cycles1to6_data <- data.frame(
@@ -21,7 +20,7 @@ source("R/table-1.R")
 #   gen_045 = sample(1:2, 9627, replace = TRUE), # Binary
 #   low_drink_score1 = sample(1:4, 9627, replace = TRUE), # 4 categories
 #   married = sample(1:3, 9627, replace = TRUE), # 3 categories
-#   smoke = sample(1:2, 9627, replace = TRUE), # Binary
+#   smoke = sample(1:3, 9627, replace = TRUE), # Binary
 #   working = sample(1:2, 9627, replace = TRUE), # Binary
 #   clc_sex = sample(1:2, 9627, replace = TRUE), # Binary
 #   wgt_full = runif(9627, 0, 1), # Continuous weights
@@ -157,7 +156,6 @@ imputed_cycles1to6_data <- imputed_cycles1to6_data %>%
          ckd = ifelse(ckd == 2, 0, ckd),
          diabx = ifelse(diabx == 2, 0, diabx),
          fmh_15 = ifelse(fmh_15 == 2, 0, fmh_15),
-         smoke = ifelse(smoke == 2, 0, smoke),
          edudr04 = case_when(
            edudr04 == 1 ~ 2,
            edudr04 == 2 ~ 1,
@@ -168,7 +166,7 @@ imputed_cycles1to6_data <- imputed_cycles1to6_data %>%
            gendmhi == 2 ~ 1,
            gendmhi == 3 ~ 0
          ),
-         snoke = case_when(
+         smoke = case_when(
            smoke == 1 ~ 2,
            smoke == 2 ~ 1,
            smoke == 3 ~ 0
@@ -268,7 +266,7 @@ combined_crude_models <- bind_rows(
 # Define the custom order for the Level column
 custom_order <- c("Age", "Widowed, separated, or divorced", "Single", "High school graduate only", "Did not graduate high school", "Does not have a job",
                   "Family history for hypertension", "Minutes of exercise per week", "Daily fruit and vegetable consumption", "Body mass index", "Waist-to-height ratio",
-                  "Diabetes", "Chronic kidney disease", "Former drinker", "Light drinker", "Moderate to heavy drinker", "Current smoker", "Sleep duration", 
+                  "Diabetes", "Chronic kidney disease", "Former drinker", "Light drinker", "Moderate to heavy drinker", "Former smoker", "Current smoker", "Sleep duration", 
                   "Fair or good mental health", "Poor mental health", "Quite a bit or extremely stressed", "Weak sense of belonging"
                   )
 
