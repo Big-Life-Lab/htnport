@@ -1,13 +1,12 @@
 # Set working directory at RDC
 setwd("P:/10619/Dropbox/chmsflow")
 
-# Load this R file to obtain all datasets and reduced models, as well as Nagelkerke's R2 function
+# Load this R file to obtain dataset and reduced models
 source("R/develop-models.R")
 
 # Load new packages
 library(pROC)
 library(ggplot2)
-library(FSelectorRcpp)
 
 # Generate predicted_probabilities for male and female models
 generate_predicted_probabilities <- function(model, data) {
@@ -15,30 +14,27 @@ generate_predicted_probabilities <- function(model, data) {
   return(predicted_probabilities)
 }
 
-male_train_predicted_probabilities <- generate_predicted_probabilities(male_reduced_model, male_train_data)
-male_test_predicted_probabilities <- generate_predicted_probabilities(male_reduced_model, male_test_data)
-male_combined_predicted_probabilities <- generate_predicted_probabilities(male_reduced_model, male_data)
-
-female_train_predicted_probabilities <- generate_predicted_probabilities(female_reduced_model, female_train_data)
-female_test_predicted_probabilities <- generate_predicted_probabilities(female_reduced_model, female_test_data)
-female_combined_predicted_probabilities <- generate_predicted_probabilities(female_reduced_model, female_data)
-
-# Nagelkerke's R2
-male_train_nagelkerke_r2 <- calculate_nagelkerke_r2(male_reduced_model, male_train_data)
-male_test_nagelkerke_r2 <- calculate_nagelkerke_r2(male_reduced_model, male_test_data)
-male_combined_nagelkerke_r2 <- calculate_nagelkerke_r2(male_reduced_model, male_data)
-
-female_train_nagelkerke_r2 <- calculate_nagelkerke_r2(female_reduced_model, female_train_data)
-female_test_nagelkerke_r2 <- calculate_nagelkerke_r2(female_reduced_model, female_test_data)
-female_combined_nagelkerke_r2 <- calculate_nagelkerke_r2(female_reduced_model, female_data)
-
-male_train_nagelkerke_r2
-male_test_nagelkerke_r2
-male_combined_nagelkerke_r2
-
-female_train_nagelkerke_r2
-female_test_nagelkerke_r2
-female_combined_nagelkerke_r2
+# Function to calculate Nagelkerke's R²
+calculate_nagelkerke_r2 <- function(model, data) {
+  # Get the number of observations
+  n <- nrow(data)
+  
+  # Get the log-likelihood of the fitted model
+  fitted_model_fit <- glm(formula = model$formula, data = data, family = binomial())
+  log_likelihood_fitted <- logLik(fitted_model_fit)[1]
+  
+  # Get the log-likelihood of the null model
+  null_model_fit <- glm(highbp14090_adj ~ 1, data = data, family = binomial())
+  log_likelihood_null <- logLik(null_model_fit)[1]
+  
+  # Calculate the likelihood ratio statistic (LR)
+  LR <- 2 * (log_likelihood_fitted - log_likelihood_null)
+  
+  # Calculate Nagelkerke's R² using the formula
+  nagelkerke_r2 <- (1 - exp(-LR / n)) / (1 - exp(-(-2 * log_likelihood_null) / n))
+  
+  return(nagelkerke_r2)
+}
 
 # Brier score
 calculate_brier_score <- function(model, data) {
@@ -51,22 +47,6 @@ calculate_brier_score <- function(model, data) {
   return(brier_score)
 }
 
-male_train_brier_score <- calculate_brier_score(male_reduced_model, male_train_data)
-male_test_brier_score <- calculate_brier_score(male_reduced_model, male_test_data)
-male_combined_brier_score <- calculate_brier_score(male_reduced_model, male_data)
-
-female_train_brier_score <- calculate_brier_score(female_reduced_model, female_train_data)
-female_test_brier_score <- calculate_brier_score(female_reduced_model, female_test_data)
-female_combined_brier_score <- calculate_brier_score(female_reduced_model, female_data)
-
-male_train_brier_score
-male_test_brier_score
-male_combined_brier_score
-
-female_train_brier_score
-female_test_brier_score
-female_combined_brier_score
-
 # c-statistic via ROC
 calculate_auc <- function(model, data) {
   # Generate predicted_probabilities
@@ -77,22 +57,6 @@ calculate_auc <- function(model, data) {
   
   return(auc_value)
 }
-
-male_train_auc <- calculate_auc(male_reduced_model, male_train_data)
-male_test_auc <- calculate_auc(male_reduced_model, male_test_data)
-male_combined_auc <- calculate_auc(male_reduced_model, male_data)
-
-female_train_auc <- calculate_auc(female_reduced_model, female_train_data)
-female_test_auc <- calculate_auc(female_reduced_model, female_test_data)
-female_combined_auc <- calculate_auc(female_reduced_model, female_data)
-
-male_train_auc
-male_test_auc
-male_combined_auc
-
-female_train_auc
-female_test_auc
-female_combined_auc
 
 # Calibration - comparing observed and predicted probabilities
 compare_probs <- function(data, predicted_probs) {
@@ -120,22 +84,6 @@ compare_probs <- function(data, predicted_probs) {
   return(list(comparison_whole = comparison_whole, comparison_90_10 = comparison_90_10, comparison_95_5 = comparison_95_5))
 }
 
-obs_pred_comparison_male_train <- compare_probs(male_train_data, male_train_predicted_probabilities)
-obs_pred_comparison_male_test <- compare_probs(male_test_data, male_test_predicted_probabilities)
-obs_pred_comparison_male_combined <- compare_probs(male_data, male_combined_predicted_probabilities)
-
-obs_pred_comparison_female_train <- compare_probs(female_train_data, female_train_predicted_probabilities)
-obs_pred_comparison_female_test <- compare_probs(female_test_data, female_test_predicted_probabilities)
-obs_pred_comparison_female_combined <- compare_probs(female_data, female_combined_predicted_probabilities)
-
-print(obs_pred_comparison_male_train)
-print(obs_pred_comparison_male_test)
-print(obs_pred_comparison_male_combined)
-
-print(obs_pred_comparison_female_train)
-print(obs_pred_comparison_female_test)
-print(obs_pred_comparison_female_combined)
-
 # Calibration slopes
 calibration_slope <- function(data, predicted_probs) {
   data$predicted <- predicted_probs
@@ -143,21 +91,74 @@ calibration_slope <- function(data, predicted_probs) {
   return(summary(slope_model))
 }
 
-calibration_slope_male_train <- calibration_slope(male_train_data, male_train_predicted_probabilities)
-calibration_slope_male_test <- calibration_slope(male_test_data, male_test_predicted_probabilities)
-calibration_slope_male_combined <- calibration_slope(male_data, male_combined_predicted_probabilities)
+# Function to perform bootstrapping and calculate performance metrics
+bootstrap_function <- function(data, indices) {
+  # Create the bootstrap sample using indices
+  boot_data <- data[indices, ]
+  
+  # Recreate the survey design with the bootstrap sample
+  boot_design <- svydesign(ids = ~1, weights = ~weight_variable, data = boot_data)
+  
+  # Refit the svyglm model on the bootstrap sample
+  boot_model <- svyglm(highbp14090_adj ~ rcs(clc_age, 4) + married + working +
+                         rcs(hwmdbmi, 3) * whr + slp_11, 
+                       design = boot_design, family = quasibinomial())
+  
+  # Generate predicted probabilities on the original (out-of-bag) data
+  predicted_probs <- predict(boot_model, newdata = mydata, type = "response")
+  
+  # Calculate Nagelkerke's R²
+  nagelkerke_r2 <- calculate_nagelkerke_r2(boot_model, mydata)
+  
+  # Calculate Brier Score
+  brier_score <- calculate_brier_score(boot_model, mydata)
+  
+  # Calculate AUC
+  auc_value <- calculate_auc(boot_model, mydata)
+  
+  # Calculate Calibration Slope
+  slope_model <- calibration_slope(mydata, predicted_probs)
+  calibration_slope_value <- slope_model$coefficients[2]  # Extract slope
+  
+  # Calibration Comparison (Deciles)
+  calibration_comparison <- compare_probs(mydata, predicted_probs)
+  
+  # Return all performance metrics as a list
+  return(list(
+    nagelkerke_r2 = nagelkerke_r2,
+    brier_score = brier_score,
+    auc_value = auc_value,
+    calibration_slope = calibration_slope_value,
+    calibration_comparison_90_10 = calibration_comparison$comparison_90_10,
+    calibration_comparison_95_5 = calibration_comparison$comparison_95_5
+  ))
+}
 
-calibration_slope_female_train <- calibration_slope(female_train_data, female_train_predicted_probabilities)
-calibration_slope_female_test <- calibration_slope(female_test_data, female_test_predicted_probabilities)
-calibration_slope_female_combined <- calibration_slope(female_data, female_combined_predicted_probabilities)
+# Perform bootstrapping with 1000 replications
+set.seed(123)
+n_bootstrap <- 1000  # Number of bootstrap resamples
+bootstrap_results <- replicate(n_bootstrap, {
+  # Sample with replacement (same size as original data)
+  boot_indices <- sample(1:nrow(mydata), replace = TRUE)
+  bootstrap_function(mydata, boot_indices)
+})
 
-print(calibration_slope_male_train)
-print(calibration_slope_male_test)
-print(calibration_slope_male_combined)
+# Example: Aggregate and summarize results
+nagelkerke_r2_values <- sapply(bootstrap_results, function(x) x$nagelkerke_r2)
+brier_score_values <- sapply(bootstrap_results, function(x) x$brier_score)
+auc_values <- sapply(bootstrap_results, function(x) x$auc_value)
+calibration_slope_values <- sapply(bootstrap_results, function(x) x$calibration_slope)
 
-print(calibration_slope_female_train)
-print(calibration_slope_female_test)
-print(calibration_slope_female_combined)
+# Print summarized results (means, CIs, etc.)
+mean_nagelkerke_r2 <- mean(nagelkerke_r2_values)
+mean_brier_score <- mean(brier_score_values)
+mean_auc <- mean(auc_values)
+mean_calibration_slope <- mean(calibration_slope_values)
+
+cat("Mean Nagelkerke R²:", mean_nagelkerke_r2, "\n")
+cat("Mean Brier Score:", mean_brier_score, "\n")
+cat("Mean AUC:", mean_auc, "\n")
+cat("Mean Calibration Slope:", mean_calibration_slope, "\n")
 
 # Calibration plots with LOESS
 plot_calibration <- function(data, predicted_probs, title) {
@@ -169,51 +170,8 @@ plot_calibration <- function(data, predicted_probs, title) {
     theme_minimal()
 }
 
-plot_calibration(male_train_data, male_train_predicted_probabilities, "Calibration Plot for Male Train Data")
-plot_calibration(male_test_data, male_test_predicted_probabilities, "Calibration Plot for Male Test Data")
-plot_calibration(male_data, male_combined_predicted_probabilities, "Calibration Plot for Male Combined Data")
+male_predicted_probabilities <- generate_predicted_probabilities(male_reduced_model, male_data)
+female_predicted_probabilities <- generate_predicted_probabilities(female_reduced_model, female_data)
 
-plot_calibration(female_train_data, female_train_predicted_probabilities, "Calibration Plot for Female Train Data")
-plot_calibration(female_test_data, female_test_predicted_probabilities, "Calibration Plot for Female Test Data")
-plot_calibration(female_data, female_combined_predicted_probabilities, "Calibration Plot for Female Combined Data")
-
-# Information gain
-# Define the function to extract variable names from rcs terms
-extract_variable_from_rcs <- function(term) {
-  # Use regular expression to extract the variable name from rcs
-  variable_name <- gsub("rcs\\(([^,]+),\\s*\\d+\\)", "\\1", term)
-  return(variable_name)
-}
-
-# Define the function to exclude interaction terms and simplify rcs terms
-exclude_interactions_and_simplify_rcs <- function(model) {
-  # Extract the formula from the model
-  formula <- formula(model)
-  
-  # Get terms object from the formula
-  terms_obj <- terms(formula)
-  
-  # Extract term labels
-  term_labels <- attr(terms_obj, "term.labels")
-  
-  # Identify interaction terms (terms containing ":")
-  interaction_terms <- grep(":", term_labels, value = TRUE)
-  
-  # Exclude interaction terms to get only main predictors
-  main_predictors <- setdiff(term_labels, interaction_terms)
-  
-  # Replace rcs terms with just the variable names
-  simplified_predictors <- sapply(main_predictors, extract_variable_from_rcs)
-  
-  # Remove duplicates, which might arise if multiple rcs terms refer to the same variable
-  simplified_predictors <- unique(simplified_predictors)
-  
-  # Construct new formula with only simplified predictors
-  new_formula <- as.formula(paste("highbp14090_adj", "~", paste(simplified_predictors, collapse = " + ")))
-  
-  # Return the new formula
-  return(new_formula)
-}
-
-information_gain(exclude_interactions_and_simplify_rcs(male_reduced_model), male_data)
-information_gain(exclude_interactions_and_simplify_rcs(female_reduced_model), female_data)
+plot_calibration(male_data, male_predicted_probabilities, "Calibration Plot for Male Data")
+plot_calibration(female_data, female_predicted_probabilities, "Calibration Plot for Female Data")

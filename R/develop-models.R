@@ -100,24 +100,17 @@ imputed_cycles1to6_data <- imputed_cycles1to6_data %>%
 male_data <- filter(imputed_cycles1to6_data, clc_sex == 1)
 female_data <- filter(imputed_cycles1to6_data, clc_sex == 2)
 
-# Create train and test data for male and female
-male_train_data <- filter(male_data, cycle != 6)
-female_train_data <- filter(female_data, cycle != 6)
-
-male_test_data <- filter(male_data, cycle == 6)
-female_test_data <- filter(female_data, cycle == 6)
-
 # Apply survey weights to male and female train data
 weighted_male <- svydesign(
   id = ~1,
   weights = ~wgt_full,
-  data = male_train_data
+  data = male_data
 )
 
 weighted_female <- svydesign(
   id = ~1,
   weights = ~wgt_full,
-  data = female_train_data
+  data = female_data
 )
 
 # Fit male and female models
@@ -153,11 +146,11 @@ calculate_simplified_vif(design = weighted_male)
 calculate_simplified_vif(design = weighted_female)
 
 # Linearity assessment for slp_11 and totalfv
-plot(male_train_data$slp_11, male_model$fitted.values) 
-plot(male_train_data$totalfv, male_model$fitted.values) 
+plot(male_data$slp_11, male_model$fitted.values) 
+plot(male_data$totalfv, male_model$fitted.values) 
 
-plot(female_train_data$slp_11, female_model$fitted.values) 
-plot(female_train_data$totalfv, female_model$fitted.values) 
+plot(female_data$slp_11, female_model$fitted.values) 
+plot(female_data$totalfv, female_model$fitted.values) 
 
 # Refit male and female models without whr if high collinearity detected
 # male_model <- svyglm(highbp14090_adj ~ rcs(clc_age, 4) + married + edudr04 + working + gendmhi + gen_025 + gen_045 + fmh_15 +
@@ -231,8 +224,8 @@ stepdown <- function(full_model, data, threshold = 0.95) {
 }
 
 # Apply stepdown function to male and female models
-male_reduced_model <- stepdown(male_model, male_train_data)
-female_reduced_model <- stepdown(female_model, female_train_data)
+male_reduced_model <- stepdown(male_model, male_data)
+female_reduced_model <- stepdown(female_model, female_data)
 
 # Function to perform Likelihood Ratio Test (LRT) for svyglm models
 lrt_svyglm <- function(full_model, reduced_model) {

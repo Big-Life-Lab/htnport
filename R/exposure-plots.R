@@ -53,7 +53,7 @@ legend("topright", legend = c("Male", "Female"), col = c("blue", "red"), lty = 1
 male_exercise <- svysmooth(~minperweek, design = male_svy)
 female_exercise <- svysmooth(~minperweek, design = female_svy)
 
-plot(male_exercise$minperweek$x, male_exercise$minperweek$y, col = "blue", main = "Exercise distribution", xlab = "Average minutes of exercise per week", ylab = "Density")
+plot(male_exercise$minperweek$x, male_exercise$minperweek$y, col = "blue", main = "Exercise distribution", xlim = c(0,500), xlab = "Average minutes of exercise per week", ylab = "Density")
 points(female_exercise$minperweek$x, female_exercise$minperweek$y, col = "red")
 legend("topright", legend = c("Male", "Female"), col = c("blue", "red"), lty = 1:2, inset = 0.02, bg = 'white')
 
