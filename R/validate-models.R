@@ -8,12 +8,6 @@ source("R/develop-models.R")
 library(pROC)
 library(ggplot2)
 
-# Generate predicted_probabilities for male and female models
-generate_predicted_probabilities <- function(model, data) {
-  predicted_probabilities <- predict(model, newdata = data, type = "response")
-  return(predicted_probabilities)
-}
-
 # Function to calculate Nagelkerke's R²
 calculate_nagelkerke_r2 <- function(model, data) {
   # Get the number of observations
@@ -125,62 +119,110 @@ bootstrap_function <- function(data, indices, model) {
     nagelkerke_r2 = nagelkerke_r2,
     brier_score = brier_score,
     auc_value = auc_value,
-    calibration_comparison_90_10 = calibration_comparison$comparison_90_10,
-    calibration_comparison_95_5 = calibration_comparison$comparison_95_5,
+    calibration_comparison_whole_obs = mean(calibration_comparison$comparison_whole$Observed),
+    calibration_comparison_whole_pred = mean(calibration_comparison$comparison_whole$Predicted),
+    calibration_comparison_90_10_obs = mean(calibration_comparison$comparison_90_10$Observed),
+    calibration_comparison_90_10_pred = mean(calibration_comparison$comparison_90_10$Predicted),
+    calibration_comparison_95_5_obs = mean(calibration_comparison$comparison_95_5$Observed),
+    calibration_comparison_95_5_pred = mean(calibration_comparison$comparison_95_5$Predicted),
     calibration_slope = calibration_slope_value
   ))
 }
 
 # Perform bootstrapping for both male and female models
 set.seed(123)
-n_bootstrap <- 1000  # Number of bootstrap resamples
+n_bootstrap <- 10  # Number of bootstrap resamples
 
 # For male model
 bootstrap_results_male <- replicate(n_bootstrap, {
   boot_indices <- sample(1:nrow(male_test_data), replace = TRUE)
-  bootstrap_function(male_data, boot_indices, male_reduced_model)
-})
+  bootstrap_function(male_test_data, boot_indices, male_reduced_model)
+}, simplify = FALSE)
 
 # For female model
 bootstrap_results_female <- replicate(n_bootstrap, {
-  boot_indices <- sample(1:nrow(female_test_data), replace = TRUE)
+  boot_indices <- sample(1:nrow(female_data), replace = TRUE)
   bootstrap_function(female_data, boot_indices, female_reduced_model)
-})
+}, simplify = FALSE)
 
 # Aggregate and summarize results for male
 nagelkerke_r2_male <- sapply(bootstrap_results_male, function(x) x$nagelkerke_r2)
 brier_score_male <- sapply(bootstrap_results_male, function(x) x$brier_score)
 auc_male <- sapply(bootstrap_results_male, function(x) x$auc_value)
+calibration_comparison_whole_obs_male <- sapply(bootstrap_results_male, function(x) x$calibration_comparison_whole_obs)
+calibration_comparison_whole_pred_male <- sapply(bootstrap_results_male, function(x) x$calibration_comparison_whole_pred)
+calibration_comparison_90_10_obs_male <- sapply(bootstrap_results_male, function(x) x$calibration_comparison_90_10_obs)
+calibration_comparison_90_10_pred_male <- sapply(bootstrap_results_male, function(x) x$calibration_comparison_90_10_pred)
+calibration_comparison_95_5_obs_male <- sapply(bootstrap_results_male, function(x) x$calibration_comparison_95_5_obs)
+calibration_comparison_95_5_pred_male <- sapply(bootstrap_results_male, function(x) x$calibration_comparison_95_5_pred)
 calibration_slope_male <- sapply(bootstrap_results_male, function(x) x$calibration_slope)
 
 mean_nagelkerke_r2_male <- mean(nagelkerke_r2_male)
 mean_brier_score_male <- mean(brier_score_male)
 mean_auc_male <- mean(auc_male)
+mean_comparison_whole_obs_male <- mean(calibration_comparison_whole_obs_male)
+mean_comparison_whole_pred_male <- mean(calibration_comparison_whole_pred_male)
+mean_comparison_90_10_obs_male <- mean(calibration_comparison_90_10_obs_male)
+mean_comparison_90_10_pred_male <- mean(calibration_comparison_90_10_pred_male)
+mean_comparison_95_5_obs_male <- mean(calibration_comparison_95_5_obs_male)
+mean_comparison_95_5_pred_male <- mean(calibration_comparison_95_5_pred_male)
 mean_calibration_slope_male <- mean(calibration_slope_male)
+
+cat("Male Model:\n")
+cat("Mean Nagelkerke R²:", mean_nagelkerke_r2_male, "\n")
+cat("Mean Brier Score:", mean_brier_score_male, "\n")
+cat("Mean AUC:", mean_auc_male, "\n")
+cat("Mean Whole Observation:", mean_comparison_whole_obs_male, "\n")
+cat("Mean Whole Prediction:", mean_comparison_whole_pred_male, "\n")
+cat("Mean 90-10 Observation:", mean_comparison_90_10_obs_male, "\n")
+cat("Mean 90-10 Prediction:", mean_comparison_90_10_pred_male, "\n")
+cat("Mean 95-5 Observation:", mean_comparison_95_5_obs_male, "\n")
+cat("Mean 95-5 Prediction:", mean_comparison_95_5_pred_male, "\n")
+cat("Mean Calibration Slope:", mean_calibration_slope_male, "\n")
 
 # Aggregate and summarize results for female
 nagelkerke_r2_female <- sapply(bootstrap_results_female, function(x) x$nagelkerke_r2)
 brier_score_female <- sapply(bootstrap_results_female, function(x) x$brier_score)
 auc_female <- sapply(bootstrap_results_female, function(x) x$auc_value)
+calibration_comparison_whole_obs_female <- sapply(bootstrap_results_female, function(x) x$calibration_comparison_whole_obs)
+calibration_comparison_whole_pred_female <- sapply(bootstrap_results_female, function(x) x$calibration_comparison_whole_pred)
+calibration_comparison_90_10_obs_female <- sapply(bootstrap_results_female, function(x) x$calibration_comparison_90_10_obs)
+calibration_comparison_90_10_pred_female <- sapply(bootstrap_results_female, function(x) x$calibration_comparison_90_10_pred)
+calibration_comparison_95_5_obs_female <- sapply(bootstrap_results_female, function(x) x$calibration_comparison_95_5_obs)
+calibration_comparison_95_5_pred_female <- sapply(bootstrap_results_female, function(x) x$calibration_comparison_95_5_pred)
 calibration_slope_female <- sapply(bootstrap_results_female, function(x) x$calibration_slope)
 
 mean_nagelkerke_r2_female <- mean(nagelkerke_r2_female)
 mean_brier_score_female <- mean(brier_score_female)
 mean_auc_female <- mean(auc_female)
+mean_comparison_whole_obs_female <- mean(calibration_comparison_whole_obs_female)
+mean_comparison_whole_pred_female <- mean(calibration_comparison_whole_pred_female)
+mean_comparison_90_10_obs_female <- mean(calibration_comparison_90_10_obs_female)
+mean_comparison_90_10_pred_female <- mean(calibration_comparison_90_10_pred_female)
+mean_comparison_95_5_obs_female <- mean(calibration_comparison_95_5_obs_female)
+mean_comparison_95_5_pred_female <- mean(calibration_comparison_95_5_pred_female)
 mean_calibration_slope_female <- mean(calibration_slope_female)
-
-# Print summarized results
-cat("Male Model:\n")
-cat("Mean Nagelkerke R²:", mean_nagelkerke_r2_male, "\n")
-cat("Mean Brier Score:", mean_brier_score_male, "\n")
-cat("Mean AUC:", mean_auc_male, "\n")
-cat("Mean Calibration Slope:", mean_calibration_slope_male, "\n\n")
 
 cat("Female Model:\n")
 cat("Mean Nagelkerke R²:", mean_nagelkerke_r2_female, "\n")
 cat("Mean Brier Score:", mean_brier_score_female, "\n")
 cat("Mean AUC:", mean_auc_female, "\n")
-cat("Mean Calibration Slope:", mean_calibration_slope_f)
+cat("Mean Whole Observation:", mean_comparison_whole_obs_female, "\n")
+cat("Mean Whole Prediction:", mean_comparison_whole_pred_female, "\n")
+cat("Mean 90-10 Observation:", mean_comparison_90_10_obs_female, "\n")
+cat("Mean 90-10 Prediction:", mean_comparison_90_10_pred_female, "\n")
+cat("Mean 95-5 Observation:", mean_comparison_95_5_obs_female, "\n")
+cat("Mean 95-5 Prediction:", mean_comparison_95_5_pred_female, "\n")
+cat("Mean Calibration Slope:", mean_calibration_slope_female)
+
+# Generate predicted_probabilities for models
+generate_predicted_probabilities <- function(model, data) {
+  predicted_probabilities <- predict(model, newdata = data, type = "response")
+  return(predicted_probabilities)
+}
+
+male_predicted_probabilities <- generate_predicted_probabilities(male_reduced_model, male_data)
+female_predicted_probabilities <- generate_predicted_probabilities(female_reduced_model, female_data)
 
 # Calibration plots with LOESS
 plot_calibration <- function(data, predicted_probs, title) {
@@ -191,9 +233,6 @@ plot_calibration <- function(data, predicted_probs, title) {
     labs(title = title, x = "Predicted Probability", y = "Observed Probability") +
     theme_minimal()
 }
-
-male_predicted_probabilities <- generate_predicted_probabilities(male_reduced_model, male_data)
-female_predicted_probabilities <- generate_predicted_probabilities(female_reduced_model, female_data)
 
 plot_calibration(male_data, male_predicted_probabilities, "Calibration Plot for Male Data")
 plot_calibration(female_data, female_predicted_probabilities, "Calibration Plot for Female Data")
