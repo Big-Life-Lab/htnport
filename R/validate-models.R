@@ -91,74 +91,96 @@ calibration_slope <- function(data, predicted_probs) {
   return(summary(slope_model))
 }
 
-# Function to perform bootstrapping and calculate performance metrics
-bootstrap_function <- function(data, indices) {
+bootstrap_function <- function(data, indices, model) {
   # Create the bootstrap sample using indices
   boot_data <- data[indices, ]
   
   # Recreate the survey design with the bootstrap sample
-  boot_design <- svydesign(ids = ~1, weights = ~weight_variable, data = boot_data)
+  boot_design <- svydesign(ids = ~1, weights = ~wgt_full, data = boot_data)
   
-  # Refit the svyglm model on the bootstrap sample
-  boot_model <- svyglm(highbp14090_adj ~ rcs(clc_age, 4) + married + working +
-                         rcs(hwmdbmi, 3) * whr + slp_11, 
-                       design = boot_design, family = quasibinomial())
+  # Refit the provided svyglm model on the bootstrap sample
+  boot_model <- update(model, data = boot_data, design = boot_design)
   
   # Generate predicted probabilities on the original (out-of-bag) data
-  predicted_probs <- predict(boot_model, newdata = mydata, type = "response")
+  predicted_probs <- predict(boot_model, newdata = data, type = "response")
   
   # Calculate Nagelkerke's R²
-  nagelkerke_r2 <- calculate_nagelkerke_r2(boot_model, mydata)
+  nagelkerke_r2 <- calculate_nagelkerke_r2(boot_model, data)
   
   # Calculate Brier Score
-  brier_score <- calculate_brier_score(boot_model, mydata)
+  brier_score <- calculate_brier_score(boot_model, data)
   
   # Calculate AUC
-  auc_value <- calculate_auc(boot_model, mydata)
+  auc_value <- calculate_auc(boot_model, data)
+  
+  # Calibration Comparison (Whole and Deciles)
+  calibration_comparison <- compare_probs(data, predicted_probs)
   
   # Calculate Calibration Slope
-  slope_model <- calibration_slope(mydata, predicted_probs)
+  slope_model <- calibration_slope(data, predicted_probs)
   calibration_slope_value <- slope_model$coefficients[2]  # Extract slope
-  
-  # Calibration Comparison (Deciles)
-  calibration_comparison <- compare_probs(mydata, predicted_probs)
   
   # Return all performance metrics as a list
   return(list(
     nagelkerke_r2 = nagelkerke_r2,
     brier_score = brier_score,
     auc_value = auc_value,
-    calibration_slope = calibration_slope_value,
     calibration_comparison_90_10 = calibration_comparison$comparison_90_10,
-    calibration_comparison_95_5 = calibration_comparison$comparison_95_5
+    calibration_comparison_95_5 = calibration_comparison$comparison_95_5,
+    calibration_slope = calibration_slope_value
   ))
 }
 
-# Perform bootstrapping with 1000 replications
+# Perform bootstrapping for both male and female models
 set.seed(123)
 n_bootstrap <- 1000  # Number of bootstrap resamples
-bootstrap_results <- replicate(n_bootstrap, {
-  # Sample with replacement (same size as original data)
-  boot_indices <- sample(1:nrow(mydata), replace = TRUE)
-  bootstrap_function(mydata, boot_indices)
+
+# For male model
+bootstrap_results_male <- replicate(n_bootstrap, {
+  boot_indices <- sample(1:nrow(male_test_data), replace = TRUE)
+  bootstrap_function(male_data, boot_indices, male_reduced_model)
 })
 
-# Example: Aggregate and summarize results
-nagelkerke_r2_values <- sapply(bootstrap_results, function(x) x$nagelkerke_r2)
-brier_score_values <- sapply(bootstrap_results, function(x) x$brier_score)
-auc_values <- sapply(bootstrap_results, function(x) x$auc_value)
-calibration_slope_values <- sapply(bootstrap_results, function(x) x$calibration_slope)
+# For female model
+bootstrap_results_female <- replicate(n_bootstrap, {
+  boot_indices <- sample(1:nrow(female_test_data), replace = TRUE)
+  bootstrap_function(female_data, boot_indices, female_reduced_model)
+})
 
-# Print summarized results (means, CIs, etc.)
-mean_nagelkerke_r2 <- mean(nagelkerke_r2_values)
-mean_brier_score <- mean(brier_score_values)
-mean_auc <- mean(auc_values)
-mean_calibration_slope <- mean(calibration_slope_values)
+# Aggregate and summarize results for male
+nagelkerke_r2_male <- sapply(bootstrap_results_male, function(x) x$nagelkerke_r2)
+brier_score_male <- sapply(bootstrap_results_male, function(x) x$brier_score)
+auc_male <- sapply(bootstrap_results_male, function(x) x$auc_value)
+calibration_slope_male <- sapply(bootstrap_results_male, function(x) x$calibration_slope)
 
-cat("Mean Nagelkerke R²:", mean_nagelkerke_r2, "\n")
-cat("Mean Brier Score:", mean_brier_score, "\n")
-cat("Mean AUC:", mean_auc, "\n")
-cat("Mean Calibration Slope:", mean_calibration_slope, "\n")
+mean_nagelkerke_r2_male <- mean(nagelkerke_r2_male)
+mean_brier_score_male <- mean(brier_score_male)
+mean_auc_male <- mean(auc_male)
+mean_calibration_slope_male <- mean(calibration_slope_male)
+
+# Aggregate and summarize results for female
+nagelkerke_r2_female <- sapply(bootstrap_results_female, function(x) x$nagelkerke_r2)
+brier_score_female <- sapply(bootstrap_results_female, function(x) x$brier_score)
+auc_female <- sapply(bootstrap_results_female, function(x) x$auc_value)
+calibration_slope_female <- sapply(bootstrap_results_female, function(x) x$calibration_slope)
+
+mean_nagelkerke_r2_female <- mean(nagelkerke_r2_female)
+mean_brier_score_female <- mean(brier_score_female)
+mean_auc_female <- mean(auc_female)
+mean_calibration_slope_female <- mean(calibration_slope_female)
+
+# Print summarized results
+cat("Male Model:\n")
+cat("Mean Nagelkerke R²:", mean_nagelkerke_r2_male, "\n")
+cat("Mean Brier Score:", mean_brier_score_male, "\n")
+cat("Mean AUC:", mean_auc_male, "\n")
+cat("Mean Calibration Slope:", mean_calibration_slope_male, "\n\n")
+
+cat("Female Model:\n")
+cat("Mean Nagelkerke R²:", mean_nagelkerke_r2_female, "\n")
+cat("Mean Brier Score:", mean_brier_score_female, "\n")
+cat("Mean AUC:", mean_auc_female, "\n")
+cat("Mean Calibration Slope:", mean_calibration_slope_f)
 
 # Calibration plots with LOESS
 plot_calibration <- function(data, predicted_probs, title) {
