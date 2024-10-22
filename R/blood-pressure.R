@@ -82,6 +82,12 @@ adjust_DBP <- function(BPMDPBPD) {
 #' @param ANYMED2 An integer indicating whether the respondent is on medication for hypertension.
 #'   - 1: Yes
 #'   - 0: No
+#' @param CCC_32 An optional integer indicating whether the respondent is actually on medication for hypertension.
+#'   - 1: Yes
+#'   - 2: No (default)
+#' @param CARDIOV An optional integer indicating the presence of cardiovascular disease, affecting medication status.
+#'   - 1: Yes
+#'   - 2: No (default)  
 #' @param DIABX An optional integer indicating the presence of diabetes, affecting blood pressure thresholds.
 #'   - 1: Yes
 #'   - 2: No (default)
@@ -105,10 +111,15 @@ adjust_DBP <- function(BPMDPBPD) {
 #' # Output: 2 (Normal blood pressure as BP is below 140/90 mmHg and not on medication).
 #' 
 #' @export
-determine_hypertension <- function(BPMDPBPS, BPMDPBPD, ANYMED2, DIABX = 2, CKD = 2) {
+determine_hypertension <- function(BPMDPBPS, BPMDPBPD, ANYMED2, CCC_32 = 2, CARDIOV = 2, DIABX = 2, CKD = 2) {
   highsys140 <- NA
   highdias90 <- NA
   highBP14090 <- haven::tagged_na("b")
+  
+  # Set ANYMED2 to 0 if CCC_32 = 2 and either CARDIOV, CKD, or DIABX = 1
+  if (CCC_32 == 2 && (CARDIOV == 1 || CKD == 1 || DIABX == 1)) {
+    ANYMED2 <- 0
+  }
   
   if (is.na(BPMDPBPS) || is.na(BPMDPBPD)) {
     if (!is.na(ANYMED2) && ANYMED2 == 1) {
@@ -179,6 +190,12 @@ determine_hypertension <- function(BPMDPBPS, BPMDPBPD, ANYMED2, DIABX = 2, CKD =
 #' @param ANYMED2 An integer indicating whether the respondent is on medication for hypertension.
 #'   - 1: Yes
 #'   - 0: No
+#' @param CCC_32 An optional integer indicating whether the respondent is actually on medication for hypertension.
+#'   - 1: Yes
+#'   - 2: No (default)
+#' @param CARDIOV An optional integer indicating the presence of cardiovascular disease, affecting medication status.
+#'   - 1: Yes
+#'   - 2: No (default)  
 #' @param DIABX An optional integer indicating the presence of diabetes, affecting blood pressure thresholds.
 #'   - 1: Yes
 #'   - 2: No (default)
@@ -202,10 +219,15 @@ determine_hypertension <- function(BPMDPBPS, BPMDPBPD, ANYMED2, DIABX = 2, CKD =
 #' # Output: 2 (Normal blood pressure as adjusted BP is below 140/90 mmHg and not on medication).
 #' 
 #' @export
-determine_adjusted_hypertension <- function(SBP_adj, DBP_adj, ANYMED2, DIABX = 2, CKD = 2) {
+determine_adjusted_hypertension <- function(SBP_adj, DBP_adj, ANYMED2, CCC_32 = 2, CARDIOV = 2, DIABX = 2, CKD = 2) {
   highsys140_adj <- NA
   highdias90_adj <- NA
   highBP14090_adj <- haven::tagged_na("b")
+  
+  # Set ANYMED2 to 0 if CCC_32 = 2 and either CARDIOV, CKD, or DIABX = 1
+  if (CCC_32 == 2 && (CARDIOV == 1 || CKD == 1 || DIABX == 1)) {
+    ANYMED2 <- 0
+  }
   
   if (is.na(SBP_adj) || is.na(DBP_adj)) {
     if (!is.na(ANYMED2) && ANYMED2 == 1) {
@@ -282,6 +304,12 @@ determine_adjusted_hypertension <- function(SBP_adj, DBP_adj, ANYMED2, DIABX = 2
 #' @param ANYMED2 An integer indicating whether the respondent is on medication for hypertension.
 #'   - 1: Yes
 #'   - 0: No
+#' @param CCC_32 An optional integer indicating whether the respondent is actually on medication for hypertension.
+#'   - 1: Yes
+#'   - 2: No (default)
+#' @param CARDIOV An optional integer indicating the presence of cardiovascular disease, affecting medication status.
+#'   - 1: Yes
+#'   - 2: No (default)  
 #' @param DIABX An optional integer indicating the presence of diabetes, affecting blood pressure thresholds.
 #'   - 1: Yes
 #'   - 2: No (default)
@@ -305,10 +333,15 @@ determine_adjusted_hypertension <- function(SBP_adj, DBP_adj, ANYMED2, DIABX = 2
 #' # Output: 1 (Hypertension controlled as BP is below 140/90 mmHg and on medication).
 #' 
 #' @export
-determine_controlled_hypertension <- function(BPMDPBPS, BPMDPBPD, ANYMED2, DIABX = 2, CKD = 2) {
+determine_controlled_hypertension <- function(BPMDPBPS, BPMDPBPD, ANYMED2, CCC_32 = 2, CARDIOV = 2, DIABX = 2, CKD = 2) {
   highsys140 <- NA
   highdias90 <- NA
   Control14090 <- haven::tagged_na("b")
+  
+  # Set ANYMED2 to 0 if CCC_32 = 2 and either CARDIOV, CKD, or DIABX = 1
+  if (CCC_32 == 2 && (CARDIOV == 1 || CKD == 1 || DIABX == 1)) {
+    ANYMED2 <- 0
+  }
   
   if (is.na(BPMDPBPS) || is.na(BPMDPBPD)) {
       return(Control14090)
@@ -371,6 +404,12 @@ determine_controlled_hypertension <- function(BPMDPBPS, BPMDPBPD, ANYMED2, DIABX
 #' @param ANYMED2 An integer indicating whether the respondent is on medication for hypertension.
 #'   - 1: Yes
 #'   - 0: No
+#' @param CCC_32 An optional integer indicating whether the respondent is actually on medication for hypertension.
+#'   - 1: Yes
+#'   - 2: No (default)
+#' @param CARDIOV An optional integer indicating the presence of cardiovascular disease, affecting medication status.
+#'   - 1: Yes
+#'   - 2: No (default)  
 #' @param DIABX An optional integer indicating the presence of diabetes, affecting blood pressure thresholds.
 #'   - 1: Yes
 #'   - 2: No (default)
@@ -394,10 +433,15 @@ determine_controlled_hypertension <- function(BPMDPBPS, BPMDPBPD, ANYMED2, DIABX
 #' # Output: 1 (Hypertension controlled as adjusted BP is below 140/90 mmHg and on medication).
 #' 
 #' @export
-determine_controlled_adjusted_hypertension <- function(SBP_adj, DBP_adj, ANYMED2, DIABX = 2, CKD = 2) {
+determine_controlled_adjusted_hypertension <- function(SBP_adj, DBP_adj, ANYMED2, CCC_32 = 2, CARDIOV = 2, DIABX = 2, CKD = 2) {
   highsys140_adj <- NA
   highdias90_adj <- NA
   Control14090_adj <- haven::tagged_na("b")
+  
+  # Set ANYMED2 to 0 if CCC_32 = 2 and either CARDIOV, CKD, or DIABX = 1
+  if (CCC_32 == 2 && (CARDIOV == 1 || CKD == 1 || DIABX == 1)) {
+    ANYMED2 <- 0
+  }
   
   if (is.na(SBP_adj) || is.na(DBP_adj)) {
     return(Control14090_adj)

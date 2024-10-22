@@ -83,6 +83,9 @@ create_descriptive_table(
 )
 
 # Generate Table 2c - meds distribution
+imputed_cycles1to6_data <- imputed_cycles1to6_data %>%
+  mutate(anymed2 = if_else(ccc_32 == 2 & (cardiov == 1 | ckd == 1 | diabx == 1), 0, anymed2))
+
 table2c_data <- get_descriptive_data(
   imputed_cycles1to6_data,
   my_variables,

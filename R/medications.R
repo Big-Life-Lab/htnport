@@ -676,7 +676,7 @@ cycles1to2_other_antiHTN_meds <- function(
   else if (all(is.na(misc$MISCmed))) {
     miscmed <- haven::tagged_na("b")
   }
-
+  
   return(miscmed)
   
 }
