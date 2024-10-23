@@ -35,8 +35,9 @@ my_variables <- read.csv("P:/10619/Dropbox/chmsflow/worksheets/variables.csv")
 my_variable_details <- read.csv("P:/10619/Dropbox/chmsflow/worksheets/variable-details.csv")
 
 # Load medication data - make them have same name as cycle to recode med vars
-cycle1 <- read_stata("data/cycle1/cycle1-meds.dta")
-cycle2 <- read_stata("data/cycle2/cycle2-meds.dta")
+cycle1 <- read_sas("data/cycle1/cycle1-meds.sas7bdat")
+names(cycle1) <- tolower(names(cycle1)) 
+cycle2 <- read_sas("data/cycle2/cycle2-meds.sas7bdat")
 cycle3 <- read_stata("data/cycle3/cycle3-meds.dta")
 cycle4 <- read_stata("data/cycle4/cycle4-meds.dta")
 names(cycle4) <- tolower(names(cycle4)) 
@@ -95,7 +96,7 @@ process_long_medication_data <- function(cycle_data, cycle_medication_data) {
     )
   
   # Step 2: Merge the summarized data back to the original cycle_data
-  cycle_data <- merge(cycle_data, cycle_medication_data, by = "clinicid")
+  cycle_data <- dplyr::left_join(cycle_data, cycle_medication_data, by = c("clinicid"))
   
   # Step 3: Create 'anymed2' and 'diab_drug2', and clean up columns
   cycle_data <- cycle_data %>%
