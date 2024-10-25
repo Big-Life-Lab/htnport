@@ -56,8 +56,31 @@ create_descriptive_table(
   column_stratifier = c("clc_sex")
 )
 
-# Generate Table 2b - predictor x outcome distribution
-table2b_data <- get_descriptive_data(
+# Generate Table 2b - weighted sex x outcome distribution
+weighted_data <- svydesign(
+  id = ~1,
+  weights = ~wgt_full,
+  data = imputed_cycles1to6_data
+)
+
+table2b_data <- table(imputed_cycles1to6_data$highbp14090_adj, imputed_cycles1to6_data$clc_sex)
+table2b_weighted_data <- svytable(~highbp14090_adj + clc_sex, weighted_data)
+column_percentages <- prop.table(table2b_weighted_data, margin = 2) * 100
+
+table2b <- matrix(
+  paste0(table2b_data, " (", round(column_percentages, 2), "%)"),
+  nrow = nrow(table2b_data),
+  dimnames = dimnames(table2b_data)
+)
+
+table2b <- as.data.frame(table2b)
+rownames(table2b) <- c("Hypertensive", "Non-hypertensive")
+colnames(table2b) <- c("Male", "Female")
+  
+flextable::flextable(table2b)
+
+# Generate Table 2c - predictor x outcome distribution
+table2c_data <- get_descriptive_data(
   imputed_cycles1to6_data,
   my_variables,
   my_variable_details,
@@ -71,7 +94,7 @@ table2b_data <- get_descriptive_data(
 )
 
 create_descriptive_table(
-  table2b_data,
+  table2c_data,
   my_variables,
   my_variable_details,
   recodeflow:::select_vars_by_role(
@@ -82,40 +105,40 @@ create_descriptive_table(
   subjects_order = c("Age", "Marital status", "Education", "Occupation", "Family history", "Exercise", "Diet", "Weight", "Chronic disease", "Alcohol", "Smoking", "Sleep", "General")
 )
 
-# Generate Table 2c - meds distribution
-table2c_data <- get_descriptive_data(
-  imputed_cycles1to6_data,
-  my_variables,
-  my_variable_details,
-  # All the variables whose descriptive statistics we want
-  "ccc_32",
-  # Sets the stratifier
-  list("all" = list("anymed2"))
-)
-
-create_descriptive_table(
-  table2c_data,
-  my_variables,
-  my_variable_details,
-  "ccc_32",
-  column_stratifier = c("anymed2")
-)
-
-# Generate Table 2d - misclassified meds distribution for chronic conditions
-imputed_cycles1to6_data$misclassified_meds <- ifelse(imputed_cycles1to6_data$anymed2 == 1 & imputed_cycles1to6_data$ccc_32 == 2, 1, 0)
-
-table2d_data <- imputed_cycles1to6_data %>%
-  group_by(misclassified_meds) %>%
-  summarise(
-    diabx_1_count = sum(diabx == 1, na.rm = TRUE),
-    diabx_2_count = sum(diabx == 2, na.rm = TRUE),
-    cardiov_1_count = sum(cardiov == 1, na.rm = TRUE),
-    cardiov_2_count = sum(cardiov == 2, na.rm = TRUE),
-    ckd_1_count = sum(ckd == 1, na.rm = TRUE),
-    ckd_2_count = sum(ckd == 2, na.rm = TRUE)
-  )
-
-flextable::flextable(table2d_data)
+# # Generate Table 2d - meds distribution
+# table2d_data <- get_descriptive_data(
+#   imputed_cycles1to6_data,
+#   my_variables,
+#   my_variable_details,
+#   # All the variables whose descriptive statistics we want
+#   "ccc_32",
+#   # Sets the stratifier
+#   list("all" = list("anymed2"))
+# )
+# 
+# create_descriptive_table(
+#   table2d_data,
+#   my_variables,
+#   my_variable_details,
+#   "ccc_32",
+#   column_stratifier = c("anymed2")
+# )
+# 
+# # Generate Table 2e - misclassified meds distribution for chronic conditions
+# imputed_cycles1to6_data$misclassified_meds <- ifelse(imputed_cycles1to6_data$anymed2 == 1 & imputed_cycles1to6_data$ccc_32 == 2, 1, 0)
+# 
+# table2e_data <- imputed_cycles1to6_data %>%
+#   group_by(misclassified_meds) %>%
+#   summarise(
+#     diabx_1_count = sum(diabx == 1, na.rm = TRUE),
+#     diabx_2_count = sum(diabx == 2, na.rm = TRUE),
+#     cardiov_1_count = sum(cardiov == 1, na.rm = TRUE),
+#     cardiov_2_count = sum(cardiov == 2, na.rm = TRUE),
+#     ckd_1_count = sum(ckd == 1, na.rm = TRUE),
+#     ckd_2_count = sum(ckd == 2, na.rm = TRUE)
+#   )
+# 
+# flextable::flextable(table2e_data)
 
 # Truncate skewed continuous variables if necessary
 truncate_skewed <- function(df, threshold = 0.995, skew_threshold = 1) {
