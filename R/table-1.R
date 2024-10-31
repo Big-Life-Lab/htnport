@@ -3,15 +3,7 @@ setwd("P:/10619/Dropbox/chmsflow")
 
 # Load packages and functions
 source("R/installation.R")
-
-library(recodeflow)
-library(cchsflow)
 library(dplyr)
-library(readr)
-library(haven)
-library(cli)
-library(mice)
-library(broom)
 
 source("R/alcohol.R")
 source("R/blood-pressure.R")
@@ -76,8 +68,8 @@ cycle2_medication_data$anymed2 <- as.numeric(as.character(cycle2_medication_data
 cycle1_medication_data$diab_drug2 <- as.numeric(as.character(cycle1_medication_data$diab_drug))
 cycle2_medication_data$diab_drug2 <- as.numeric(as.character(cycle2_medication_data$diab_drug))
 
-cycle1_medication_data <- select(cycle1_medication_data, clinicid, anymed2, diab_drug2)
-cycle2_medication_data <- select(cycle2_medication_data, clinicid, anymed2, diab_drug2)
+cycle1_medication_data <- dplyr::select(cycle1_medication_data, clinicid, anymed2, diab_drug2)
+cycle2_medication_data <- dplyr::select(cycle2_medication_data, clinicid, anymed2, diab_drug2)
 
 cycle1 <- merge(cycle1, cycle1_medication_data, by = "clinicid")
 cycle2 <- merge(cycle2, cycle2_medication_data, by = "clinicid")
@@ -87,8 +79,8 @@ process_long_medication_data <- function(cycle_data, cycle_medication_data) {
   
   # Step 1: Group and summarize the medication data
   cycle_medication_data <- cycle_medication_data %>%
-    group_by(clinicid) %>%
-    summarize(
+    dplyr::group_by(clinicid) %>%
+    dplyr::summarize(
       meucatc = paste(unique(meucatc), collapse = ", "),   # Concatenate unique values of meucatc
       npi_25b = paste(unique(npi_25b), collapse = ", "),   # Concatenate unique values of npi_25b
       anymed = max(as.numeric(as.character(anymed))),      # Find the maximum of anymed
@@ -100,9 +92,9 @@ process_long_medication_data <- function(cycle_data, cycle_medication_data) {
   
   # Step 3: Create 'anymed2' and 'diab_drug2', and clean up columns
   cycle_data <- cycle_data %>%
-    mutate(anymed2 = anymed) %>%
-    mutate(diab_drug2 = diab_drug) %>%
-    select(-c(anymed, diab_drug))
+    dplyr::mutate(anymed2 = anymed) %>%
+    dplyr::mutate(diab_drug2 = diab_drug) %>%
+    dplyr::select(-c(anymed, diab_drug))
   
   return(cycle_data)
 }
@@ -132,53 +124,138 @@ tracey <- subset(tracey, select = -c(CLINICID, avg_mvpa, adultPAG))
 
 cycles1to6_data <- dplyr::left_join(cycles1to6_data, tracey, by = c("clinicid"))
 cycles1to6_data <- cycles1to6_data %>%
-  mutate(mvpa_min = coalesce(mvpa_min.x, mvpa_min.y),
+  dplyr::mutate(mvpa_min = coalesce(mvpa_min.x, mvpa_min.y),
          minperweek = coalesce(minperweek.x, minperweek.y)) %>%
-  mutate(mvpa_min = ifelse(is.na(mvpa_min), haven::tagged_na("b"), mvpa_min),
+  dplyr::mutate(mvpa_min = ifelse(is.na(mvpa_min), haven::tagged_na("b"), mvpa_min),
          minperweek = ifelse(is.na(minperweek), haven::tagged_na("b"), minperweek)) %>%
-  select(c(wgt_full, clc_sex, recodeflow:::select_vars_by_role(c("imputation-predictor"), my_variables)))
+  dplyr::select(c(wgt_full, clc_sex, recodeflow:::select_vars_by_role(c("imputation-predictor"), my_variables)))
 
-# Ensure derived categorical variables present in all six cycles can be properly tabulated
-recode_na_b <- function(column) {
-  # Convert the column to character if it's a factor
-  if (is.factor(column)) {
-    column <- as.character(column)
-  }
-  # Replace "NA(c)" with "NA(b)"
-  column[column == "NA(c)"] <- "NA(b)"
-  return(column)
-}
+# # Ensure derived categorical variables present in all six cycles can be properly tabulated
+# recode_na_b <- function(column) {
+#   # Convert the column to character if it's a factor
+#   if (is.factor(column)) {
+#     column <- as.character(column)
+#   }
+#   # Replace "NA(c)" with "NA(b)"
+#   column[column == "NA(c)"] <- "NA(b)"
+#   return(column)
+# }
+# 
+# cycles1to6_data$ckd <- recode_na_b(cycles1to6_data$ckd)
+# cycles1to6_data$diabx <- recode_na_b(cycles1to6_data$diabx)
+# cycles1to6_data$low_drink_score1 <- recode_na_b(cycles1to6_data$low_drink_score1)
+# cycles1to6_data$working <- recode_na_b(cycles1to6_data$working)
+# 
+# # Generate unimputed Table 1
+# table1_data <- get_descriptive_data(
+#   cycles1to6_data,
+#   my_variables,
+#   my_variable_details,
+#   # All the variables whose descriptive statistics we want
+#   recodeflow:::select_vars_by_role(
+#     c("Table 1"),
+#     my_variables
+#   ),
+#   # Sets the stratifier
+#   list("all" = list("clc_sex"))
+# )
+# 
+# create_descriptive_table(
+#   table1_data,
+#   my_variables,
+#   my_variable_details,
+#   recodeflow:::select_vars_by_role(
+#     c("Table 1"),
+#     my_variables
+#   ),
+#   column_stratifier = c("clc_sex"),
+#   subjects_order = c("Age", "Sex", "Marital status", "Education", "Occupation", "Family history", "Exercise", "Diet", "Weight", "Chronic disease", "Alcohol", "Smoking", "Sleep", "General")
+# )
 
-cycles1to6_data$ckd <- recode_na_b(cycles1to6_data$ckd)
-cycles1to6_data$diabx <- recode_na_b(cycles1to6_data$diabx)
-cycles1to6_data$low_drink_score1 <- recode_na_b(cycles1to6_data$low_drink_score1)
-cycles1to6_data$working <- recode_na_b(cycles1to6_data$working)
+# Generate unimputed and weighted Table 1
+cycles1to6_data <- cycles1to6_data %>%
+  dplyr::rename(
+    'Age' = clc_age,
+    `Marital status` = married,
+    `Highest education level` = edudr04,
+    `Working status` = working,
+    `Hypertension family history` = fmh_15,
+    `Minutes of exercise per week` = minperweek,
+    `Daily fruit and vegetable consumption` = totalfv,
+    `Body mass index` = hwmdbmi,
+    `Waist-to-height ratio` = whr,
+    `Chronic kidney disease` = ckd,
+    'Diabetes' = diabx,
+    `Alcohol consumption level` = low_drink_score1,
+    `Smoking status` = smoke,
+    `Hours of sleep per day` = slp_11,
+    `Self-rated mental health` = gendmhi,
+    'Stress' = gen_025,
+    `Sense of belonging` = gen_045
+  )
 
-# Generate unimputed Table 1
-table1_data <- get_descriptive_data(
-  cycles1to6_data,
-  my_variables,
-  my_variable_details,
-  # All the variables whose descriptive statistics we want
-  recodeflow:::select_vars_by_role(
-    c("Table 1"),
-    my_variables
-  ),
-  # Sets the stratifier
-  list("all" = list("clc_sex"))
+weighted_data <- survey::svydesign(
+  id = ~1,
+  weights = ~wgt_full,
+  data = cycles1to6_data 
 )
 
-create_descriptive_table(
-  table1_data,
-  my_variables,
-  my_variable_details,
-  recodeflow:::select_vars_by_role(
-    c("Table 1"),
-    my_variables
+gtsummary::tbl_svysummary(
+  data = weighted_data, 
+  by = clc_sex,
+  include = -wgt_full,
+  statistic = list(
+    all_continuous() ~ "{median} ({p25}, {p75})",
+    all_categorical() ~ "{n_unweighted} ({p}%)"
   ),
-  column_stratifier = c("clc_sex"),
-  subjects_order = c("Age", "Sex", "Marital status", "Education", "Occupation", "Family history", "Exercise", "Diet", "Weight", "Chronic disease", "Alcohol", "Smoking", "Sleep", "General")
-)
+  missing = "ifany"
+) %>%
+  # Rename columns
+  gtsummary::modify_header(label = "**Characteristic**") %>%
+  gtsummary::modify_spanning_header(
+    all_stat_cols() ~ "**Sex**"
+  ) %>%
+  gtsummary::modify_header(
+    stat_1 = "**Male**",
+    stat_2 = "**Female**"
+  ) %>%
+  # Rename variable names and category labels
+  gtsummary::modify_table_body(
+    ~ .x %>%
+      dplyr::mutate(
+        label = dplyr::case_when(
+          variable == "Marital status" & label == "1" ~ "Married or common-law",
+          variable == "Marital status" & label == "2" ~ "Widowed, separated, or divorced",
+          variable == "Marital status" & label == "3" ~ "Single",
+          variable == "Highest education level" & label == "1" ~ "No high school",
+          variable == "Highest education level" & label == "2" ~ "Secondary",
+          variable == "Highest education level" & label == "3" ~ "Post-secondary",
+          variable == "Working status" & label == "1" ~ "Has a job",
+          variable == "Working status" & label == "2" ~ "Does not have a job",
+          variable == "Hypertension family history" & label == "1" ~ "Yes",
+          variable == "Hypertension family history" & label == "2" ~ "No",
+          variable == "Chronic kidney disease" & label == "1" ~ "Yes",
+          variable == "Chronic kidney disease" & label == "2" ~ "No",
+          variable == "Diabetes" & label == "1" ~ "Yes",
+          variable == "Diabetes" & label == "2" ~ "No",
+          variable == "Alcohol consumption level" & label == "1" ~ "Never drinker",
+          variable == "Alcohol consumption level" & label == "2" ~ "Former drinker",
+          variable == "Alcohol consumption level" & label == "3" ~ "Light drinker",
+          variable == "Alcohol consumption level" & label == "4" ~ "Moderate to heavy drinker",
+          variable == "Smoking status" & label == "1" ~ "Current smoker",
+          variable == "Smoking status" & label == "2" ~ "Former smoker",
+          variable == "Smoking status" & label == "3" ~ "Never smoker",
+          variable == "Self-rated mental health" & label == "1" ~ "Poor",
+          variable == "Self-rated mental health" & label == "2" ~ "Fair or good",
+          variable == "Self-rated mental health" & label == "3" ~ "Very good or excellent",
+          variable == "Stress" & label == "1" ~ "Not at all to a bit",
+          variable == "Stress" & label == "2" ~ "Quite a bit or extremely",
+          variable == "Sense of belonging" & label == "1" ~ "Strong",
+          variable == "Sense of belonging" & label == "2" ~ "Weak",
+          TRUE ~ label
+        )
+      )
+  )
 
 # Repeat combination of cycles, obtaining of sample, and merging of extra accelerometer data
 cycles1to6_data <- cchsflow::merge_rec_data(cycle1_data, cycle2_data, cycle3_data, cycle4_data, cycle5_data, cycle6_data)
@@ -192,41 +269,126 @@ tracey <- subset(tracey, select = -c(CLINICID, avg_mvpa, adultPAG))
 
 cycles1to6_data <- dplyr::left_join(cycles1to6_data, tracey, by = c("clinicid"))
 cycles1to6_data <- cycles1to6_data %>%
-  mutate(mvpa_min = coalesce(mvpa_min.x, mvpa_min.y),
+  dplyr::mutate(mvpa_min = coalesce(mvpa_min.x, mvpa_min.y),
          minperweek = coalesce(minperweek.x, minperweek.y)) %>%
-  mutate(mvpa_min = ifelse(is.na(mvpa_min), haven::tagged_na("b"), mvpa_min),
+  dplyr::mutate(mvpa_min = ifelse(is.na(mvpa_min), haven::tagged_na("b"), mvpa_min),
          minperweek = ifelse(is.na(minperweek), haven::tagged_na("b"), minperweek)) %>%
-  select(c(wgt_full, clc_sex, recodeflow:::select_vars_by_role(c("imputation-predictor"), my_variables)), cardiov, anymed2, ccc_32)
+  dplyr::select(c(wgt_full, clc_sex, recodeflow:::select_vars_by_role(c("imputation-predictor"), my_variables)), cardiov, anymed2, ccc_32)
 
 # Impute data
 set.seed(123)
-imputed_cycles1to6_data <- impute_variables(select(cycles1to6_data, -c(cardiov, anymed2, ccc_32)), outcomes = recodeflow:::select_vars_by_role(c("Predictor"), my_variables), predictors = recodeflow:::select_vars_by_role(c("imputation-predictor"), my_variables))
+imputed_cycles1to6_data <- impute_variables(dplyr::select(cycles1to6_data, -c(cardiov, anymed2, ccc_32)), outcomes = recodeflow:::select_vars_by_role(c("Predictor"), my_variables), predictors = recodeflow:::select_vars_by_role(c("imputation-predictor"), my_variables))
 
 # Generate imputed Table 1
-imputed_table1_data <- get_descriptive_data(
-  imputed_cycles1to6_data,
-  my_variables,
-  my_variable_details,
-  # All the variables whose descriptive statistics we want
-  recodeflow:::select_vars_by_role(
-    c("Table 1"),
-    my_variables
-  ),
-  # Sets the stratifier
-  list("all" = list("clc_sex"))
+# imputed_table1_data <- get_descriptive_data(
+#   imputed_cycles1to6_data,
+#   my_variables,
+#   my_variable_details,
+#   # All the variables whose descriptive statistics we want
+#   recodeflow:::select_vars_by_role(
+#     c("Table 1"),
+#     my_variables
+#   ),
+#   # Sets the stratifier
+#   list("all" = list("clc_sex"))
+# )
+# 
+# create_descriptive_table(
+#   imputed_table1_data,
+#   my_variables,
+#   my_variable_details,
+#   recodeflow:::select_vars_by_role(
+#     c("Table 1"),
+#     my_variables
+#   ),
+#   column_stratifier = c("clc_sex"),
+#   subjects_order = c("Age", "Sex", "Marital status", "Education", "Occupation", "Family history", "Exercise", "Diet", "Weight", "Chronic disease", "Alcohol", "Smoking", "Sleep", "General")
+# )
+
+# Generate imputed and weighted Table 1
+imputed_cycles1to6_data <- imputed_cycles1to6_data %>%
+  dplyr::rename(
+    'Age' = clc_age,
+    `Marital status` = married,
+    `Highest education level` = edudr04,
+    `Working status` = working,
+    `Hypertension family history` = fmh_15,
+    `Minutes of exercise per week` = minperweek,
+    `Daily fruit and vegetable consumption` = totalfv,
+    `Body mass index` = hwmdbmi,
+    `Waist-to-height ratio` = whr,
+    `Chronic kidney disease` = ckd,
+    'Diabetes' = diabx,
+    `Alcohol consumption level` = low_drink_score1,
+    `Smoking status` = smoke,
+    `Hours of sleep per day` = slp_11,
+    `Self-rated mental health` = gendmhi,
+    'Stress' = gen_025,
+    `Sense of belonging` = gen_045
+  )
+
+weighted_imputed_data <- survey::svydesign(
+  id = ~1,
+  weights = ~wgt_full,
+  data = imputed_cycles1to6_data 
 )
 
-create_descriptive_table(
-  imputed_table1_data,
-  my_variables,
-  my_variable_details,
-  recodeflow:::select_vars_by_role(
-    c("Table 1"),
-    my_variables
+gtsummary::tbl_svysummary(
+  data = weighted_imputed_data, 
+  by = clc_sex,
+  include = -wgt_full,
+  statistic = list(
+    all_continuous() ~ "{median} ({p25}, {p75})",
+    all_categorical() ~ "{n_unweighted} ({p}%)"
   ),
-  column_stratifier = c("clc_sex"),
-  subjects_order = c("Age", "Sex", "Marital status", "Education", "Occupation", "Family history", "Exercise", "Diet", "Weight", "Chronic disease", "Alcohol", "Smoking", "Sleep", "General")
-)
+  missing = "no"
+) %>%
+  # Rename columns
+  gtsummary::modify_header(label = "**Characteristic**") %>%
+  gtsummary::modify_spanning_header(
+    all_stat_cols() ~ "**Sex**"
+  ) %>%
+  gtsummary::modify_header(
+    stat_1 = "**Male**",
+    stat_2 = "**Female**"
+  ) %>%
+  # Rename variable names and category labels
+  gtsummary::modify_table_body(
+    ~ .x %>%
+      dplyr::mutate(
+        label = dplyr::case_when(
+          variable == "Marital status" & label == "1" ~ "Married or common-law",
+          variable == "Marital status" & label == "2" ~ "Widowed, separated, or divorced",
+          variable == "Marital status" & label == "3" ~ "Single",
+          variable == "Highest education level" & label == "1" ~ "No high school",
+          variable == "Highest education level" & label == "2" ~ "Secondary",
+          variable == "Highest education level" & label == "3" ~ "Post-secondary",
+          variable == "Working status" & label == "1" ~ "Has a job",
+          variable == "Working status" & label == "2" ~ "Does not have a job",
+          variable == "Hypertension family history" & label == "1" ~ "Yes",
+          variable == "Hypertension family history" & label == "2" ~ "No",
+          variable == "Chronic kidney disease" & label == "1" ~ "Yes",
+          variable == "Chronic kidney disease" & label == "2" ~ "No",
+          variable == "Diabetes" & label == "1" ~ "Yes",
+          variable == "Diabetes" & label == "2" ~ "No",
+          variable == "Alcohol consumption level" & label == "1" ~ "Never drinker",
+          variable == "Alcohol consumption level" & label == "2" ~ "Former drinker",
+          variable == "Alcohol consumption level" & label == "3" ~ "Light drinker",
+          variable == "Alcohol consumption level" & label == "4" ~ "Moderate to heavy drinker",
+          variable == "Smoking status" & label == "1" ~ "Current smoker",
+          variable == "Smoking status" & label == "2" ~ "Former smoker",
+          variable == "Smoking status" & label == "3" ~ "Never smoker",
+          variable == "Self-rated mental health" & label == "1" ~ "Poor",
+          variable == "Self-rated mental health" & label == "2" ~ "Fair or good",
+          variable == "Self-rated mental health" & label == "3" ~ "Very good or excellent",
+          variable == "Stress" & label == "1" ~ "Not at all to a bit",
+          variable == "Stress" & label == "2" ~ "Quite a bit or extremely",
+          variable == "Sense of belonging" & label == "1" ~ "Strong",
+          variable == "Sense of belonging" & label == "2" ~ "Weak",
+          TRUE ~ label
+        )
+      )
+  )
 
 # Add extra variables to imputed dataset for exploratory analysis
 imputed_cycles1to6_data$cardiov <- cycles1to6_data$cardiov

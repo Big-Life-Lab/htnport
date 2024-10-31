@@ -4,10 +4,6 @@ setwd("P:/10619/Dropbox/chmsflow")
 # Load this R file to obtain imputed dataset
 source("R/table-1.R")
 
-# Load new packages
-library(e1071)
-library(survey)
-
 # Synthetic dataset for test use outside RDC
 # imputed_cycles1to6_data <- data.frame(
 #   highbp14090_adj = sample(1:2, 9627, replace = TRUE), # Binary outcome
@@ -57,27 +53,46 @@ create_descriptive_table(
 )
 
 # Generate Table 2b - weighted sex x outcome distribution
-weighted_data <- svydesign(
+imputed_cycles1to6_data <- imputed_cycles1to6_data %>%
+  dplyr::rename(
+    'Hypertension' = highbp14090_adj
+  )
+
+weighted_imputed_data <- survey::svydesign(
   id = ~1,
   weights = ~wgt_full,
-  data = imputed_cycles1to6_data
+  data = dplyr::select(imputed_cycles1to6_data, c('Hypertension', clc_sex, wgt_full))
 )
 
-table2b_data <- table(imputed_cycles1to6_data$highbp14090_adj, imputed_cycles1to6_data$clc_sex)
-table2b_weighted_data <- svytable(~highbp14090_adj + clc_sex, weighted_data)
-column_percentages <- prop.table(table2b_weighted_data, margin = 2) * 100
-
-table2b <- matrix(
-  paste0(table2b_data, " (", round(column_percentages, 2), "%)"),
-  nrow = nrow(table2b_data),
-  dimnames = dimnames(table2b_data)
-)
-
-table2b <- as.data.frame(table2b)
-rownames(table2b) <- c("Hypertensive", "Non-hypertensive")
-colnames(table2b) <- c("Male", "Female")
-  
-flextable::flextable(table2b)
+gtsummary::tbl_svysummary(
+  data = weighted_imputed_data, 
+  by = clc_sex,
+  include = -wgt_full,
+  statistic = list(
+    all_categorical() ~ "{n_unweighted} ({p}%)"
+  ),
+  missing = "no"
+) %>%
+  # Rename columns
+  gtsummary::modify_header(label = "**Characteristic**") %>%
+  gtsummary::modify_spanning_header(
+    all_stat_cols() ~ "**Sex**"
+  ) %>%
+  gtsummary::modify_header(
+    stat_1 = "**Male**",
+    stat_2 = "**Female**"
+  ) %>%
+  # Rename variable names and category labels
+  gtsummary::modify_table_body(
+    ~ .x %>%
+      dplyr::mutate(
+        label = dplyr::case_when(
+          variable == "Hypertension" & label == "1" ~ "Yes",
+          variable == "Hypertension" & label == "2" ~ "No",
+          TRUE ~ label
+        )
+      )
+  )
 
 # Generate Table 2c - predictor x outcome distribution
 table2c_data <- get_descriptive_data(
@@ -140,6 +155,30 @@ create_descriptive_table(
 # 
 # flextable::flextable(table2e_data)
 
+# Revert the names in the data frame
+original_names <- c(
+  "Hypertension" = "highbp14090_adj",
+  "Age" = "clc_age",
+  "Marital status" = "married",
+  "Highest education level" = "edudr04",
+  "Working status" = "working",
+  "Hypertension family history" = "fmh_15",
+  "Minutes of exercise per week" = "minperweek",
+  "Daily fruit and vegetable consumption" = "totalfv",
+  "Body mass index" = "hwmdbmi",
+  "Waist-to-height ratio" = "whr",
+  "Chronic kidney disease" = "ckd",
+  "Diabetes" = "diabx",
+  "Alcohol consumption level" = "low_drink_score1",
+  "Smoking status" = "smoke",
+  "Hours of sleep per day" = "slp_11",
+  "Self-rated mental health" = "gendmhi",
+  "Stress" = "gen_025",
+  "Sense of belonging" = "gen_045"
+)
+
+names(imputed_cycles1to6_data) <- dplyr::recode(names(imputed_cycles1to6_data), !!!original_names)
+
 # Truncate skewed continuous variables if necessary
 truncate_skewed <- function(df, threshold = 0.995, skew_threshold = 1) {
   
@@ -151,7 +190,7 @@ truncate_skewed <- function(df, threshold = 0.995, skew_threshold = 1) {
     if (is.numeric(df[[col]])) {
       
       # Calculate skewness
-      skewness_value <- skewness(df[[col]], na.rm = TRUE)
+      skewness_value <- e1071::skewness(df[[col]], na.rm = TRUE)
       
       # Check if the variable is skewed
       if (abs(skewness_value) > skew_threshold) {
@@ -175,7 +214,7 @@ imputed_cycles1to6_data <- truncate_skewed(imputed_cycles1to6_data)
 
 # Recode 2s as 0s in binary predictors and factorize all categorical predictors
 imputed_cycles1to6_data <- imputed_cycles1to6_data %>%
-  mutate(highbp14090_adj = ifelse(highbp14090_adj == 2, 0, highbp14090_adj),
+  dplyr::mutate(highbp14090_adj = ifelse(highbp14090_adj == 2, 0, highbp14090_adj),
          ckd = ifelse(ckd == 2, 0, ckd),
          diabx = ifelse(diabx == 2, 0, diabx),
          fmh_15 = ifelse(fmh_15 == 2, 0, fmh_15),
@@ -199,20 +238,20 @@ cat_variables <- c("ckd", "diabx", "edudr04", "fmh_15", "gendmhi",
                "gen_025", "gen_045", "low_drink_score1", "married", 
                "smoke", "working")
 imputed_cycles1to6_data <- imputed_cycles1to6_data %>%
-  mutate(across(all_of(cat_variables), as.factor))
+  dplyr::mutate(across(all_of(cat_variables), as.factor))
 
 # Separate male and female data
-male_data <- filter(imputed_cycles1to6_data, clc_sex == 1)
-female_data <- filter(imputed_cycles1to6_data, clc_sex == 2)
+male_data <- dplyr::filter(imputed_cycles1to6_data, clc_sex == 1)
+female_data <- dplyr::filter(imputed_cycles1to6_data, clc_sex == 2)
 
 # Apply survey weights to male and female data
-weighted_male <- svydesign(
+weighted_male <- survey::svydesign(
     id = ~1,
     weights = ~wgt_full,
     data = male_data
   )
 
-weighted_female <- svydesign(
+weighted_female <- survey::svydesign(
   id = ~1,
   weights = ~wgt_full,
   data = female_data
@@ -224,7 +263,7 @@ predictors <- recodeflow:::select_vars_by_role(c("Predictor"), my_variables)
 # Function to fit crude models and return ORs and CIs for all levels of a predictor
 fit_crude_model <- function(predictor, design) {
   formula <- as.formula(paste("highbp14090_adj ~", predictor))
-  model <- svyglm(formula, design = design, family = quasibinomial())
+  model <- survey::svyglm(formula, design = design, family = quasibinomial())
   
   # Extract coefficients and calculate ORs
   coef_est <- coef(model)
@@ -244,7 +283,7 @@ fit_crude_model <- function(predictor, design) {
   )
   
   results <- results %>%
-    mutate(Level = recode(Level,
+    dplyr::mutate(Level = recode(Level,
                           "ckd1" = "Chronic kidney disease",
                           "clc_age" = "Age",
                           "diabx1" = "Diabetes",
@@ -282,8 +321,8 @@ crude_models_female <- do.call(rbind, crude_models_female)
 
 # Combine the data frames for males and females
 combined_crude_models <- bind_rows(
-  crude_models_male %>% mutate(Sex = "Male"),
-  crude_models_female %>% mutate(Sex = "Female")
+  crude_models_male %>% dplyr::mutate(Sex = "Male"),
+  crude_models_female %>% dplyr::mutate(Sex = "Female")
 )
 
 # Define the custom order for the Level column
@@ -299,9 +338,9 @@ final_order <- c(custom_order, setdiff(original_order, custom_order))
 
 # Convert the Level column to a factor with the specified levels
 combined_crude_models <- combined_crude_models %>%
-  mutate(Level = factor(Level, levels = final_order)) %>%
-  arrange(Level) %>%
-  select(-Variable)
+  dplyr::mutate(Level = factor(Level, levels = final_order)) %>%
+  dplyr::arrange(Level) %>%
+  dplyr::select(-Variable)
 
 combined_crude_models <- combined_crude_models[c("Sex", "Level", "OR", "CI_Lower", "CI_Upper")]
 

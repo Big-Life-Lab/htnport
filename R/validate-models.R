@@ -4,10 +4,6 @@ setwd("P:/10619/Dropbox/chmsflow")
 # Load this R file to obtain dataset and reduced models
 source("R/develop-models.R")
 
-# Load new packages
-library(pROC)
-library(ggplot2)
-
 # Function to calculate Nagelkerke's R²
 calculate_nagelkerke_r2 <- function(model, data) {
   # Get the number of observations
@@ -47,7 +43,7 @@ calculate_auc <- function(model, data) {
   predicted_probabilities <- predict(model, newdata = data, type = "response")
   
   # Calculate ROC curve and AUC
-  auc_value <- auc(roc(data$highbp14090_adj, predicted_probabilities))
+  auc_value <- pROC::auc(pROC::roc(data$highbp14090_adj, predicted_probabilities))
   
   return(auc_value)
 }
@@ -90,7 +86,7 @@ bootstrap_function <- function(data, indices, model) {
   boot_data <- data[indices, ]
   
   # Recreate the survey design with the bootstrap sample
-  boot_design <- svydesign(ids = ~1, weights = ~wgt_full, data = boot_data)
+  boot_design <- survey::svydesign(ids = ~1, weights = ~wgt_full, data = boot_data)
   
   # Refit the provided svyglm model on the bootstrap sample
   boot_model <- update(model, data = boot_data, design = boot_design)
@@ -135,8 +131,8 @@ n_bootstrap <- 10  # Number of bootstrap resamples
 
 # For male model
 bootstrap_results_male <- replicate(n_bootstrap, {
-  boot_indices <- sample(1:nrow(male_test_data), replace = TRUE)
-  bootstrap_function(male_test_data, boot_indices, male_reduced_model)
+  boot_indices <- sample(1:nrow(male_data), replace = TRUE)
+  bootstrap_function(male_data, boot_indices, male_reduced_model)
 }, simplify = FALSE)
 
 # For female model
@@ -227,11 +223,11 @@ female_predicted_probabilities <- generate_predicted_probabilities(female_reduce
 # Calibration plots with LOESS
 plot_calibration <- function(data, predicted_probs, title) {
   data$predicted <- predicted_probs
-  ggplot(data, aes(x = predicted, y = highbp14090_adj)) +
-    geom_point(alpha = 0.5) +
-    geom_smooth(method = "loess", color = "blue") +
-    labs(title = title, x = "Predicted Probability", y = "Observed Probability") +
-    theme_minimal()
+  ggplot2::ggplot(data, ggplot2::aes(x = predicted, y = highbp14090_adj)) +
+    ggplot2::geom_point(alpha = 0.5) +
+    ggplot2::geom_smooth(method = "loess", color = "blue") +
+    ggplot2::labs(title = title, x = "Predicted Probability", y = "Observed Probability") +
+    ggplot2::theme_minimal()
 }
 
 plot_calibration(male_data, male_predicted_probabilities, "Calibration Plot for Male Data")

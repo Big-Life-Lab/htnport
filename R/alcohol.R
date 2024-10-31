@@ -1,5 +1,3 @@
-library(logger)
-
 #' @title Calculate the low drink score for a CHMS respondent based on alcohol consumption.
 #'
 #' @param CLC_SEX An integer indicating the respondent's sex. 1 for male, 2 for female.
@@ -132,12 +130,12 @@ low_drink_score_fun <- function(CLC_SEX, ALCDWKY) {
 low_drink_score_fun1 <- function(CLC_SEX, ALCDWKY, ALC_17, ALC_11) {
   
   # if (!is.numeric(CLC_SEX) || !is.numeric(ALCDWKY) || !is.numeric(ALC_17) || !is.numeric(ALC_11)) {
-  #   log_warn("Input data must be numerics.")
+  #   logger::log_warn("Input data must be numerics.")
   #   return(haven::tagged_na("b"))
   # }
   # 
   # if (any(!CLC_SEX %in% c(1, 2)) || any(!ALCDWKY %in% c(0:84)) || any(!ALC_17 %in% c(1, 2)) || any(!ALC_11 %in% c(1, 2))) {
-  #   log_warn("Input data is out of bounds.")
+  #   logger::log_warn("Input data is out of bounds.")
   #   return(haven::tagged_na("b"))
   # }
   

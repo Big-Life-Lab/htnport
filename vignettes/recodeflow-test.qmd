@@ -6,17 +6,20 @@ format: html
 Loading required packages and functions
 ```{r}
 library(readr)
-library(here)
+library(here) # Ensure here is set to your working directory
 library(huiport)
 library(dplyr)
 library(recodeflow)
 library(haven)
 
-# Ensure to set working directory to your local directory of repo, then uncomment these
-# source("R/blood-pressure.R")
-# source("R/kidney.R")
-# source("R/get-descriptive-data.R")
-# source("R/create-descriptive-table.R")
+source(here("R", "blood-pressure.R"), local = knitr::knit_global())
+source(here("R", "kidney.R"), local = knitr::knit_global())
+withr::with_dir(here::here(), {
+  source(here("R", "variables-sheet-utils.R"), local = knitr::knit_global())
+  source(here("R", "variable-details-sheet-utils.R"), local = knitr::knit_global())
+  source(here("R", "get-descriptive-data.R"), local = knitr::knit_global())
+  source(here("R", "create-descriptive-table.R"), local = knitr::knit_global())
+})
 ```
 
 
@@ -58,25 +61,25 @@ my_variable_details <- read.csv(here("worksheets", "variable-details.csv"))
 
 ```{r}
 # Recoding basic variables
-cycle6_ages <- recodeflow::rec_with_table(cycle6, "clc_age", variable_details = my_variable_details, log = TRUE)
-cycle6_sexes <- recodeflow::rec_with_table(cycle6, "clc_sex", variable_details = my_variable_details, log = TRUE)
+cycle6_ages <- rec_with_table(cycle6, "clc_age", variable_details = my_variable_details, log = TRUE)
+cycle6_sexes <- rec_with_table(cycle6, "clc_sex", variable_details = my_variable_details, log = TRUE)
 
 head(cycle6_ages)
 head(cycle6_sexes)
 
 # Recoding a transformed variable (cont to cat)
-cycle6_categorical_ages <- recodeflow::rec_with_table(cycle6, "agegroup4", variable_details = my_variable_details, log = TRUE)
+cycle6_categorical_ages <- rec_with_table(cycle6, "agegroup4", variable_details = my_variable_details, log = TRUE)
 head(cycle6_categorical_ages)
 
 # Recoding a derived variable
-cycle6_adjusted_SBPs <- recodeflow::rec_with_table(cycle6, c("bpmdpbps", "sbp_adj"), variable_details = my_variable_details, log = TRUE)
+cycle6_adjusted_SBPs <- rec_with_table(cycle6, c("bpmdpbps", "sbp_adj"), variable_details = my_variable_details, log = TRUE)
 head(cycle6_adjusted_SBPs)
 ```
 
 4.  Generate a Table 1 for synthetic data.
 
 ```{r}
-transformed_cycle6 <- recodeflow::rec_with_table(cycle6, variables = c("clc_age", "clc_sex", "bpmdpbps", "bpmdpbpd", "sbp_adj"), variable_details = my_variable_details, notes = FALSE) # It can transform multiple variables at once too!
+transformed_cycle6 <- rec_with_table(cycle6, variables = c("clc_age", "clc_sex", "bpmdpbps", "bpmdpbpd", "sbp_adj"), variable_details = my_variable_details, notes = FALSE) # It can transform multiple variables at once too!
 
 table1_data <- get_descriptive_data(
   transformed_cycle6,
