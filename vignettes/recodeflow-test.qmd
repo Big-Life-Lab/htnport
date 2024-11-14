@@ -79,10 +79,10 @@ head(cycle6_adjusted_SBPs)
 4.  Generate a Table 1 for synthetic data.
 
 ```{r}
-transformed_cycle6 <- rec_with_table(cycle6, variables = c("clc_age", "clc_sex", "bpmdpbps", "bpmdpbpd", "sbp_adj"), variable_details = my_variable_details, notes = FALSE) # It can transform multiple variables at once too!
+recoded_cycle6 <- rec_with_table(cycle6, variables = c("clc_age", "clc_sex", "bpmdpbps", "bpmdpbpd", "sbp_adj"), variable_details = my_variable_details, notes = FALSE) # It can transform multiple variables at once too!
 
 table1_data <- get_descriptive_data(
-  transformed_cycle6,
+  recoded_cycle6,
   my_variables,
   my_variable_details,
   # All the variables whose descriptive statistics we want
@@ -116,8 +116,8 @@ my_variables <- read.csv(here("worksheets", "variables.csv"))
 my_variable_details <- read.csv(here("worksheets", "variable-details.csv"))
 
 # Recoding variables needed to compute GFR which will be used to determine CKD status
-logan <- rec_with_table(cycle5, c("lab_bcre", "pgdcgt", "clc_sex", "clc_age", "gfr", "ckd"), variable_details = my_variable_details)
-head(logan)
+recoded_cycle5 <- rec_with_table(cycle5, c("lab_bcre", "pgdcgt", "clc_sex", "clc_age", "gfr", "ckd"), variable_details = my_variable_details)
+head(recoded_cycle5)
 
 # Temporary fix -> convert factored NAs into "NA(b)"
 recode_na_b <- function(column) {
@@ -130,11 +130,11 @@ recode_na_b <- function(column) {
   return(column)
 }
 
-logan$ckd <- recode_na_b(logan$ckd)
+recoded_cycle5$ckd <- recode_na_b(recoded_cycle5$ckd)
 
 # Stratified table
 table1_data <- get_descriptive_data(
-  logan,
+  recoded_cycle5,
   my_variables,
   my_variable_details,
   # All the variables whose descriptive statistics we want
@@ -153,7 +153,7 @@ create_descriptive_table(
 
 # Unstratified table
 table2_data <- get_descriptive_data(
-  logan,
+  recoded_cycle5,
   my_variables,
   my_variable_details,
   # All the variables whose descriptive statistics we want
@@ -177,10 +177,10 @@ my_variable_details <- read.csv(here("worksheets", "variable-details.csv"))
 
 cycle4 <- data.frame(slp_11 = c(8, 99.7, tagged_na("c")), fmh_15 = c(1, 6, tagged_na("c")), clc_sex = c(1, 1, 2))
 
-hello <- rec_with_table(cycle4, c("slp_11", "fmh_15", "clc_sex"), variable_details = my_variable_details)
+recoded_cycle4 <- rec_with_table(cycle4, c("slp_11", "fmh_15", "clc_sex"), variable_details = my_variable_details)
 
 table_data <- get_descriptive_data(
-  hello,
+  recoded_cycle4,
   my_variables,
   my_variable_details,
   # All the variables whose descriptive statistics we want

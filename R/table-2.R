@@ -53,46 +53,28 @@ create_descriptive_table(
 )
 
 # Generate Table 2b - weighted sex x outcome distribution
-imputed_cycles1to6_data <- imputed_cycles1to6_data %>%
-  dplyr::rename(
-    'Hypertension' = highbp14090_adj
-  )
-
 weighted_imputed_data <- survey::svydesign(
   id = ~1,
   weights = ~wgt_full,
-  data = dplyr::select(imputed_cycles1to6_data, c('Hypertension', clc_sex, wgt_full))
+  data = dplyr::select(imputed_cycles1to6_data, highbp14090_adj, clc_sex, wgt_full)
 )
 
-gtsummary::tbl_svysummary(
-  data = weighted_imputed_data, 
-  by = clc_sex,
-  include = -wgt_full,
-  statistic = list(
-    all_categorical() ~ "{n_unweighted} ({p}%)"
-  ),
-  missing = "no"
-) %>%
-  # Rename columns
-  gtsummary::modify_header(label = "**Characteristic**") %>%
-  gtsummary::modify_spanning_header(
-    all_stat_cols() ~ "**Sex**"
+table2b_data <- survey::svytable(~ highbp14090_adj + clc_sex, design = weighted_imputed_data)
+table2b_df <- as.data.frame(table2b_data)
+table2b_df <- table2b_df %>%
+  dplyr::group_by(clc_sex) %>%
+  dplyr::mutate(percentage = Freq / sum(Freq) * 100) %>%
+  dplyr::ungroup()
+
+flextable::flextable(table2b_df) %>%
+  flextable::set_header_labels(
+    highbp14090_adj = "Hypertension",
+    clc_sex = "Sex",
+    Freq = "Unweighted Count",
+    percentage = "Weighted Percentage"
   ) %>%
-  gtsummary::modify_header(
-    stat_1 = "**Male**",
-    stat_2 = "**Female**"
-  ) %>%
-  # Rename variable names and category labels
-  gtsummary::modify_table_body(
-    ~ .x %>%
-      dplyr::mutate(
-        label = dplyr::case_when(
-          variable == "Hypertension" & label == "1" ~ "Yes",
-          variable == "Hypertension" & label == "2" ~ "No",
-          TRUE ~ label
-        )
-      )
-  )
+  theme_vanilla() %>%
+  autofit()
 
 # Generate Table 2c - predictor x outcome distribution
 table2c_data <- get_descriptive_data(
