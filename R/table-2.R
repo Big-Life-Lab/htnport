@@ -53,28 +53,46 @@ create_descriptive_table(
 )
 
 # Generate Table 2b - weighted sex x outcome distribution
+imputed_cycles1to6_data <- imputed_cycles1to6_data %>%
+  dplyr::rename(
+    'Hypertension' = highbp14090_adj
+  )
+
 weighted_imputed_data <- survey::svydesign(
   id = ~1,
   weights = ~wgt_full,
-  data = dplyr::select(imputed_cycles1to6_data, highbp14090_adj, clc_sex, wgt_full)
+  data = dplyr::select(imputed_cycles1to6_data, c('Hypertension', clc_sex, wgt_full))
 )
 
-table2b_data <- survey::svytable(~ highbp14090_adj + clc_sex, design = weighted_imputed_data)
-table2b_df <- as.data.frame(table2b_data)
-table2b_df <- table2b_df %>%
-  dplyr::group_by(clc_sex) %>%
-  dplyr::mutate(percentage = Freq / sum(Freq) * 100) %>%
-  dplyr::ungroup()
-
-flextable::flextable(table2b_df) %>%
-  flextable::set_header_labels(
-    highbp14090_adj = "Hypertension",
-    clc_sex = "Sex",
-    Freq = "Unweighted Count",
-    percentage = "Weighted Percentage"
+gtsummary::tbl_svysummary(
+  data = weighted_imputed_data, 
+  by = clc_sex,
+  include = -wgt_full,
+  statistic = list(
+    all_categorical() ~ "{n_unweighted} ({p}%)"
+  ),
+  missing = "no"
+) %>%
+  # Rename columns
+  gtsummary::modify_header(label = "**Characteristic**") %>%
+  gtsummary::modify_spanning_header(
+    all_stat_cols() ~ "**Sex**"
   ) %>%
-  theme_vanilla() %>%
-  autofit()
+  gtsummary::modify_header(
+    stat_1 = "**Male**",
+    stat_2 = "**Female**"
+  ) %>%
+  # Rename variable names and category labels
+  gtsummary::modify_table_body(
+    ~ .x %>%
+      dplyr::mutate(
+        label = dplyr::case_when(
+          variable == "Hypertension" & label == "1" ~ "Yes",
+          variable == "Hypertension" & label == "2" ~ "No",
+          TRUE ~ label
+        )
+      )
+  )
 
 # Generate Table 2c - predictor x outcome distribution
 table2c_data <- get_descriptive_data(
@@ -197,28 +215,28 @@ imputed_cycles1to6_data <- truncate_skewed(imputed_cycles1to6_data)
 # Recode 2s as 0s in binary predictors and factorize all categorical predictors
 imputed_cycles1to6_data <- imputed_cycles1to6_data %>%
   dplyr::mutate(highbp14090_adj = ifelse(highbp14090_adj == 2, 0, highbp14090_adj),
-         ckd = ifelse(ckd == 2, 0, ckd),
-         diabx = ifelse(diabx == 2, 0, diabx),
-         fmh_15 = ifelse(fmh_15 == 2, 0, fmh_15),
-         edudr04 = case_when(
-           edudr04 == 1 ~ 2,
-           edudr04 == 2 ~ 1,
-           edudr04 == 3 ~ 0
-         ),
-         gendmhi = case_when(
-           gendmhi == 1 ~ 2,
-           gendmhi == 2 ~ 1,
-           gendmhi == 3 ~ 0
-         ),
-         smoke = case_when(
-           smoke == 1 ~ 2,
-           smoke == 2 ~ 1,
-           smoke == 3 ~ 0
-         ))
+                ckd = ifelse(ckd == 2, 0, ckd),
+                diabx = ifelse(diabx == 2, 0, diabx),
+                fmh_15 = ifelse(fmh_15 == 2, 0, fmh_15),
+                edudr04 = case_when(
+                  edudr04 == 1 ~ 2,
+                  edudr04 == 2 ~ 1,
+                  edudr04 == 3 ~ 0
+                ),
+                gendmhi = case_when(
+                  gendmhi == 1 ~ 2,
+                  gendmhi == 2 ~ 1,
+                  gendmhi == 3 ~ 0
+                ),
+                smoke = case_when(
+                  smoke == 1 ~ 2,
+                  smoke == 2 ~ 1,
+                  smoke == 3 ~ 0
+                ))
 
 cat_variables <- c("ckd", "diabx", "edudr04", "fmh_15", "gendmhi", 
-               "gen_025", "gen_045", "low_drink_score1", "married", 
-               "smoke", "working")
+                   "gen_025", "gen_045", "low_drink_score1", "married", 
+                   "smoke", "working")
 imputed_cycles1to6_data <- imputed_cycles1to6_data %>%
   dplyr::mutate(across(all_of(cat_variables), as.factor))
 
@@ -228,10 +246,10 @@ female_data <- dplyr::filter(imputed_cycles1to6_data, clc_sex == 2)
 
 # Apply survey weights to male and female data
 weighted_male <- survey::svydesign(
-    id = ~1,
-    weights = ~wgt_full,
-    data = male_data
-  )
+  id = ~1,
+  weights = ~wgt_full,
+  data = male_data
+)
 
 weighted_female <- survey::svydesign(
   id = ~1,
@@ -266,29 +284,29 @@ fit_crude_model <- function(predictor, design) {
   
   results <- results %>%
     dplyr::mutate(Level = recode(Level,
-                          "ckd1" = "Chronic kidney disease",
-                          "clc_age" = "Age",
-                          "diabx1" = "Diabetes",
-                          "edudr041" = "High school graduate only",
-                          "edudr042" = "Did not graduate high school",
-                          "fmh_151" = "Family history for hypertension",
-                          "gendmhi1" = "Fair or good mental health",
-                          "gendmhi2" = "Poor mental health",
-                          "gen_0252" = "Quite a bit or extremely stressed",
-                          "gen_0452" = "Weak sense of belonging",
-                          "hwmdbmi" = "Body mass index",
-                          "low_drink_score12" = "Former drinker",
-                          "low_drink_score13" = "Light drinker",
-                          "low_drink_score14" = "Moderate to heavy drinker",
-                          "married2" = "Widowed, separated, or divorced",
-                          "married3" = "Single",
-                          "minperweek" = "Minutes of exercise per week",
-                          "slp_11" = "Sleep duration",
-                          "smoke1" = "Former smoker",
-                          "smoke2" = "Current smoker",
-                          "totalfv" = "Daily fruit and vegetable consumption",
-                          "whr" = "Waist-to-height ratio",
-                          "working2" = "Does not have a job"))
+                                 "ckd1" = "Chronic kidney disease",
+                                 "clc_age" = "Age",
+                                 "diabx1" = "Diabetes",
+                                 "edudr041" = "High school graduate only",
+                                 "edudr042" = "Did not graduate high school",
+                                 "fmh_151" = "Family history for hypertension",
+                                 "gendmhi1" = "Fair or good mental health",
+                                 "gendmhi2" = "Poor mental health",
+                                 "gen_0252" = "Quite a bit or extremely stressed",
+                                 "gen_0452" = "Weak sense of belonging",
+                                 "hwmdbmi" = "Body mass index",
+                                 "low_drink_score12" = "Former drinker",
+                                 "low_drink_score13" = "Light drinker",
+                                 "low_drink_score14" = "Moderate to heavy drinker",
+                                 "married2" = "Widowed, separated, or divorced",
+                                 "married3" = "Single",
+                                 "minperweek" = "Minutes of exercise per week",
+                                 "slp_11" = "Sleep duration",
+                                 "smoke1" = "Former smoker",
+                                 "smoke2" = "Current smoker",
+                                 "totalfv" = "Daily fruit and vegetable consumption",
+                                 "whr" = "Waist-to-height ratio",
+                                 "working2" = "Does not have a job"))
   
   return(results)
 }
@@ -312,7 +330,7 @@ custom_order <- c("Age", "Widowed, separated, or divorced", "Single", "High scho
                   "Family history for hypertension", "Minutes of exercise per week", "Daily fruit and vegetable consumption", "Body mass index", "Waist-to-height ratio",
                   "Diabetes", "Chronic kidney disease", "Former drinker", "Light drinker", "Moderate to heavy drinker", "Former smoker", "Current smoker", "Sleep duration", 
                   "Fair or good mental health", "Poor mental health", "Quite a bit or extremely stressed", "Weak sense of belonging"
-                  )
+)
 
 # Combine custom order with the original order
 original_order <- unique(combined_crude_models$Level)
