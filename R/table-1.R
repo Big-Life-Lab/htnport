@@ -1,5 +1,5 @@
 # Set working directory at RDC
-setwd("P:/10619/Dropbox/chmsflow")
+setwd("P:/10619/Dropbox/htnport")
 
 # Load packages and functions
 source("R/installation.R")

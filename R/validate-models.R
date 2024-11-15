@@ -1,8 +1,9 @@
 # Set working directory at RDC
-setwd("P:/10619/Dropbox/chmsflow")
+setwd("P:/10619/Dropbox/htnport")
 
 # Load this R file to obtain dataset and reduced models
 source("R/develop-models.R")
+source("R/calibration.R")
 
 # Function to calculate Nagelkerke's R²
 calculate_nagelkerke_r2 <- function(model, data) {
@@ -220,15 +221,6 @@ generate_predicted_probabilities <- function(model, data) {
 male_predicted_probabilities <- generate_predicted_probabilities(male_reduced_model, male_data)
 female_predicted_probabilities <- generate_predicted_probabilities(female_reduced_model, female_data)
 
-# Calibration plots with LOESS
-plot_calibration <- function(data, predicted_probs, title) {
-  data$predicted <- predicted_probs
-  ggplot2::ggplot(data, ggplot2::aes(x = predicted, y = highbp14090_adj)) +
-    ggplot2::geom_point(alpha = 0.5) +
-    ggplot2::geom_smooth(method = "loess", color = "blue") +
-    ggplot2::labs(title = title, x = "Predicted Probability", y = "Observed Probability") +
-    ggplot2::theme_minimal()
-}
-
-plot_calibration(male_data, male_predicted_probabilities, "Calibration Plot for Male Data")
-plot_calibration(female_data, female_predicted_probabilities, "Calibration Plot for Female Data")
+# Calibration plots with LOESS, and model assessment across original sample
+calibration(male_predicted_probabilities, male_data$highbp14090_adj)
+calibration(female_predicted_probabilities, female_data$highbp14090_adj)

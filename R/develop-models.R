@@ -1,5 +1,5 @@
 # Set working directory at RDC
-setwd("P:/10619/Dropbox/chmsflow")
+setwd("P:/10619/Dropbox/htnport")
 
 # Load this R file to obtain imputed dataset
 source("R/table-1.R")
