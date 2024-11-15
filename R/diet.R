@@ -39,14 +39,13 @@
 #' @export
 find_totalFV_cycles1and2 <- function(WSDD14Y, GFVD17Y, GFVD18Y, GFVD19Y, GFVD20Y, GFVD22Y, GFVD23Y) {
   
+  totalFV <- 0
+  
   if (all(is.na(c(WSDD14Y, GFVD17Y, GFVD18Y, GFVD19Y, GFVD20Y, GFVD22Y, GFVD23Y)))) {
     totalFV <- haven::tagged_na("b")
   }
   else {
     totalFV <- sum(c(WSDD14Y, GFVD17Y, GFVD18Y, GFVD19Y, GFVD20Y, GFVD22Y, GFVD23Y), na.rm = TRUE) / 365
-    if (is.na(totalFV)) {
-      totalFV <- haven::tagged_na("b")
-    }
   }
   
   return(totalFV)
@@ -103,14 +102,13 @@ find_totalFV_cycles1and2 <- function(WSDD14Y, GFVD17Y, GFVD18Y, GFVD19Y, GFVD20Y
 #' @export
 find_totalFV_cycles3to6 <- function(WSDD34Y, WSDD35Y, GFVD17AY, GFVD17BY, GFVD17CY, GFVD17DY, GFVD18Y, GFVD19Y, GFVD20Y, GFVD22Y, GFVD23Y) {
   
+  totalFV <- 0
+  
   if (all(is.na(c(WSDD34Y, WSDD35Y, GFVD17AY, GFVD17BY, GFVD17CY, GFVD17DY, GFVD18Y, GFVD19Y, GFVD20Y, GFVD22Y, GFVD23Y)))) {
     totalFV <- haven::tagged_na("b")
   }
   else {
     totalFV <- sum(c(WSDD34Y, WSDD35Y, GFVD17AY, GFVD17BY, GFVD17CY, GFVD17DY, GFVD18Y, GFVD19Y, GFVD20Y, GFVD22Y, GFVD23Y), na.rm = TRUE) / 365
-    if (is.na(totalFV)) {
-      totalFV <- haven::tagged_na("b")
-    }
   }
   return(totalFV)
 }
@@ -138,10 +136,10 @@ find_totalFV_cycles3to6 <- function(WSDD34Y, WSDD35Y, GFVD17AY, GFVD17BY, GFVD17
 #' @export
 determine_poordiet <- function(totalFV) {
   
-  poordiet <- haven::tagged_na("b")
+  poordiet <- 0
   
   if (is.na(totalFV)) {
-    return(poordiet)
+    poordiet <- haven::tagged_na("b")
   }
   else {
     if (totalFV < 5) {
@@ -152,83 +150,5 @@ determine_poordiet <- function(totalFV) {
     }
   }
   return(poordiet)
-  
-}
-
-#' @title Calculate Non-HDL Cholesterol Level
-#'
-#' @description This function calculates a respondent's non-HDL cholesterol level by subtracting their HDL cholesterol level 
-#' from their total cholesterol level. It first checks whether the input values `LAB_CHOL` (total cholesterol) 
-#' and `LAB_HDL` (HDL cholesterol) are both less than certain thresholds (99.6 mmol/L and 9.96 mmol/L, respectively). 
-#' If both conditions are met, it calculates the non-HDL cholesterol level; otherwise, it sets the non-HDL value to 
-#' NA to indicate that the calculation is not applicable.
-#'
-#' @param LAB_CHOL A numeric representing a respondent's total cholesterol level in mmol/L.
-#' @param LAB_HDL A numeric representing a respondent's HDL cholesterol level in mmol/L.
-#'
-#' @return A numeric representing the calculated non-HDL cholesterol level (in mmol.L) if both `LAB_CHOL` and 
-#' `LAB_HDL` are below the specified thresholds; otherwise, it returns NA(b) to indicate that the calculation is not applicable.
-#'
-#' @details The function calculates the non-HDL cholesterol level by subtracting the HDL cholesterol level from the total cholesterol level.
-#' It first checks if both `LAB_CHOL` and `LAB_HDL` are less than the specified thresholds (99.6 mmol/L and 9.96 mmol/L, respectively).
-#' If both conditions are met and neither input is missing, the non-HDL cholesterol level is calculated. If either of the conditions
-#' is not met or if either input is missing (NA), the function returns NA(b) to indicate that the calculation is not applicable.
-#'
-#' @examples
-#'
-#' # Example: Calculate non-HDL cholesterol level for a respondent with total cholesterol of 50 mmol/L and 
-#' HDL cholesterol of 5 mmol/L.
-#' calculate_nonHDL(LAB_CHOL = 50, LAB_HDL = 5)
-#' # Output: 45 (non-HDL cholesterol = total cholesterol - HDL cholesterol = 50 - 5 = 45)
-#' 
-#' @export
-calculate_nonHDL <- function(LAB_CHOL, LAB_HDL) {
-  nonHDL <- 0
-  if (LAB_CHOL < 99.6 && LAB_HDL < 9.96 && !is.na(LAB_CHOL) && !is.na(LAB_HDL)) {
-    nonHDL <- LAB_CHOL - LAB_HDL
-  }
-  else {
-    nonHDL <- haven::tagged_na("b")
-  }
-  return(nonHDL)
-}
-
-#' Non-HDL Cholesterol Categorization
-#'
-#' This function categorizes individuals' non-HDL cholesterol levels based on a threshold value.
-#'
-#' @param nonHDL Numeric value representing an individual's non-HDL cholesterol level.
-#'
-#' @return A categorical value indicating the non-HDL cholesterol category:
-#'   - 1: High non-HDL cholesterol (nonHDL >= 4.3)
-#'   - 2: Normal non-HDL cholesterol (nonHDL < 4.3)
-#'   - NA(b): Missing or invalid input
-#'
-#' @examples
-#' # Example 1: Categorize a nonHDL value of 5.0 as high non-HDL cholesterol
-#' categorize_nonHDL(5.0)
-#' # Output: 1
-#' 
-#' # Example 2: Categorize a nonHDL value of 3.8 as normal non-HDL cholesterol
-#' categorize_nonHDL(3.8)
-#' # Output: 2
-#'
-#' @export
-categorize_nonHDL <- function(nonHDL) {
-  
-  nonhdltodd <- haven::tagged_na("b")
-  
-  if (is.na(nonHDL)) {
-    return(nonhdltodd)
-  }
-  else {
-    if (nonHDL >= 4.3) {
-      nonhdltodd <- 1
-    }
-    else {
-      nonhdltodd <- 2
-    }
-  }
-  return(nonhdltodd)
   
 }

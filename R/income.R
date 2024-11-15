@@ -98,7 +98,7 @@ categorize_income <- function(adj_hh_inc) {
     else if (adj_hh_inc > 21500 && adj_hh_inc <= 35000) {
       incq <- 2
     }
-    else if (adj_hh_inc > 35500 && adj_hh_inc <= 50000) {
+    else if (adj_hh_inc > 35000 && adj_hh_inc <= 50000) {
       incq <- 3
     }
     else if (adj_hh_inc > 50000 && adj_hh_inc <= 70000) {
@@ -112,23 +112,23 @@ categorize_income <- function(adj_hh_inc) {
   
 }
 
-#' Check If in Lowest Income Quartile
+#' Check If in Lowest Income Quintile
 #'
-#' This function checks if an individual's income category corresponds to the lowest income quartile.
+#' This function checks if an individual's income category corresponds to the lowest income quintile.
 #'
 #' @param incq Categorical value indicating the income category as defined by the categorize_income function.
 #'
-#' @return A categorical value indicating whether the individual is in the lowest income quartile:
+#' @return A categorical value indicating whether the individual is in the lowest income quintile:
 #'   - 1: In the lowest income quartile
 #'   - 2: Not in the lowest income quartile
 #'   - NA(b): Missing or invalid input
 #'
 #' @examples
-#' # Example 1: Check if an income category of 3 (between $35,000 and $50,000) is in the lowest quartile
+#' # Example 1: Check if an income category of 3 (between $35,000 and $50,000) is in the lowest quintile
 #' in_lowest_income_qunitle(3)
 #' # Output: 2
 #'
-#' # Example 2: Check if an income category of 1 (below or equal to $21,500) is in the lowest quartile
+#' # Example 2: Check if an income category of 1 (below or equal to $21,500) is in the lowest quintile
 #' in_lowest_income_qunitle(1)
 #' # Output: 1
 #'
