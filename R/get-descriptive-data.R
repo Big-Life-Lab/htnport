@@ -186,7 +186,7 @@ get_descriptive_data <- function(
               tagged_na_type
             ) | .data[[variable]] == paste("NA(", tagged_na_type, ")", sep = "")
           )
-          
+                    
           new_descriptive_data_row$n <- c(
             nrow(data_for_new_descriptive_data_row)
           )
@@ -362,13 +362,13 @@ map_stratifier_data <- function(
         } else if(stratifier_category == "NA::b") {
           formatted_stratifier_category <- "NA(b)"
         }
-        
+      
         data_for_current_stratifier_combination <- dplyr::filter(
           data_for_current_stratifier_combination,
-          data_for_current_stratifier_combination[[stratifier]] == formatted_stratifier_category
+          !!as.symbol(stratifier) == formatted_stratifier_category
         )
       }
-      
+    
       iterator(
         list(
           data = data_for_current_stratifier_combination,
