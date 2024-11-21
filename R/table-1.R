@@ -2,8 +2,11 @@
 setwd("P:/10619/Dropbox/htnport")
 
 # Load packages and functions
-source("R/installation.R")
+.libPaths("S:\\_R4.2.3packages_incomplete")
 library(dplyr)
+library(recodeflow)
+library(survey)
+library(gtsummary)
 
 source("R/alcohol.R")
 source("R/blood-pressure.R")
@@ -26,25 +29,25 @@ source("R/impute-variables.R")
 my_variables <- read.csv("P:/10619/Dropbox/chmsflow/worksheets/variables.csv")
 my_variable_details <- read.csv("P:/10619/Dropbox/chmsflow/worksheets/variable-details.csv")
 
-# Load medication data - make them have same name as cycle to recode med vars
-cycle1 <- read_sas("data/cycle1/cycle1-meds.sas7bdat")
-names(cycle1) <- tolower(names(cycle1)) 
-cycle2 <- read_sas("data/cycle2/cycle2-meds.sas7bdat")
-cycle3 <- read_stata("data/cycle3/cycle3-meds.dta")
-cycle4 <- read_stata("data/cycle4/cycle4-meds.dta")
-names(cycle4) <- tolower(names(cycle4)) 
-cycle5 <- read_stata("data/cycle5/cycle5-meds.dta")
-cycle6 <- read_stata("data/cycle6/cycle6-meds.dta")
-names(cycle6) <- tolower(names(cycle6)) 
+# Load medication data
+cycle1_meds <- read_sas("data/cycle1/cycle1-meds.sas7bdat")
+names(cycle1_meds) <- tolower(names(cycle1_meds)) 
+cycle2_meds <- read_sas("data/cycle2/cycle2-meds.sas7bdat")
+cycle3_meds <- read_stata("data/cycle3/cycle3-meds.dta")
+cycle4_meds <- read_stata("data/cycle4/cycle4-meds.dta")
+names(cycle4_meds) <- tolower(names(cycle4_meds)) 
+cycle5_meds <- read_stata("data/cycle5/cycle5-meds.dta")
+cycle6_meds <- read_stata("data/cycle6/cycle6-meds.dta")
+names(cycle6_meds) <- tolower(names(cycle6_meds)) 
 
-cycle1_medication_data <- recodeflow::rec_with_table(cycle1, c("clinicid", recodeflow:::select_vars_by_role("Drugs", my_variables)), variable_details = my_variable_details)
-cycle2_medication_data <- recodeflow::rec_with_table(cycle2, c("clinicid", recodeflow:::select_vars_by_role("Drugs", my_variables)), variable_details = my_variable_details)
-cycle3_medication_data <- recodeflow::rec_with_table(cycle3, c("clinicid", "meucatc", "npi_25b", "anymed", "diab_drug"), variable_details = my_variable_details)
-cycle4_medication_data <- recodeflow::rec_with_table(cycle4, c("clinicid", "meucatc", "npi_25b", "anymed", "diab_drug"), variable_details = my_variable_details)
-cycle5_medication_data <- recodeflow::rec_with_table(cycle5, c("clinicid", "meucatc", "npi_25b", "anymed", "diab_drug"), variable_details = my_variable_details)
-cycle6_medication_data <- recodeflow::rec_with_table(cycle6, c("clinicid", "meucatc", "npi_25b", "anymed", "diab_drug"), variable_details = my_variable_details)
+cycle1_medication_data <- recodeflow::rec_with_table(cycle1_meds, c("clinicid", recodeflow:::select_vars_by_role("Drugs", my_variables)), variable_details = my_variable_details)
+cycle2_medication_data <- recodeflow::rec_with_table(cycle2_meds, c("clinicid", recodeflow:::select_vars_by_role("Drugs", my_variables)), variable_details = my_variable_details)
+cycle3_medication_data <- recodeflow::rec_with_table(cycle3_meds, c("clinicid", "meucatc", "npi_25b", "anymed", "diab_drug"), variable_details = my_variable_details)
+cycle4_medication_data <- recodeflow::rec_with_table(cycle4_meds, c("clinicid", "meucatc", "npi_25b", "anymed", "diab_drug"), variable_details = my_variable_details)
+cycle5_medication_data <- recodeflow::rec_with_table(cycle5_meds, c("clinicid", "meucatc", "npi_25b", "anymed", "diab_drug"), variable_details = my_variable_details)
+cycle6_medication_data <- recodeflow::rec_with_table(cycle6_meds, c("clinicid", "meucatc", "npi_25b", "anymed", "diab_drug"), variable_details = my_variable_details)
 
-# Load overall cycle data with correct names
+# Load overall cycle data
 cycle1 <- read_stata("data/cycle1/cycle1.dta")
 cycle2 <- read_stata("data/cycle2/cycle2.dta")
 cycle3 <- read_stata("data/cycle3/cycle3.dta")

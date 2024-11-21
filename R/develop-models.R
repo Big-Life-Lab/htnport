@@ -3,7 +3,8 @@ setwd("P:/10619/Dropbox/htnport")
 
 # Load this R file to obtain imputed dataset
 source("R/table-1.R")
-library(survey)
+library(e1071)
+library(rms)
 
 # Synthetic dataset for test use outside RDC
 # imputed_cycles1to6_data <- data.frame(
@@ -134,16 +135,16 @@ weighted_female <- survey::svydesign(
 )
 
 # Fit male and female models
-male_model <- survey::svyglm(highbp14090_adj ~ rms::rcs(clc_age, 4) + married + edudr04 + working + gendmhi + gen_025 + gen_045 + fmh_15 +
-                       rms::rcs(hwmdbmi, 3) + rms::rcs(whr, 3) + low_drink_score1 + rms::rcs(minperweek, 3) + smoke + slp_11 + totalfv + diabx + 
-                       ckd + rms::rcs(clc_age, 4)*gen_045 + rms::rcs(clc_age, 4)*rms::rcs(hwmdbmi, 3) + rms::rcs(clc_age, 4)*rms::rcs(whr, 3) + rms::rcs(clc_age, 4)*rms::rcs(minperweek, 3) +
-                       rms::rcs(clc_age, 4)*smoke + rms::rcs(clc_age, 4)*slp_11 + rms::rcs(clc_age, 4)*diabx + rms::rcs(clc_age, 4)*ckd + rms::rcs(hwmdbmi, 3)*rms::rcs(whr, 3), 
+male_model <- survey::svyglm(highbp14090_adj ~ rcs(clc_age, 4) + married + edudr04 + working + gendmhi + gen_025 + gen_045 + fmh_15 +
+                       rcs(hwmdbmi, 3) + rcs(whr, 3) + low_drink_score1 + rcs(minperweek, 3) + smoke + slp_11 + totalfv + diabx + 
+                       ckd + rcs(clc_age, 4)*gen_045 + rcs(clc_age, 4)*rcs(hwmdbmi, 3) + rcs(clc_age, 4)*rcs(whr, 3) + rcs(clc_age, 4)*rcs(minperweek, 3) +
+                       rcs(clc_age, 4)*smoke + rcs(clc_age, 4)*slp_11 + rcs(clc_age, 4)*diabx + rcs(clc_age, 4)*ckd + rcs(hwmdbmi, 3)*rcs(whr, 3), 
                      design = weighted_male, family = quasibinomial())
 
-female_model <- survey::svyglm(highbp14090_adj ~ rms::rcs(clc_age, 4) + married + edudr04 + working + gendmhi + gen_025 + gen_045 + fmh_15 +
-                         rms::rcs(hwmdbmi, 3) + rms::rcs(whr, 3) + low_drink_score1 + rms::rcs(minperweek, 3) + smoke + slp_11 + totalfv + diabx + 
-                         ckd + rms::rcs(clc_age, 4)*gen_045 + rms::rcs(clc_age, 4)*rms::rcs(hwmdbmi, 3) + rms::rcs(clc_age, 4)*rms::rcs(whr, 3) + rms::rcs(clc_age, 4)*rms::rcs(minperweek, 3) +
-                         rms::rcs(clc_age, 4)*smoke + rms::rcs(clc_age, 4)*slp_11 + rms::rcs(clc_age, 4)*diabx + rms::rcs(clc_age, 4)*ckd + rms::rcs(hwmdbmi, 3)*rms::rcs(whr, 3), 
+female_model <- survey::svyglm(highbp14090_adj ~ rcs(clc_age, 4) + married + edudr04 + working + gendmhi + gen_025 + gen_045 + fmh_15 +
+                         rcs(hwmdbmi, 3) + rcs(whr, 3) + low_drink_score1 + rcs(minperweek, 3) + smoke + slp_11 + totalfv + diabx + 
+                         ckd + rcs(clc_age, 4)*gen_045 + rcs(clc_age, 4)*rcs(hwmdbmi, 3) + rcs(clc_age, 4)*rcs(whr, 3) + rcs(clc_age, 4)*rcs(minperweek, 3) +
+                         rcs(clc_age, 4)*smoke + rcs(clc_age, 4)*slp_11 + rcs(clc_age, 4)*diabx + rcs(clc_age, 4)*ckd + rcs(hwmdbmi, 3)*rcs(whr, 3), 
                        design = weighted_female, family = quasibinomial())
 
 # Multicollinearity assessment
@@ -173,16 +174,16 @@ plot(female_data$slp_11, female_model$fitted.values)
 plot(female_data$totalfv, female_model$fitted.values) 
 
 # Refit male and female models without whr if high collinearity detected
-# male_model <- svyglm(highbp14090_adj ~ rms::rcs(clc_age, 4) + married + edudr04 + working + gendmhi + gen_025 + gen_045 + fmh_15 +
-#                        rms::rcs(hwmdbmi, 3) + low_drink_score1 + rms::rcs(minperweek, 3) + smoke + slp_11 + totalfv + diabx + 
-#                        ckd + rms::rcs(clc_age, 4)*gen_045 + rms::rcs(clc_age, 4)*rms::rcs(hwmdbmi, 3) + rms::rcs(clc_age, 4)*rms::rcs(minperweek, 3) +
-#                        rms::rcs(clc_age, 4)*smoke + rms::rcs(clc_age, 4)*slp_11 + rms::rcs(clc_age, 4)*diabx + rms::rcs(clc_age, 4)*ckd, 
+# male_model <- svyglm(highbp14090_adj ~ rcs(clc_age, 4) + married + edudr04 + working + gendmhi + gen_025 + gen_045 + fmh_15 +
+#                        rcs(hwmdbmi, 3) + low_drink_score1 + rcs(minperweek, 3) + smoke + slp_11 + totalfv + diabx + 
+#                        ckd + rcs(clc_age, 4)*gen_045 + rcs(clc_age, 4)*rcs(hwmdbmi, 3) + rcs(clc_age, 4)*rcs(minperweek, 3) +
+#                        rcs(clc_age, 4)*smoke + rcs(clc_age, 4)*slp_11 + rcs(clc_age, 4)*diabx + rcs(clc_age, 4)*ckd, 
 #                      design = weighted_male, family = quasibinomial())
 # 
-# female_model <- svyglm(highbp14090_adj ~ rms::rcs(clc_age, 4) + married + edudr04 + working + gendmhi + gen_025 + gen_045 + fmh_15 +
-#                        rms::rcs(hwmdbmi, 3) + low_drink_score1 + rms::rcs(minperweek, 3) + smoke + slp_11 + totalfv + diabx + 
-#                        ckd + rms::rcs(clc_age, 4)*gen_045 + rms::rcs(clc_age, 4)*rms::rcs(hwmdbmi, 3) + rms::rcs(clc_age, 4)*rms::rcs(minperweek, 3) +
-#                        rms::rcs(clc_age, 4)*smoke + rms::rcs(clc_age, 4)*slp_11 + rms::rcs(clc_age, 4)*diabx + rms::rcs(clc_age, 4)*ckd, 
+# female_model <- svyglm(highbp14090_adj ~ rcs(clc_age, 4) + married + edudr04 + working + gendmhi + gen_025 + gen_045 + fmh_15 +
+#                        rcs(hwmdbmi, 3) + low_drink_score1 + rcs(minperweek, 3) + smoke + slp_11 + totalfv + diabx + 
+#                        ckd + rcs(clc_age, 4)*gen_045 + rcs(clc_age, 4)*rcs(hwmdbmi, 3) + rcs(clc_age, 4)*rcs(minperweek, 3) +
+#                        rcs(clc_age, 4)*smoke + rcs(clc_age, 4)*slp_11 + rcs(clc_age, 4)*diabx + rcs(clc_age, 4)*ckd, 
 #                      design = weighted_female, family = quasibinomial())
 
 # Function to calculate Nagelkerke's R²
@@ -270,9 +271,10 @@ lrt_svyglm <- function(full_model, reduced_model) {
 lrt_svyglm(male_model, male_reduced_model)
 lrt_svyglm(female_model, female_reduced_model)
 
-# Perform likelihood ratio tests to determine overall significance of reduced models (ie. p < 0.05)
+# Develop null models for likelihood ratio tests below
 male_null_model <- survey::svyglm(highbp14090_adj ~ 1, design = weighted_male, family = quasibinomial())
 female_null_model <- survey::svyglm(highbp14090_adj ~ 1, design = weighted_female, family = quasibinomial())
 
+# Perform likelihood ratio tests to determine overall significance of reduced models (ie. p < 0.05)
 lrt_svyglm(male_reduced_model, male_null_model)
 lrt_svyglm(female_reduced_model, female_null_model)

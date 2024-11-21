@@ -3,6 +3,8 @@ setwd("P:/10619/Dropbox/htnport")
 
 # Load this R file to obtain imputed dataset
 source("R/table-1.R")
+library(e1071)
+library(flextable)
 
 # Synthetic dataset for test use outside RDC
 # imputed_cycles1to6_data <- data.frame(
