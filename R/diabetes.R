@@ -27,10 +27,6 @@
 #' determine_inclusive_diabetes(diab_m = 2, CCC_51 = NA, diab_drug2 = 1)
 #' # Output: 1 (Based on `diab_drug2`, inclusive diabetes status is "Yes").
 #'
-#' # Example: Determine inclusive diabetes status when two parameters are NA.
-#' determine_inclusive_diabetes(diab_m = NA, CCC_51 = NA, diab_drug2 = 2)
-#' # Output: 2 (Based on `diab_drug2`, inclusive diabetes status is "No").
-#'
 #' @export
 determine_inclusive_diabetes <- function(diab_m, CCC_51, diab_drug2) {
   
@@ -55,7 +51,7 @@ determine_inclusive_diabetes <- function(diab_m, CCC_51, diab_drug2) {
     if (!is.na(diab_drug2) && diab_drug2 == 1) {
       diabX <- 1 
     } else if (!is.na(diab_drug2) && diab_drug2 == 0) {
-      diabX <- 2  
+      diabX <- haven::tagged_na("b")  
     }
   } else if (is.na(diab_m) && is.na(diab_drug2)) {
     if (!is.na(CCC_51) && CCC_51 == 1) {

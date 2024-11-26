@@ -38,77 +38,77 @@ determine_CVD_Personal_History <- function(CCC_61, CCC_63, CCC_81) {
   return(cardiov)
 }
 
-#' @title Determine a respondent's cardiovascular disease (CVD) family history based on specific conditions related to heart disease and stroke in their immediate family members.
+#' @title Determine Cardiovascular Disease (CVD) Family History
 #'
-#' @param FMH_11 An integer indicating whether an immediate family member was diagnosed with heart disease. 
-#'              1 for "Yes", 2 for "No".
-#' @param FMH_12 A numeric variable representing the youngest age at diagnosis of heart disease in an immediate family member.
-#' @param FMH_13 An integer indicating whether an immediate family member was diagnosed with stroke. 
-#'              1 for "Yes", 2 for "No".
-#' @param FMH_14 A numeric variable representing the youngest age at diagnosis of stroke in an immediate family member.
+#' @description This function evaluates a respondent's family history of cardiovascular disease (CVD), based on data about diagnoses of heart disease and stroke in immediate family members and the ages at which these diagnoses occurred. It identifies premature CVD if any diagnosis occurred before age 60.
 #'
-#' @return An integer indicating the cardiovascular disease (CVD) family history: 
-#'   - 1 for "Yes" if there is a family history of premature CVD (before age 60) based on heart disease and stroke histories. 
-#'   - 2 for "No" if there is no such family history.
-#'   - NA(b) if any input contains non-responses or unknown diagnosis ages (997, 998, or 999).
+#' @param FMH_11 Integer: Indicates whether an immediate family member was diagnosed with heart disease. 
+#'               - 1 for "Yes"  
+#'               - 2 for "No".
+#' @param FMH_12 Numeric: Represents the youngest age at diagnosis of heart disease in an immediate family member.
+#' @param FMH_13 Integer: Indicates whether an immediate family member was diagnosed with stroke. 
+#'               - 1 for "Yes"  
+#'               - 2 for "No".
+#' @param FMH_14 Numeric: Represents the youngest age at diagnosis of stroke in an immediate family member.
 #'
-#' @details The function evaluates the input variables `FMH_11`, `FMH_12`, `FMH_13`, and `FMH_14` to determine the cardiovascular disease (CVD) family history.
-#'   - If `FMH_11` is equal to 1 or `FMH_13` is equal to 1, it indicates that someone in the family had heart disease or stroke, respectively. 
-#'   In this case, the function checks the age at diagnosis (`FMH_12` for heart disease and `FMH_14` for stroke). If the age is greater than or equal to 0 and less than 60, 
-#'   it represents a diagnosis before age 60, and `famheart60` or `famstroke60` is set to 1, respectively.
-#'   - If the age is greater than or equal to 60 and less than or equal to 100, it indicates a late diagnosis, and the corresponding `famheart60` and `famstroke60` are set to 0.
-#'   - If any of the integer inputs contain non-responses (i.e., values greater than 2) or any age input takes non-response values (997, 998, or 999), `famCVD60` is set to NA to 
-#'   indicate that the CVD family history is not available.
-#'   - If any of the conditions for premature CVD (before age 60) are met for either heart disease or stroke, the function sets `famCVD60` to 1, indicating a family history of 
-#'   premature CVD. Otherwise, `famCVD60` is set to 2, representing no family history of premature CVD.
+#' @return An integer indicating the CVD family history:
+#'   - 1: "Yes" — Family history of premature CVD exists (diagnosis before age 60).  
+#'   - 2: "No" — No family history of premature CVD.  
+#'   - `NA(b)`: Missing/unknown — Due to non-responses, invalid inputs, or unknown diagnosis ages.
+#'
+#' @details 
+#' - If both `FMH_11` (heart disease history) and `FMH_13` (stroke history) are `NA`, the function returns `NA(b)`.
+#' - If either `FMH_11` or `FMH_13` indicates a diagnosis (`1` for "Yes"), the corresponding age (`FMH_12` for heart disease and `FMH_14` for stroke) is evaluated:
+#'     - Ages between 0 and 59 indicate premature CVD.  
+#'     - Ages between 60 and 100 indicate late-onset CVD.  
+#'     - Ages outside this range or invalid inputs (997, 998, 999) result in `NA(b)`.  
+#' - If both `FMH_11` and `FMH_13` are `2` ("No"), there is no family history of CVD (`2`).
+#' - Any invalid inputs for `FMH_11` or `FMH_13` (values greater than 2) also result in `NA(b)`.
 #'
 #' @examples
-#' 
-#' # Example: Determine CVD family history for a respondent with a family member diagnosed with heart disease at age 50.
-#' determine_CVD_Family_History(FMH_11 = 1, FMH_12 = 50, FMH_13 = 2, FMH_14 = 6)
-#' # Output: 1 (CVD family history is "Yes" due to a family member's premature heart disease).
-#' 
+#' # Example 1: Premature CVD due to heart disease diagnosis at age 50
+#' determine_CVD_Family_History(FMH_11 = 1, FMH_12 = 50, FMH_13 = 2, FMH_14 = NA)
+#' # Output: 1
+#'
 #' @export
 determine_CVD_Family_History <- function(FMH_11, FMH_12, FMH_13, FMH_14) {
-  
   famheart60 <- 0
   famstroke60 <- 0
   famCVD60 <- haven::tagged_na("b")
   
-  if (is.na(FMH_11) || is.na(FMH_12) || is.na(FMH_13) || is.na(FMH_14)) {
-    return(famCVD60)
-  }
-  else if (FMH_11 == 1 || FMH_13 == 1) {  # someone in the family diagnosed with heart disease or stroke
-    if (FMH_12 >= 0 && FMH_12 < 60) { # before age 60
-      famheart60 <- 1
-    }
-    else if (FMH_14 >= 0 && FMH_14 < 60) { 
-      famstroke60 <- 1
-    } 
-    else if (FMH_12 >= 60 && FMH_12 <= 100) {
-      famstroke60 <- 0
-    }
-    else if (FMH_14 >= 60 && FMH_14 <= 100) {
-      famheart60 <- 0
-    }
-    else {
-      return(famCVD60)
-    }
-  }
-  else if (FMH_11 == 2 && FMH_13 == 2) {
-    famheart60 <- 0
-  }
-  else if (FMH_11 > 2 || FMH_13 > 2) {
+  # If all inputs are missing, return NA(b)
+  if (is.na(FMH_11) && is.na(FMH_12) && is.na(FMH_13) && is.na(FMH_14)) {
     return(famCVD60)
   }
   
-  if (famheart60 == 1 || famstroke60 == 1) { # Family history of premature CVD (before age 60) based on heart disease and stroke histories
-    famCVD60 <- 1
+  # Check family history of heart disease
+  if (!is.na(FMH_11) && FMH_11 == 1) {
+    if (!is.na(FMH_12) && FMH_12 >= 0 && FMH_12 < 60) {
+      famheart60 <- 1
+    } else if (!is.na(FMH_12) && (FMH_12 < 0 || FMH_12 > 100 || FMH_12 %in% c(997, 998, 999))) {
+      return(famCVD60)
+    }
+  } else if (!is.na(FMH_11) && FMH_11 > 2) {
+    return(famCVD60)
   }
-  else {
+  
+  # Check family history of stroke
+  if (!is.na(FMH_13) && FMH_13 == 1) {
+    if (!is.na(FMH_14) && FMH_14 >= 0 && FMH_14 < 60) {
+      famstroke60 <- 1
+    } else if (!is.na(FMH_14) && (FMH_14 < 0 || FMH_14 > 100 || FMH_14 %in% c(997, 998, 999))) {
+      return(famCVD60)
+    }
+  } else if (!is.na(FMH_13) && FMH_13 > 2) {
+    return(famCVD60)
+  }
+  
+  # Determine final family history of premature CVD
+  if (famheart60 == 1 || famstroke60 == 1) {
+    famCVD60 <- 1
+  } else if (famheart60 == 0 && famstroke60 == 0) {
     famCVD60 <- 2
   }
   
   return(famCVD60)
-  
 }
