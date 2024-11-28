@@ -74,7 +74,7 @@ clc_sex,"Recode, Table 1, Test",Sex,Sex,Sociodemographics,Sex,Categorical,N/A,"c
 clinicid,Recode,Clinic ID,Clinic ID,N/A,N/A,Continuous,N/A,"cycle1, cycle1_meds, cycle2, cycle2_meds, cycle3, cycle3_meds, cycle4, cycle4_meds, cycle5, cycle5_meds, cycle6, cycle6_meds",[clinicid],
 control14090,,Controlled hypertension 140/90,Controlled hypertension 140/90,Health status,Hypertension,Categorical,N/A,"cycle1, cycle2, cycle3, cycle4, cycle5, cycle6","DerivedVar::[bpmdpbps, bpmdpbpd, anymed2, ccc_32, cardiov, diabx, ckd]",
 control14090_adj,,Controlled (adjusted) hypertension 140/90,Controlled (adjusted) hypertension 140/90,Health status,Hypertension,Categorical,N/A,"cycle1, cycle2, cycle3, cycle4, cycle5, cycle6","DerivedVar::[sbp_adj, dbp_adj, anymed2, ccc_32, cardiov, diabx, ckd]",
-cycle,"Recode, imputation-predictor",CHMS cycle,CHMS cycle,N/A,N/A,Categorical,N/A,"cycle1, cycle2, cycle3, cycle4, cycle5, cycle6",[cycle],
+cycle,"Recode, imputation-predictor",CHMS cycle,CHMS cycle,N/A,N/A,Continuous,N/A,"cycle1, cycle2, cycle3, cycle4, cycle5, cycle6",[cycle],
 dbp_adj,"Recode, Test",Diastolic blood pressure (adjusted),Adjusted diastolic blood pressure measurement,Health status,Blood pressure,Continuous,mmHg,"cycle1, cycle2, cycle3, cycle4, cycle5, cycle6",DerivedVar::[bpmdpbpd],
 dhhdhsz,,Household size,Household size - (D),Socioeconomic,Income,Continuous,persons,"cycle1, cycle2, cycle3, cycle4, cycle5, cycle6",[dhhdhsz],
 dhh_ms,Recode,Marital status,Marital status,Socioeconomic,Marital status,Categorical,N/A,"cycle1, cycle2, cycle3, cycle4, cycle5, cycle6",[dhh_ms],

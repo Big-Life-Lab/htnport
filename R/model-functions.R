@@ -1,9 +1,73 @@
-# Set working directory at RDC
-setwd("P:/10619/Dropbox/htnport")
+# Function for multicollinearity assessment
+calculate_simplified_vif <- function(design) {
+  # Define the simplified formula without interaction and spline terms
+  simplified_formula <- highbp14090_adj ~ clc_age + married + edudr04 + working + gendmhi + gen_025 + gen_045 + fmh_15 +
+    hwmdbmi + whr + low_drink_score1 + minperweek + smoke + slp_11 + totalfv + diabx + ckd
+  
+  # Fit the simplified model
+  simplified_model <- survey::svyglm(simplified_formula, design = design, family = quasibinomial())
+  
+  # Calculate VIF for the simplified model
+  vif_values <- rms::vif(simplified_model)
+  
+  # Return the VIF values
+  return(vif_values)
+}
 
-# Load this R file to obtain dataset and reduced models, as well as calibration plot function
-source("R/develop-models.R")
-source("R/calibration.R")
+# Function for stepdown procedure by Harrell and Ambler
+stepdown <- function(full_model, data, threshold = 0.95) {
+  initial_r2 <- calculate_nagelkerke_r2(full_model, data)
+  current_model <- full_model
+  current_r2 <- initial_r2
+  removed_terms <- c()
+  
+  # Get the terms in the model
+  terms_in_model <- attr(terms(full_model), "term.labels")
+  
+  # Iteratively remove terms and check R²
+  while (length(terms_in_model) > 0) {
+    r2_drop <- sapply(terms_in_model, function(term) {
+      reduced_model <- try(update(current_model, as.formula(paste(". ~ . -", term))), silent = TRUE)
+      if (inherits(reduced_model, "try-error")) return(Inf)
+      calculate_nagelkerke_r2(reduced_model, data)
+    })
+    
+    # Identify the term with the least impact on R²
+    term_to_remove <- terms_in_model[which.max(r2_drop)]
+    max_r2_drop <- r2_drop[which.max(r2_drop)]
+    
+    # Check if the current R² after removing the term is still above the threshold
+    if (max_r2_drop < threshold * initial_r2) {
+      break
+    } else {
+      current_model <- update(current_model, as.formula(paste(". ~ . -", term_to_remove)))
+      terms_in_model <- setdiff(terms_in_model, term_to_remove)
+      removed_terms <- c(removed_terms, term_to_remove)
+      current_r2 <- max_r2_drop
+    }
+  }
+  
+  return(current_model)
+}
+
+# Function to perform Likelihood Ratio Test (LRT) for svyglm models
+lrt_svyglm <- function(full_model, reduced_model) {
+  # Calculate the log-likelihoods
+  logLik_full <- logLik(full_model)
+  logLik_reduced <- logLik(reduced_model)
+  
+  # Compute the test statistic
+  test_statistic <- -2 * (logLik_reduced - logLik_full)
+  
+  # Degrees of freedom difference
+  df_diff <- df.residual(reduced_model) - df.residual(full_model)
+  
+  # Calculate p-value
+  p_value <- pchisq(test_statistic, df = df_diff, lower.tail = FALSE)
+  
+  # Return the test statistic and p-value as a list
+  return(list(statistic = test_statistic, p_value = p_value))
+}
 
 # Metric-generating functions
 # Nagelkerke's R²
@@ -111,24 +175,12 @@ calibration_slope <- function(data, predicted_probs) {
   return(summary(slope_model))
 }
 
-# Model assessment for original sample
-# Generate predicted probabilities for models
+# Predicted probabilities for models
 generate_predicted_probabilities <- function(model, data) {
   predicted_probabilities <- predict(model, newdata = data, type = "response")
   return(predicted_probabilities)
 }
-male_predicted_probabilities <- generate_predicted_probabilities(male_reduced_model, male_data)
-female_predicted_probabilities <- generate_predicted_probabilities(female_reduced_model, female_data)
 
-# Calibration plots with performance metrics
-calibration(male_predicted_probabilities, male_data$highbp14090_adj)
-calibration(female_predicted_probabilities, female_data$highbp14090_adj)
-
-# Calibration in-the-whole and across percentiles
-compare_probs(male_data, male_predicted_probabilities)
-compare_probs(female_data, female_predicted_probabilities)
-
-# Model assessment for bootstrap samples - BOOTSTRAP VALIDATION
 # Bootstrap function which returns metrics per bootstrap sample
 bootstrap_function <- function(data, indices, model) {
   # Create the bootstrap sample using indices
@@ -170,71 +222,3 @@ bootstrap_function <- function(data, indices, model) {
     calibration_slope = calibration_slope_value
   ))
 }
-
-# Perform bootstrapping for both male and female models
-set.seed(123)
-n_bootstrap <- 10  # Number of bootstrap resamples
-
-# For male model
-bootstrap_results_male <- replicate(n_bootstrap, {
-  boot_indices <- sample(1:nrow(male_data), replace = TRUE)
-  bootstrap_function(male_data, boot_indices, male_reduced_model)
-}, simplify = FALSE)
-
-# For female model
-bootstrap_results_female <- replicate(n_bootstrap, {
-  boot_indices <- sample(1:nrow(female_data), replace = TRUE)
-  bootstrap_function(female_data, boot_indices, female_reduced_model)
-}, simplify = FALSE)
-
-# Aggregate and summarize results for male
-nagelkerke_r2_male <- sapply(bootstrap_results_male, function(x) x$nagelkerke_r2)
-brier_score_male <- sapply(bootstrap_results_male, function(x) x$brier_score)
-auc_male <- sapply(bootstrap_results_male, function(x) x$auc_value)
-relative_difference_overall_male <- sapply(bootstrap_results_male, function(x) x$relative_difference_overall)
-ratio_90_10_male <- sapply(bootstrap_results_male, function(x) x$ratio_90_10)
-ratio_95_5_male <- sapply(bootstrap_results_male, function(x) x$ratio_95_5)
-calibration_slope_male <- sapply(bootstrap_results_male, function(x) x$calibration_slope)
-
-mean_nagelkerke_r2_male <- mean(nagelkerke_r2_male)
-mean_brier_score_male <- mean(brier_score_male)
-mean_auc_male <- mean(auc_male)
-mean_relative_difference_overall_male <- mean(relative_difference_overall_male)
-mean_ratio_90_10_male <- mean(ratio_90_10_male)
-mean_ratio_95_5_male <- mean(ratio_95_5_male)
-mean_calibration_slope_male <- mean(calibration_slope_male)
-
-cat("Male Model:\n")
-cat("Mean Nagelkerke R²:", mean_nagelkerke_r2_male, "\n")
-cat("Mean Brier Score:", mean_brier_score_male, "\n")
-cat("Mean AUC:", mean_auc_male, "\n")
-cat("Mean Observed v. Predicted:", mean_relative_difference_overall_male, "\n")
-cat("Mean 90:10 Observed v. Predicted:", mean_ratio_90_10_male, "\n")
-cat("Mean 95:5 Observed v. Predicted:", mean_ratio_95_5_male, "\n")
-cat("Mean Calibration Slope:", mean_calibration_slope_male, "\n")
-
-# Aggregate and summarize results for female
-nagelkerke_r2_female <- sapply(bootstrap_results_female, function(x) x$nagelkerke_r2)
-brier_score_female <- sapply(bootstrap_results_female, function(x) x$brier_score)
-auc_female <- sapply(bootstrap_results_female, function(x) x$auc_value)
-relative_difference_overall_female <- sapply(bootstrap_results_female, function(x) x$relative_difference_overall)
-ratio_90_10_female <- sapply(bootstrap_results_female, function(x) x$ratio_90_10)
-ratio_95_5_female <- sapply(bootstrap_results_female, function(x) x$ratio_95_5)
-calibration_slope_female <- sapply(bootstrap_results_female, function(x) x$calibration_slope)
-
-mean_nagelkerke_r2_female <- mean(nagelkerke_r2_female)
-mean_brier_score_female <- mean(brier_score_female)
-mean_auc_female <- mean(auc_female)
-mean_relative_difference_overall_female <- mean(relative_difference_overall_female)
-mean_ratio_90_10_female <- mean(ratio_90_10_female)
-mean_ratio_95_5_female <- mean(ratio_95_5_female)
-mean_calibration_slope_female <- mean(calibration_slope_female)
-
-cat("Female Model:\n")
-cat("Mean Nagelkerke R²:", mean_nagelkerke_r2_female, "\n")
-cat("Mean Brier Score:", mean_brier_score_female, "\n")
-cat("Mean AUC:", mean_auc_female, "\n")
-cat("Mean Observed v. Predicted:", mean_relative_difference_overall_female, "\n")
-cat("Mean 90:10 Observed v. Predicted:", mean_ratio_90_10_female, "\n")
-cat("Mean 95:5 Observed v. Predicted:", mean_ratio_95_5_female, "\n")
-cat("Mean Calibration Slope:", mean_calibration_slope_female, "\n")

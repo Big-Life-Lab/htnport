@@ -1,0 +1,838 @@
+---
+title: "HTNPoRT Paper - Descriptive Analysis"
+author: "Rafidul Islam"
+date: "27/11/2024"
+output: pdf_document
+knit: (function(inputFile, encoding) {
+  rmarkdown::render(inputFile, encoding = encoding, output_dir = "../dist/descriptives") })
+---
+
+# 1. Load packages, functions, and metadata
+
+```{r}
+# Set working directory at RDC
+setwd("P:/10619/Dropbox/htnport")
+
+# Load packages and functions
+.libPaths("S:\\_R4.2.3packages_incomplete")
+library(dplyr)
+library(recodeflow)
+library(survey)
+library(gtsummary)
+library(flextable)
+library(e1071)
+
+source("R/alcohol.R")
+source("R/blood-pressure.R")
+source("R/cholesterol-and-obesity.R")
+source("R/diabetes.R")
+source("R/diet.R")
+source("R/exercise.R")
+source("R/family-history.R")
+source("R/income.R")
+source("R/kidney.R")
+source("R/medications.R")
+source("R/sample.R")
+source("R/smoking.R")
+
+source("R/descriptive-functions.R")
+source("R/get-descriptive-data.R")
+source("R/create-descriptive-table.R")
+source("R/impute-variables.R")
+
+# Load metadata
+my_variables <- read.csv("P:/10619/Dropbox/htnport/worksheets/variables.csv")
+my_variable_details <- read.csv("P:/10619/Dropbox/htnport/worksheets/variable-details.csv")
+```
+
+# 2. Load medication data and recode medication variables
+
+```{r}
+# Load medication data
+cycle1_meds <- read_sas("data/cycle1/cycle1-meds.sas7bdat")
+names(cycle1_meds) <- tolower(names(cycle1_meds)) 
+cycle2_meds <- read_sas("data/cycle2/cycle2-meds.sas7bdat")
+cycle3_meds <- read_stata("data/cycle3/cycle3-meds.dta")
+cycle4_meds <- read_stata("data/cycle4/cycle4-meds.dta")
+names(cycle4_meds) <- tolower(names(cycle4_meds)) 
+cycle5_meds <- read_stata("data/cycle5/cycle5-meds.dta")
+cycle6_meds <- read_stata("data/cycle6/cycle6-meds.dta")
+names(cycle6_meds) <- tolower(names(cycle6_meds)) 
+
+# Recode medication variables from medication data
+cycle1_medication_data <- recodeflow::rec_with_table(cycle1_meds, c("clinicid", recodeflow:::select_vars_by_role("Drugs", my_variables)), variable_details = my_variable_details)
+cycle2_medication_data <- recodeflow::rec_with_table(cycle2_meds, c("clinicid", recodeflow:::select_vars_by_role("Drugs", my_variables)), variable_details = my_variable_details)
+cycle3_medication_data <- recodeflow::rec_with_table(cycle3_meds, c("clinicid", "meucatc", "npi_25b", "anymed", "diab_drug"), variable_details = my_variable_details)
+cycle4_medication_data <- recodeflow::rec_with_table(cycle4_meds, c("clinicid", "meucatc", "npi_25b", "anymed", "diab_drug"), variable_details = my_variable_details)
+cycle5_medication_data <- recodeflow::rec_with_table(cycle5_meds, c("clinicid", "meucatc", "npi_25b", "anymed", "diab_drug"), variable_details = my_variable_details)
+cycle6_medication_data <- recodeflow::rec_with_table(cycle6_meds, c("clinicid", "meucatc", "npi_25b", "anymed", "diab_drug"), variable_details = my_variable_details)
+```
+
+# 3. Load overall data, flatten/merge medication data to overall data, and recode all variables from each cycle
+
+```{r}
+# Load overall cycle data
+cycle1 <- read_stata("data/cycle1/cycle1.dta")
+cycle2 <- read_stata("data/cycle2/cycle2.dta")
+cycle3 <- read_stata("data/cycle3/cycle3.dta")
+cycle4 <- read_stata("data/cycle4/cycle4.dta")
+cycle5 <- read_stata("data/cycle5/cycle5.dta")
+cycle6 <- read_stata("data/cycle6/cycle6.dta")
+names(cycle6) <- tolower(names(cycle6)) 
+
+# Assign cycle variable to each cycle for imputation purposes
+cycle1$cycle <- 1
+cycle2$cycle <- 2
+cycle3$cycle <- 3
+cycle4$cycle <- 4
+cycle5$cycle <- 5
+cycle6$cycle <- 6
+
+# Derive outcome medication criterion in medication data, and merge that data to overall cycle data
+cycle1_medication_data$anymed2 <- as.numeric(as.character(cycle1_medication_data$anymed))
+cycle2_medication_data$anymed2 <- as.numeric(as.character(cycle2_medication_data$anymed))
+
+cycle1_medication_data$diab_drug2 <- as.numeric(as.character(cycle1_medication_data$diab_drug))
+cycle2_medication_data$diab_drug2 <- as.numeric(as.character(cycle2_medication_data$diab_drug))
+
+cycle1_medication_data <- dplyr::select(cycle1_medication_data, clinicid, anymed2, diab_drug2)
+cycle2_medication_data <- dplyr::select(cycle2_medication_data, clinicid, anymed2, diab_drug2)
+
+cycle1 <- merge(cycle1, cycle1_medication_data, by = "clinicid")
+cycle2 <- merge(cycle2, cycle2_medication_data, by = "clinicid")
+cycle3 <- process_long_medication_data(cycle3, cycle3_medication_data)
+cycle4 <- process_long_medication_data(cycle4, cycle4_medication_data)
+cycle5 <- process_long_medication_data(cycle5, cycle5_medication_data)
+cycle6 <- process_long_medication_data(cycle6, cycle6_medication_data)
+
+# Recode variables from each cycle
+cycle1_data <- recodeflow::rec_with_table(cycle1, recodeflow:::select_vars_by_role(c("Recode", "Fam"), my_variables), variable_details = my_variable_details, log = TRUE)
+cycle2_data <- recodeflow::rec_with_table(cycle2, recodeflow:::select_vars_by_role(c("Recode", "Fam"), my_variables), variable_details = my_variable_details, log = TRUE)
+cycle3_data <- recodeflow::rec_with_table(cycle3, recodeflow:::select_vars_by_role(c("Recode", "Fam"), my_variables), variable_details = my_variable_details, log = TRUE)
+cycle4_data <- recodeflow::rec_with_table(cycle4, recodeflow:::select_vars_by_role(c("Recode", "Fam"), my_variables), variable_details = my_variable_details, log = TRUE)
+cycle5_data <- recodeflow::rec_with_table(cycle5, recodeflow:::select_vars_by_role(c("Recode"), my_variables), variable_details = my_variable_details, log = TRUE)
+cycle6_data <- recodeflow::rec_with_table(cycle6, recodeflow:::select_vars_by_role(c("Recode"), my_variables), variable_details = my_variable_details, log = TRUE)
+```
+
+# 4. Combine cycles to obtain sample, and merge extra exercise data to the sample data
+
+```{r}
+# Combine cycles to obtain sample
+cycles1to6_data <- cchsflow::merge_rec_data(cycle1_data, cycle2_data, cycle3_data, cycle4_data, cycle5_data, cycle6_data)
+cycles1to6_data <- dplyr::filter(cycles1to6_data, insample == 1)
+
+# Load and merge extra accelerometer data to sample data
+tracey <- read_sas("data/From Tracy/CHMS_AM_validdays_1to3.sas7bdat")
+tracey$clinicid <-tracey$CLINICID
+tracey$mvpa_min <- tracey$avg_mvpa
+tracey$minperweek <- minperday_to_minperweek(tracey$mvpa_min)
+tracey <- subset(tracey, select = -c(CLINICID, avg_mvpa, adultPAG))
+
+cycles1to6_data <- dplyr::left_join(cycles1to6_data, tracey, by = c("clinicid"))
+cycles1to6_data <- cycles1to6_data %>%
+  dplyr::mutate(mvpa_min = coalesce(mvpa_min.x, mvpa_min.y),
+         minperweek = coalesce(minperweek.x, minperweek.y)) %>%
+  dplyr::mutate(mvpa_min = ifelse(is.na(mvpa_min), haven::tagged_na("b"), mvpa_min),
+         minperweek = ifelse(is.na(minperweek), haven::tagged_na("b"), minperweek)) %>%
+  dplyr::select(c(wgt_full, clc_sex, recodeflow:::select_vars_by_role(c("imputation-predictor"), my_variables)))
+
+# Ensure derived categorical variables present in all six cycles can be properly tabulated
+cycles1to6_data$ckd <- recode_na_b(cycles1to6_data$ckd)
+cycles1to6_data$diabx <- recode_na_b(cycles1to6_data$diabx)
+cycles1to6_data$low_drink_score1 <- recode_na_b(cycles1to6_data$low_drink_score1)
+cycles1to6_data$working <- recode_na_b(cycles1to6_data$working)
+```
+
+# 5. Table 1a - weighted unimputed data
+
+```{r}
+# Code for unweighted Table 1a
+# table1_data <- get_descriptive_data(
+#   cycles1to6_data,
+#   my_variables,
+#   my_variable_details,
+#   # All the variables whose descriptive statistics we want
+#   recodeflow:::select_vars_by_role(
+#     c("Table 1"),
+#     my_variables
+#   ),
+#   # Sets the stratifier
+#   list("all" = list("clc_sex"))
+# )
+# 
+# create_descriptive_table(
+#   table1_data,
+#   my_variables,
+#   my_variable_details,
+#   recodeflow:::select_vars_by_role(
+#     c("Table 1"),
+#     my_variables
+#   ),
+#   column_stratifier = c("clc_sex"),
+#   subjects_order = c("Age", "Sex", "Marital status", "Education", "Occupation", "Family history", "Exercise", "Diet", "Weight", "Chronic disease", "Alcohol", "Smoking", "Sleep", "General")
+# )
+
+# Rename variables for table
+cycles1to6_data <- cycles1to6_data %>%
+  dplyr::rename(
+    'Age' = clc_age,
+    `Marital status` = married,
+    `Highest education level` = edudr04,
+    `Working status` = working,
+    `Hypertension family history` = fmh_15,
+    `Minutes of exercise per week` = minperweek,
+    `Daily fruit and vegetable consumption` = totalfv,
+    `Body mass index` = hwmdbmi,
+    `Waist-to-height ratio` = whr,
+    `Chronic kidney disease` = ckd,
+    'Diabetes' = diabx,
+    `Alcohol consumption level` = low_drink_score1,
+    `Smoking status` = smoke,
+    `Hours of sleep per day` = slp_11,
+    `Self-rated mental health` = gendmhi,
+    'Stress' = gen_025,
+    `Sense of belonging` = gen_045
+  )
+
+# Apply weights to data
+weighted_data <- survey::svydesign(
+  id = ~1,
+  weights = ~wgt_full,
+  data = cycles1to6_data 
+)
+
+# Generate table itself
+gtsummary::tbl_svysummary(
+  data = weighted_imputed_data, 
+  by = clc_sex,
+  include = -c(cycle, highbp14090_adj),
+  statistic = list(
+    all_continuous() ~ "{median} ({p25}, {p75})",
+    all_categorical() ~ "{n_unweighted} ({p}%)"
+  ),
+  missing = "no"
+) %>%
+  # Rename columns
+  gtsummary::modify_header(label = "**Characteristic**") %>%
+  gtsummary::modify_spanning_header(
+    all_stat_cols() ~ "**Sex**"
+  ) %>%
+  gtsummary::modify_header(
+    stat_1 = "**Male**",
+    stat_2 = "**Female**"
+  ) %>%
+  # Rename variable names and category labels
+  gtsummary::modify_table_body(
+    ~ .x %>%
+      dplyr::mutate(
+        label = dplyr::case_when(
+          variable == "Marital status" & label == "1" ~ "Married or common-law",
+          variable == "Marital status" & label == "2" ~ "Widowed, separated, or divorced",
+          variable == "Marital status" & label == "3" ~ "Single",
+          variable == "Highest education level" & label == "1" ~ "No high school",
+          variable == "Highest education level" & label == "2" ~ "Secondary",
+          variable == "Highest education level" & label == "3" ~ "Post-secondary",
+          variable == "Working status" & label == "1" ~ "Has a job",
+          variable == "Working status" & label == "2" ~ "Does not have a job",
+          variable == "Hypertension family history" & label == "1" ~ "Yes",
+          variable == "Hypertension family history" & label == "2" ~ "No",
+          variable == "Chronic kidney disease" & label == "1" ~ "Yes",
+          variable == "Chronic kidney disease" & label == "2" ~ "No",
+          variable == "Diabetes" & label == "1" ~ "Yes",
+          variable == "Diabetes" & label == "2" ~ "No",
+          variable == "Alcohol consumption level" & label == "1" ~ "Never drinker",
+          variable == "Alcohol consumption level" & label == "2" ~ "Former drinker",
+          variable == "Alcohol consumption level" & label == "3" ~ "Light drinker",
+          variable == "Alcohol consumption level" & label == "4" ~ "Moderate to heavy drinker",
+          variable == "Smoking status" & label == "1" ~ "Current smoker",
+          variable == "Smoking status" & label == "2" ~ "Former smoker",
+          variable == "Smoking status" & label == "3" ~ "Never smoker",
+          variable == "Self-rated mental health" & label == "1" ~ "Poor",
+          variable == "Self-rated mental health" & label == "2" ~ "Fair or good",
+          variable == "Self-rated mental health" & label == "3" ~ "Very good or excellent",
+          variable == "Stress" & label == "1" ~ "Not at all to a bit",
+          variable == "Stress" & label == "2" ~ "Quite a bit or extremely",
+          variable == "Sense of belonging" & label == "1" ~ "Strong",
+          variable == "Sense of belonging" & label == "2" ~ "Weak",
+          TRUE ~ label
+        )
+      )
+  )
+```
+
+# 6. Table 1b - weighted imputed data (re-run step 4 prior to running this step)
+
+```{r}
+# Impute data
+set.seed(123)
+imputed_cycles1to6_data <- impute_variables(dplyr::select(cycles1to6_data, -c(cardiov, anymed2, ccc_32)), outcomes = recodeflow:::select_vars_by_role(c("Predictor"), my_variables), predictors = recodeflow:::select_vars_by_role(c("imputation-predictor"), my_variables))
+
+# Code for unweighted Table 1b
+# imputed_table1_data <- get_descriptive_data(
+#   imputed_cycles1to6_data,
+#   my_variables,
+#   my_variable_details,
+#   # All the variables whose descriptive statistics we want
+#   recodeflow:::select_vars_by_role(
+#     c("Table 1"),
+#     my_variables
+#   ),
+#   # Sets the stratifier
+#   list("all" = list("clc_sex"))
+# )
+# 
+# create_descriptive_table(
+#   imputed_table1_data,
+#   my_variables,
+#   my_variable_details,
+#   recodeflow:::select_vars_by_role(
+#     c("Table 1"),
+#     my_variables
+#   ),
+#   column_stratifier = c("clc_sex"),
+#   subjects_order = c("Age", "Sex", "Marital status", "Education", "Occupation", "Family history", "Exercise", "Diet", "Weight", "Chronic disease", "Alcohol", "Smoking", "Sleep", "General")
+# )
+
+
+# Rename variables for table
+imputed_cycles1to6_data <- imputed_cycles1to6_data %>%
+  dplyr::rename(
+    'Age' = clc_age,
+    `Marital status` = married,
+    `Highest education level` = edudr04,
+    `Working status` = working,
+    `Hypertension family history` = fmh_15,
+    `Minutes of exercise per week` = minperweek,
+    `Daily fruit and vegetable consumption` = totalfv,
+    `Body mass index` = hwmdbmi,
+    `Waist-to-height ratio` = whr,
+    `Chronic kidney disease` = ckd,
+    'Diabetes' = diabx,
+    `Alcohol consumption level` = low_drink_score1,
+    `Smoking status` = smoke,
+    `Hours of sleep per day` = slp_11,
+    `Self-rated mental health` = gendmhi,
+    'Stress' = gen_025,
+    `Sense of belonging` = gen_045
+  )
+
+# Apply weights to data
+weighted_imputed_data <- survey::svydesign(
+  id = ~1,
+  weights = ~wgt_full,
+  data = imputed_cycles1to6_data 
+)
+
+# Generate table itself
+gtsummary::tbl_svysummary(
+  data = weighted_imputed_data, 
+  by = clc_sex,
+  include = -wgt_full,
+  statistic = list(
+    all_continuous() ~ "{median} ({p25}, {p75})",
+    all_categorical() ~ "{n_unweighted} ({p}%)"
+  ),
+  missing = "no"
+) %>%
+  # Rename columns
+  gtsummary::modify_header(label = "**Characteristic**") %>%
+  gtsummary::modify_spanning_header(
+    all_stat_cols() ~ "**Sex**"
+  ) %>%
+  gtsummary::modify_header(
+    stat_1 = "**Male**",
+    stat_2 = "**Female**"
+  ) %>%
+  # Rename variable names and category labels
+  gtsummary::modify_table_body(
+    ~ .x %>%
+      dplyr::mutate(
+        label = dplyr::case_when(
+          variable == "Marital status" & label == "1" ~ "Married or common-law",
+          variable == "Marital status" & label == "2" ~ "Widowed, separated, or divorced",
+          variable == "Marital status" & label == "3" ~ "Single",
+          variable == "Highest education level" & label == "1" ~ "No high school",
+          variable == "Highest education level" & label == "2" ~ "Secondary",
+          variable == "Highest education level" & label == "3" ~ "Post-secondary",
+          variable == "Working status" & label == "1" ~ "Has a job",
+          variable == "Working status" & label == "2" ~ "Does not have a job",
+          variable == "Hypertension family history" & label == "1" ~ "Yes",
+          variable == "Hypertension family history" & label == "2" ~ "No",
+          variable == "Chronic kidney disease" & label == "1" ~ "Yes",
+          variable == "Chronic kidney disease" & label == "2" ~ "No",
+          variable == "Diabetes" & label == "1" ~ "Yes",
+          variable == "Diabetes" & label == "2" ~ "No",
+          variable == "Alcohol consumption level" & label == "1" ~ "Never drinker",
+          variable == "Alcohol consumption level" & label == "2" ~ "Former drinker",
+          variable == "Alcohol consumption level" & label == "3" ~ "Light drinker",
+          variable == "Alcohol consumption level" & label == "4" ~ "Moderate to heavy drinker",
+          variable == "Smoking status" & label == "1" ~ "Current smoker",
+          variable == "Smoking status" & label == "2" ~ "Former smoker",
+          variable == "Smoking status" & label == "3" ~ "Never smoker",
+          variable == "Self-rated mental health" & label == "1" ~ "Poor",
+          variable == "Self-rated mental health" & label == "2" ~ "Fair or good",
+          variable == "Self-rated mental health" & label == "3" ~ "Very good or excellent",
+          variable == "Stress" & label == "1" ~ "Not at all to a bit",
+          variable == "Stress" & label == "2" ~ "Quite a bit or extremely",
+          variable == "Sense of belonging" & label == "1" ~ "Strong",
+          variable == "Sense of belonging" & label == "2" ~ "Weak",
+          TRUE ~ label
+        )
+      )
+  )
+
+# Add extra variables to imputed dataset for exploratory analysis
+# imputed_cycles1to6_data$cardiov <- cycles1to6_data$cardiov
+# imputed_cycles1to6_data$anymed2 <- cycles1to6_data$anymed2
+# imputed_cycles1to6_data$ccc_32 <- cycles1to6_data$ccc_32
+
+# Synthetic dataset for test use outside RDC
+# imputed_cycles1to6_data <- data.frame(
+#   highbp14090_adj = sample(1:2, 9627, replace = TRUE), # Binary outcome
+#   ccc_51 = sample(1:2, 9627, replace = TRUE), # Binary
+#   ckd = sample(1:2, 9627, replace = TRUE), # Binary
+#   edudr04 = sample(1:3, 9627, replace = TRUE), # 3 categories
+#   fmh_15 = sample(1:2, 9627, replace = TRUE), # Binary
+#   gendmhi = sample(1:3, 9627, replace = TRUE), # 3 categories
+#   gen_025 = sample(1:2, 9627, replace = TRUE), # 3 categories
+#   gen_045 = sample(1:2, 9627, replace = TRUE), # Binary
+#   low_drink_score1 = sample(1:4, 9627, replace = TRUE), # 4 categories
+#   married = sample(1:3, 9627, replace = TRUE), # 3 categories
+#   smoke = sample(1:3, 9627, replace = TRUE), # Binary
+#   working = sample(1:2, 9627, replace = TRUE), # Binary
+#   clc_sex = sample(1:2, 9627, replace = TRUE), # Binary
+#   wgt_full = runif(9627, 0, 1), # Continuous weights
+#   clc_age = runif(9627, 18, 90), # Continuous
+#   hwmdbmi = runif(9627, 18, 40), # Continuous
+#   minperweek = runif(9627, 0, 2000), # Continuous
+#   totalfv = runif(9627, 0, 10), # Continuous
+#   whr = runif(9627, 0.5, 1.5), # Continuous
+#   slp_11 = runif(9627, 4, 12), # Continuous
+#   diabx = sample(1:2, 9627, replace = TRUE), # Binary
+#   cycle = sample(1:6, 9627, replace = TRUE), # Cycle variable ranging from 1 to 6
+#   anymed2 = sample(0:1, 9627, replace = TRUE), # Binary
+#   ccc_32 = sample(1:2, 9627, replace = TRUE), # Binary
+#   cardiov = sample(1:2, 9627, replace = TRUE) # Binary
+# )
+```
+
+# 7. Table 2a - weighted outcome x sex distribution
+
+```{r}
+# Code for unweighted Table 2a
+# table2a_data <- get_descriptive_data(
+#   imputed_cycles1to6_data,
+#   my_variables,
+#   my_variable_details,
+#   # All the variables whose descriptive statistics we want
+#   "highbp14090_adj",
+#   # Sets the stratifier
+#   list("all" = list("clc_sex"))
+# )
+# 
+# create_descriptive_table(
+#   table2a_data,
+#   my_variables,
+#   my_variable_details,
+#   "highbp14090_adj",
+#   column_stratifier = c("clc_sex")
+# )
+
+# Rename hypertension variable for table
+imputed_cycles1to6_data <- imputed_cycles1to6_data %>%
+  dplyr::rename(
+    'Hypertension' = highbp14090_adj
+  )
+
+# Apply weights to data
+weighted_imputed_data <- survey::svydesign(
+  id = ~1,
+  weights = ~wgt_full,
+  data = dplyr::select(imputed_cycles1to6_data, c('Hypertension', clc_sex, wgt_full))
+)
+
+# Generate table itself
+gtsummary::tbl_svysummary(
+  data = weighted_imputed_data, 
+  by = clc_sex,
+  include = -wgt_full,
+  statistic = list(
+    all_categorical() ~ "{n_unweighted} ({p}%)"
+  ),
+  missing = "no"
+) %>%
+  # Rename columns
+  gtsummary::modify_header(label = "**Characteristic**") %>%
+  gtsummary::modify_spanning_header(
+    all_stat_cols() ~ "**Sex**"
+  ) %>%
+  gtsummary::modify_header(
+    stat_1 = "**Male**",
+    stat_2 = "**Female**"
+  ) %>%
+  # Rename variable names and category labels
+  gtsummary::modify_table_body(
+    ~ .x %>%
+      dplyr::mutate(
+        label = dplyr::case_when(
+          variable == "Hypertension" & label == "1" ~ "Yes",
+          variable == "Hypertension" & label == "2" ~ "No",
+          TRUE ~ label
+        )
+      )
+  )
+
+# Revert the names in the data frame
+original_names <- c(
+  "Hypertension" = "highbp14090_adj",
+  "Age" = "clc_age",
+  "Marital status" = "married",
+  "Highest education level" = "edudr04",
+  "Working status" = "working",
+  "Hypertension family history" = "fmh_15",
+  "Minutes of exercise per week" = "minperweek",
+  "Daily fruit and vegetable consumption" = "totalfv",
+  "Body mass index" = "hwmdbmi",
+  "Waist-to-height ratio" = "whr",
+  "Chronic kidney disease" = "ckd",
+  "Diabetes" = "diabx",
+  "Alcohol consumption level" = "low_drink_score1",
+  "Smoking status" = "smoke",
+  "Hours of sleep per day" = "slp_11",
+  "Self-rated mental health" = "gendmhi",
+  "Stress" = "gen_025",
+  "Sense of belonging" = "gen_045"
+)
+
+names(imputed_cycles1to6_data) <- dplyr::recode(names(imputed_cycles1to6_data), !!!original_names)
+```
+
+# 8. Density plots for continious variables
+
+```{r}
+# Unimputed data
+create_weighted_density_plots(
+  data = cycles1to6_data,
+  grouping_var = "clc_sex",
+  weight_var = "wgt_full",
+  vars_to_plot = c("clc_age", "minperweek", "totalfv", "hwmdbmi", "whr", "slp_11"),
+  group_labels = c("Male", "Female"),
+  group_colors = c("blue", "red"),
+  plot_titles = c(
+    "Age Distribution",
+    "Exercise Distribution",
+    "Fruit and Vegetable Consumption",
+    "BMI Distribution",
+    "Waist-to-Height Ratio",
+    "Sleep Distribution"
+  ),
+  x_labels = c(
+    "Age (years)",
+    "Average minutes of exercise per week",
+    "Times per day produce consumed",
+    "BMI",
+    "Waist-to-height ratio",
+    "Hours slept per night"
+  )
+)
+
+# Imputed data
+create_weighted_density_plots(
+  data = imputed_cycles1to6_data, 
+  grouping_var = "clc_sex", 
+  weight_var = "wgt_full", 
+  vars_to_plot = c("clc_age", "minperweek", "totalfv", "hwmdbmi", "whr", "slp_11"), 
+  group_labels = c("Male", "Female"), 
+  group_colors = c("blue", "red"), 
+  plot_titles = c(
+    "Age Distribution", 
+    "Exercise Distribution", 
+    "Fruit and Vegetable Consumption", 
+    "BMI Distribution", 
+    "Waist-to-Height Ratio", 
+    "Sleep Distribution"
+  ), 
+  x_labels = c(
+    "Age (years)", 
+    "Average minutes of exercise per week", 
+    "Times per day produce consumed", 
+    "BMI", 
+    "Waist-to-height ratio", 
+    "Hours slept per night"
+  )
+)
+```
+
+# 9. Table 2b - Crude ORs and CIs for candidate predictors
+
+```{r}
+# Truncate skewed continuous variables if necessary
+imputed_cycles1to6_data <- truncate_skewed(imputed_cycles1to6_data)
+
+# Recode 2s as 0s in binary predictors and factorize all categorical predictors
+imputed_cycles1to6_data <- imputed_cycles1to6_data %>%
+  dplyr::mutate(highbp14090_adj = ifelse(highbp14090_adj == 2, 0, highbp14090_adj),
+                ckd = ifelse(ckd == 2, 0, ckd),
+                diabx = ifelse(diabx == 2, 0, diabx),
+                fmh_15 = ifelse(fmh_15 == 2, 0, fmh_15),
+                edudr04 = case_when(
+                  edudr04 == 1 ~ 2,
+                  edudr04 == 2 ~ 1,
+                  edudr04 == 3 ~ 0
+                ),
+                gendmhi = case_when(
+                  gendmhi == 1 ~ 2,
+                  gendmhi == 2 ~ 1,
+                  gendmhi == 3 ~ 0
+                ),
+                smoke = case_when(
+                  smoke == 1 ~ 2,
+                  smoke == 2 ~ 1,
+                  smoke == 3 ~ 0
+                ))
+
+cat_variables <- c("ckd", "diabx", "edudr04", "fmh_15", "gendmhi", 
+                   "gen_025", "gen_045", "low_drink_score1", "married", 
+                   "smoke", "working")
+imputed_cycles1to6_data <- imputed_cycles1to6_data %>%
+  dplyr::mutate(across(all_of(cat_variables), as.factor))
+
+# Separate male and female data
+male_data <- dplyr::filter(imputed_cycles1to6_data, clc_sex == 1)
+female_data <- dplyr::filter(imputed_cycles1to6_data, clc_sex == 2)
+
+# Apply survey weights to male and female data
+weighted_male <- survey::svydesign(
+  id = ~1,
+  weights = ~wgt_full,
+  data = male_data
+)
+
+weighted_female <- survey::svydesign(
+  id = ~1,
+  weights = ~wgt_full,
+  data = female_data
+)
+
+# List of predictors
+predictors <- recodeflow:::select_vars_by_role(c("Predictor"), my_variables)
+
+# Fit crude models for males and extract ORs and CIs
+crude_models_male <- lapply(predictors, fit_crude_model, design = weighted_male)
+crude_models_male <- do.call(rbind, crude_models_male)
+
+# Fit crude models for females and extract ORs and CIs
+crude_models_female <- lapply(predictors, fit_crude_model, design = weighted_female)
+crude_models_female <- do.call(rbind, crude_models_female)
+
+# Combine the data frames for males and females
+combined_crude_models <- bind_rows(
+  crude_models_male %>% dplyr::mutate(Sex = "Male"),
+  crude_models_female %>% dplyr::mutate(Sex = "Female")
+)
+
+# Define the custom order for the Level column
+custom_order <- c("Age", "Widowed, separated, or divorced", "Single", "High school graduate only", "Did not graduate high school", "Does not have a job",
+                  "Family history for hypertension", "Minutes of exercise per week", "Daily fruit and vegetable consumption", "Body mass index", "Waist-to-height ratio",
+                  "Diabetes", "Chronic kidney disease", "Former drinker", "Light drinker", "Moderate to heavy drinker", "Former smoker", "Current smoker", "Sleep duration", 
+                  "Fair or good mental health", "Poor mental health", "Quite a bit or extremely stressed", "Weak sense of belonging"
+)
+
+# Combine custom order with the original order
+original_order <- unique(combined_crude_models$Level)
+final_order <- c(custom_order, setdiff(original_order, custom_order))
+
+# Convert the Level column to a factor with the specified levels
+combined_crude_models <- combined_crude_models %>%
+  dplyr::mutate(Level = factor(Level, levels = final_order)) %>%
+  dplyr::arrange(Level) %>%
+  dplyr::select(-Variable)
+
+combined_crude_models <- combined_crude_models[c("Sex", "Level", "OR", "CI_Lower", "CI_Upper")]
+
+# Print the combined data frame as a table
+flextable::flextable(combined_crude_models)
+```
+
+# 10. Extra table 2s
+
+```{r}
+# Generate Table 2c - predictor x outcome distribution
+# table2c_data <- get_descriptive_data(
+#   imputed_cycles1to6_data,
+#   my_variables,
+#   my_variable_details,
+#   # All the variables whose descriptive statistics we want
+#   recodeflow:::select_vars_by_role(
+#     c("Predictor"),
+#     my_variables
+#   ),
+#   # Sets the stratifier
+#   list("all" = list("highbp14090_adj"))
+# )
+# 
+# create_descriptive_table(
+#   table2c_data,
+#   my_variables,
+#   my_variable_details,
+#   recodeflow:::select_vars_by_role(
+#     c("Predictor"),
+#     my_variables
+#   ),
+#   column_stratifier = c("highbp14090_adj"),
+#   subjects_order = c("Age", "Marital status", "Education", "Occupation", "Family history", "Exercise", "Diet", "Weight", "Chronic disease", "Alcohol", "Smoking", "Sleep", "General")
+# )
+#
+# # Generate Table 2d - meds distribution
+# table2d_data <- get_descriptive_data(
+#   imputed_cycles1to6_data,
+#   my_variables,
+#   my_variable_details,
+#   # All the variables whose descriptive statistics we want
+#   "ccc_32",
+#   # Sets the stratifier
+#   list("all" = list("anymed2"))
+# )
+# 
+# create_descriptive_table(
+#   table2d_data,
+#   my_variables,
+#   my_variable_details,
+#   "ccc_32",
+#   column_stratifier = c("anymed2")
+# )
+# 
+# # Generate Table 2e - misclassified meds distribution for chronic conditions
+# imputed_cycles1to6_data$misclassified_meds <- ifelse(imputed_cycles1to6_data$anymed2 == 1 & imputed_cycles1to6_data$ccc_32 == 2, 1, 0)
+# 
+# table2e_data <- imputed_cycles1to6_data %>%
+#   group_by(misclassified_meds) %>%
+#   summarise(
+#     diabx_1_count = sum(diabx == 1, na.rm = TRUE),
+#     diabx_2_count = sum(diabx == 2, na.rm = TRUE),
+#     cardiov_1_count = sum(cardiov == 1, na.rm = TRUE),
+#     cardiov_2_count = sum(cardiov == 2, na.rm = TRUE),
+#     ckd_1_count = sum(ckd == 1, na.rm = TRUE),
+#     ckd_2_count = sum(ckd == 2, na.rm = TRUE)
+#   )
+# 
+# flextable::flextable(table2e_data)
+```
+
+# 11. Old density plot code (if necessary)
+
+```{r}
+# Unimputed data
+# Separate male and female data
+# male_data <- dplyr::filter(cycles1to6_data, clc_sex == 1)
+# female_data <- dplyr::filter(cycles1to6_data, clc_sex == 2)
+# 
+# # Create survey design objects for male and female data
+# male_svy <- survey::svydesign(ids = ~1, data = male_data, weights = ~wgt_full)
+# female_svy <- survey::svydesign(ids = ~1, data = female_data, weights = ~wgt_full)
+# 
+# # Weighted density plot for age
+# male_age <- survey::svysmooth(~clc_age, design = male_svy)
+# female_age <- survey::svysmooth(~clc_age, design = female_svy)
+# 
+# plot(male_age$clc_age$x, male_age$clc_age$y, col = "blue", main = "Age distribution", xlab = "Age", ylab = "Density")
+# points(female_age$clc_age$x, female_age$clc_age$y, col = "red")
+# legend("topright", legend = c("Male", "Female"), col = c("blue", "red"), lty = 1:2, inset = 0.02, bg = 'white')
+# 
+# # Weighted density plot for physical activity minutes
+# male_exercise <- survey::svysmooth(~minperweek, design = male_svy)
+# female_exercise <- survey::svysmooth(~minperweek, design = female_svy)
+# 
+# plot(male_exercise$minperweek$x, male_exercise$minperweek$y, col = "blue", main = "Exercise distribution", xlim = c(0,500), xlab = "Average minutes of exercise per week", ylab = "Density")
+# points(female_exercise$minperweek$x, female_exercise$minperweek$y, col = "red")
+# legend("topright", legend = c("Male", "Female"), col = c("blue", "red"), lty = 1:2, inset = 0.02, bg = 'white')
+# 
+# # Weighted density plot for total fruit and vegetable consumption
+# male_fv <- survey::svysmooth(~totalfv, design = male_svy)
+# female_fv <- survey::svysmooth(~totalfv, design = female_svy)
+# 
+# plot(male_fv$totalfv$x, male_fv$totalfv$y, col = "blue", main = "Fruit and vegetable consumption distribution", xlab = "Times per day produce consumed", ylab = "Density")
+# points(female_fv$totalfv$x, female_fv$totalfv$y, col = "red")
+# legend("topright", legend = c("Male", "Female"), col = c("blue", "red"), lty = 1:2, inset = 0.02, bg = 'white')
+# 
+# # Weighted density plot for body mass index
+# male_bmi <- survey::svysmooth(~hwmdbmi, design = male_svy)
+# female_bmi <- survey::svysmooth(~hwmdbmi, design = female_svy)
+# 
+# plot(male_bmi$hwmdbmi$x, male_bmi$hwmdbmi$y, col = "blue", main = "BMI distribution", xlab = "BMI", ylab = "Density")
+# points(female_bmi$hwmdbmi$x, female_bmi$hwmdbmi$y, col = "red")
+# legend("topright", legend = c("Male", "Female"), col = c("blue", "red"), lty = 1:2, inset = 0.02, bg = 'white')
+# 
+# # Weighted density plot for waist-to-height ratio
+# male_whr <- survey::svysmooth(~whr, design = male_svy)
+# female_whr <- survey::svysmooth(~whr, design = female_svy)
+# 
+# plot(male_whr$whr$x, male_whr$whr$y, col = "blue", main = "Waist-to-height ratio", xlab = "Waist-to-height ratio", ylab = "Density")
+# points(female_whr$whr$x, female_whr$whr$y, col = "red")
+# legend("topright", legend = c("Male", "Female"), col = c("blue", "red"), lty = 1:2, inset = 0.02, bg = 'white')
+# 
+# # Weighted density plot for sleep duration
+# male_sleep <- survey::svysmooth(~slp_11, design = male_svy)
+# female_sleep <- survey::svysmooth(~slp_11, design = female_svy)
+# 
+# plot(male_sleep$slp_11$x, male_sleep$slp_11$y, col = "blue", main = "Sleep distribution", xlab = "Hours slept per night", ylab = "Density")
+# points(female_sleep$slp_11$x, female_sleep$slp_11$y, col = "red")
+# legend("topright", legend = c("Male", "Female"), col = c("blue", "red"), lty = 1:2, inset = 0.02, bg = 'white')
+# 
+# # Imputed data
+# # Separate male and female data
+# male_data <- dplyr::filter(imputed_cycles1to6_data, clc_sex == 1)
+# female_data <- dplyr::filter(imputed_cycles1to6_data, clc_sex == 2)
+# 
+# # Create survey design objects for male and female data
+# male_svy <- survey::svydesign(ids = ~1, data = male_data, weights = ~wgt_full)
+# female_svy <- survey::svydesign(ids = ~1, data = female_data, weights = ~wgt_full)
+# 
+# # Weighted density plot for age
+# male_age <- survey::svysmooth(~clc_age, design = male_svy)
+# female_age <- survey::svysmooth(~clc_age, design = female_svy)
+# 
+# plot(male_age$clc_age$x, male_age$clc_age$y, col = "blue", main = "Age distribution", xlab = "Age", ylab = "Density")
+# points(female_age$clc_age$x, female_age$clc_age$y, col = "red")
+# legend("topright", legend = c("Male", "Female"), col = c("blue", "red"), lty = 1:2, inset = 0.02, bg = 'white')
+# 
+# # Weighted density plot for physical activity minutes
+# male_exercise <- survey::svysmooth(~minperweek, design = male_svy)
+# female_exercise <- survey::svysmooth(~minperweek, design = female_svy)
+# 
+# plot(male_exercise$minperweek$x, male_exercise$minperweek$y, col = "blue", main = "Exercise distribution", xlim = c(0,500), xlab = "Average minutes of exercise per week", ylab = "Density")
+# points(female_exercise$minperweek$x, female_exercise$minperweek$y, col = "red")
+# legend("topright", legend = c("Male", "Female"), col = c("blue", "red"), lty = 1:2, inset = 0.02, bg = 'white')
+# 
+# # Weighted density plot for total fruit and vegetable consumption
+# male_fv <- survey::svysmooth(~totalfv, design = male_svy)
+# female_fv <- survey::svysmooth(~totalfv, design = female_svy)
+# 
+# plot(male_fv$totalfv$x, male_fv$totalfv$y, col = "blue", main = "Fruit and vegetable consumption distribution", xlab = "Times per day produce consumed", ylab = "Density")
+# points(female_fv$totalfv$x, female_fv$totalfv$y, col = "red")
+# legend("topright", legend = c("Male", "Female"), col = c("blue", "red"), lty = 1:2, inset = 0.02, bg = 'white')
+# 
+# # Weighted density plot for body mass index
+# male_bmi <- survey::svysmooth(~hwmdbmi, design = male_svy)
+# female_bmi <- survey::svysmooth(~hwmdbmi, design = female_svy)
+# 
+# plot(male_bmi$hwmdbmi$x, male_bmi$hwmdbmi$y, col = "blue", main = "BMI distribution", xlab = "BMI", ylab = "Density")
+# points(female_bmi$hwmdbmi$x, female_bmi$hwmdbmi$y, col = "red")
+# legend("topright", legend = c("Male", "Female"), col = c("blue", "red"), lty = 1:2, inset = 0.02, bg = 'white')
+# 
+# # Weighted density plot for waist-to-height ratio
+# male_whr <- survey::svysmooth(~whr, design = male_svy)
+# female_whr <- survey::svysmooth(~whr, design = female_svy)
+# 
+# plot(male_whr$whr$x, male_whr$whr$y, col = "blue", main = "Waist-to-height ratio", xlab = "Waist-to-height ratio", ylab = "Density")
+# points(female_whr$whr$x, female_whr$whr$y, col = "red")
+# legend("topright", legend = c("Male", "Female"), col = c("blue", "red"), lty = 1:2, inset = 0.02, bg = 'white')
+# 
+# # Weighted density plot for sleep duration
+# male_sleep <- survey::svysmooth(~slp_11, design = male_svy)
+# female_sleep <- survey::svysmooth(~slp_11, design = female_svy)
+# 
+# plot(male_sleep$slp_11$x, male_sleep$slp_11$y, col = "blue", main = "Sleep distribution", xlab = "Hours slept per night", ylab = "Density")
+# points(female_sleep$slp_11$x, female_sleep$slp_11$y, col = "red")
+# legend("topright", legend = c("Male", "Female"), col = c("blue", "red"), lty = 1:2, inset = 0.02, bg = 'white')
+```

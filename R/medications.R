@@ -300,7 +300,7 @@ is_other_antiHTN_med <- function(MEUCATC, NPI_25B) {
 #' 
 #' @return A numeric, 1 if medication is in any anti-hypertensive drug class and 0 if it is not.
 #' 
-#' @details This function first identifies any anti-hypertensive drugs based on their ATC codesm using the regular expression 
+#' @details This function first identifies any anti-hypertensive drugs based on their ATC codes using the regular expression 
 #'          'C0[2, 3, 7, 8, 9]' which matches ATC codes that start with "C02", "C03", "C07", "C08", and "C09". Specific sub-codes 
 #'          'C07AA07', 'C07AA12', 'C07AG02', 'C03BA08', 'C03CA01', and 'C02KX01' are excluded from the class. If the ATC 
 #'          code matches the pattern and is not in the exclusion list, and the medication was taken within the last month 
