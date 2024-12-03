@@ -204,23 +204,6 @@ ratio_90_10_male <- sapply(bootstrap_results_male, function(x) x$ratio_90_10)
 ratio_95_5_male <- sapply(bootstrap_results_male, function(x) x$ratio_95_5)
 calibration_slope_male <- sapply(bootstrap_results_male, function(x) x$calibration_slope)
 
-mean_nagelkerke_r2_male <- mean(nagelkerke_r2_male)
-mean_brier_score_male <- mean(brier_score_male)
-mean_auc_male <- mean(auc_male)
-mean_relative_difference_overall_male <- mean(relative_difference_overall_male)
-mean_ratio_90_10_male <- mean(ratio_90_10_male)
-mean_ratio_95_5_male <- mean(ratio_95_5_male)
-mean_calibration_slope_male <- mean(calibration_slope_male)
-
-cat("Male Model:\n")
-cat("Mean Nagelkerke R²:", mean_nagelkerke_r2_male, "\n")
-cat("Mean Brier Score:", mean_brier_score_male, "\n")
-cat("Mean AUC:", mean_auc_male, "\n")
-cat("Mean Observed v. Predicted:", mean_relative_difference_overall_male, "\n")
-cat("Mean 90:10 Observed v. Predicted:", mean_ratio_90_10_male, "\n")
-cat("Mean 95:5 Observed v. Predicted:", mean_ratio_95_5_male, "\n")
-cat("Mean Calibration Slope:", mean_calibration_slope_male, "\n")
-
 # Aggregate and summarize results for female
 nagelkerke_r2_female <- sapply(bootstrap_results_female, function(x) x$nagelkerke_r2)
 brier_score_female <- sapply(bootstrap_results_female, function(x) x$brier_score)
@@ -230,22 +213,21 @@ ratio_90_10_female <- sapply(bootstrap_results_female, function(x) x$ratio_90_10
 ratio_95_5_female <- sapply(bootstrap_results_female, function(x) x$ratio_95_5)
 calibration_slope_female <- sapply(bootstrap_results_female, function(x) x$calibration_slope)
 
-mean_nagelkerke_r2_female <- mean(nagelkerke_r2_female)
-mean_brier_score_female <- mean(brier_score_female)
-mean_auc_female <- mean(auc_female)
-mean_relative_difference_overall_female <- mean(relative_difference_overall_female)
-mean_ratio_90_10_female <- mean(ratio_90_10_female)
-mean_ratio_95_5_female <- mean(ratio_95_5_female)
-mean_calibration_slope_female <- mean(calibration_slope_female)
+# Combine into a data frame
+results_summary <- data.frame(
+  Metric = c("Mean Nagelkerke R²", "Mean Brier Score", "Mean AUC", 
+             "Mean Observed v. Predicted", "Mean 90:10 Observed v. Predicted",
+             "Mean 95:5 Observed v. Predicted", "Mean Calibration Slope"),
+  Male = c(mean(nagelkerke_r2_male), mean(brier_score_male), mean(auc_male), 
+           mean(relative_difference_overall_male), mean(ratio_90_10_male),
+           mean(ratio_95_5_male), mean(calibration_slope_male)),
+  Female = c(mean(nagelkerke_r2_female), mean(brier_score_female), mean(auc_female), 
+             mean(relative_difference_overall_female), mean(ratio_90_10_female),
+             mean(ratio_95_5_female), mean(calibration_slope_female))
+)
 
-cat("Female Model:\n")
-cat("Mean Nagelkerke R²:", mean_nagelkerke_r2_female, "\n")
-cat("Mean Brier Score:", mean_brier_score_female, "\n")
-cat("Mean AUC:", mean_auc_female, "\n")
-cat("Mean Observed v. Predicted:", mean_relative_difference_overall_female, "\n")
-cat("Mean 90:10 Observed v. Predicted:", mean_ratio_90_10_female, "\n")
-cat("Mean 95:5 Observed v. Predicted:", mean_ratio_95_5_female, "\n")
-cat("Mean Calibration Slope:", mean_calibration_slope_female, "\n")
+# Print the summary data frame
+print(results_summary)
 ```
 
 ## 8. Model presentation (ignore for now)
