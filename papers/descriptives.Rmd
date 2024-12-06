@@ -265,7 +265,7 @@ gtsummary::tbl_svysummary(
 ```{r}
 # Impute data
 set.seed(123)
-imputed_cycles1to6_data <- impute_variables(dplyr::select(cycles1to6_data, -c(cardiov, anymed2, ccc_32)), outcomes = recodeflow:::select_vars_by_role(c("Predictor"), my_variables), predictors = recodeflow:::select_vars_by_role(c("imputation-predictor"), my_variables))
+imputed_cycles1to6_data <- impute_variables(dplyr::select(cycles1to6_data, -c(cardiov, anymed2, ccc_32)), outcomes = recodeflow:::select_vars_by_role(c("Predictor", "cali-subgroup"), my_variables), predictors = recodeflow:::select_vars_by_role(c("imputation-predictor"), my_variables))
 
 # Code for unweighted Table 1b
 # imputed_table1_data <- get_descriptive_data(
@@ -381,7 +381,7 @@ gtsummary::tbl_svysummary(
       )
   )
 
-# Add extra variables to imputed dataset for exploratory analysis
+# Add extra variables to imputed dataset for extra tables 2d-e
 # imputed_cycles1to6_data$cardiov <- cycles1to6_data$cardiov
 # imputed_cycles1to6_data$anymed2 <- cycles1to6_data$anymed2
 # imputed_cycles1to6_data$ccc_32 <- cycles1to6_data$ccc_32
@@ -394,7 +394,7 @@ gtsummary::tbl_svysummary(
 #   edudr04 = sample(1:3, 9627, replace = TRUE), # 3 categories
 #   fmh_15 = sample(1:2, 9627, replace = TRUE), # Binary
 #   gendmhi = sample(1:3, 9627, replace = TRUE), # 3 categories
-#   gen_025 = sample(1:2, 9627, replace = TRUE), # 3 categories
+#   gen_025 = sample(1:2, 9627, replace = TRUE), # Binary
 #   gen_045 = sample(1:2, 9627, replace = TRUE), # Binary
 #   low_drink_score1 = sample(1:4, 9627, replace = TRUE), # 4 categories
 #   married = sample(1:3, 9627, replace = TRUE), # 3 categories
@@ -412,7 +412,22 @@ gtsummary::tbl_svysummary(
 #   cycle = sample(1:6, 9627, replace = TRUE), # Cycle variable ranging from 1 to 6
 #   anymed2 = sample(0:1, 9627, replace = TRUE), # Binary
 #   ccc_32 = sample(1:2, 9627, replace = TRUE), # Binary
-#   cardiov = sample(1:2, 9627, replace = TRUE) # Binary
+#   cardiov = sample(1:2, 9627, replace = TRUE), # Binary
+#   adj_hh_inc = runif(9627, 20000, 150000), # Numeric income
+#   agegroup4 = sample(c("2039", "4059", "6069", "7079"), 9627, replace = TRUE), # Categorical age group
+#   alcdwky = sample(0:84, 9627, replace = TRUE), # Integer alcohol consumption per week
+#   bmigroup = sample(1:4, 9627, replace = TRUE), # Categorical BMI group
+#   gendhdi = sample(0:4, 9627, replace = TRUE), # Categorical health-disease index
+#   gfr = runif(9627, 30, 120), # Numeric glomerular filtration rate
+#   hwm_13kg = runif(9627, 40, 150), # Numeric weight in kg
+#   hwm_14cx = runif(9627, 60, 200), # Numeric chest circumference in cm
+#   img_03 = sample(1:2, 9627, replace = TRUE), # Binary image analysis variable
+#   lab_bpb = runif(9627, 60, 160), # Numeric blood pressure measurement
+#   lab_hba1 = runif(9627, 4, 14), # Numeric HbA1c
+#   mvpa150wk = sample(1:2, 9627, replace = TRUE), # Binary moderate-vigorous activity
+#   nonhdltodd = sample(1:2, 9627, replace = TRUE), # Binary non-HDL cholesterol
+#   poordiet = sample(1:2, 9627, replace = TRUE), # Binary poor diet indicator
+#   pgdcgt = sample(1:13, 9627, replace = TRUE) # Categorical food group codes
 # )
 ```
 
@@ -591,9 +606,7 @@ imputed_cycles1to6_data <- imputed_cycles1to6_data %>%
                   smoke == 3 ~ 0
                 ))
 
-cat_variables <- c("ckd", "diabx", "edudr04", "fmh_15", "gendmhi", 
-                   "gen_025", "gen_045", "low_drink_score1", "married", 
-                   "smoke", "working")
+cat_variables <- c("ckd", "diabx", "edudr04", "fmh_15", "gendmhi", "gen_025", "gen_045", "low_drink_score1", "married", "smoke", "working")
 imputed_cycles1to6_data <- imputed_cycles1to6_data %>%
   dplyr::mutate(across(all_of(cat_variables), as.factor))
 

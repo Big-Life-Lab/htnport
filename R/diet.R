@@ -113,42 +113,42 @@ find_totalFV_cycles3to6 <- function(WSDD34Y, WSDD35Y, GFVD17AY, GFVD17BY, GFVD17
   return(totalFV)
 }
       
-#' Poor Diet Categorization 
+#' Diet Categorization 
 #'
 #' This function categorizes individuals' diet quality based on their total fruit and vegetable consumption.
 #'
 #' @param totalFV Numeric value representing the average times per day fruits and vegetables were consumed in a year.
 #'
 #' @return A categorical value indicating the diet quality:
-#'   - 1: Poor diet (totalFV < 5)
-#'   - 2: Good diet (totalFV >= 5)
+#'   - 1: Good diet (totalFV >= 5)
+#'   - 2: Poor diet (totalFV < 5)
 #'   - NA(b): Missing or invalid input
 #'
 #' @examples
 #' # Example 1: Categorize a totalFV value of 3 as poor diet
-#' determine_poordiet(3)
-#' # Output: 1
+#' determine_gooddiet(3)
+#' # Output: 2
 #' 
 #' # Example 2: Categorize a totalFV value of 7 as good diet
-#' determine_poordiet(7)
-#' # Output: 2
+#' determine_gooddiet(7)
+#' # Output: 1
 #'
 #' @export
-determine_poordiet <- function(totalFV) {
+determine_gooddiet <- function(totalFV) {
   
-  poordiet <- 0
+  gooddiet <- 0
   
   if (is.na(totalFV)) {
-    poordiet <- haven::tagged_na("b")
+    gooddiet <- haven::tagged_na("b")
   }
   else {
-    if (totalFV < 5) {
-      poordiet <- 1
+    if (totalFV >= 5) {
+      gooddiet <- 1
     }
     else {
-      poordiet <- 2
+      gooddiet <- 2
     }
   }
-  return(poordiet)
+  return(gooddiet)
   
 }
