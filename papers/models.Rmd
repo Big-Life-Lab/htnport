@@ -32,7 +32,7 @@ my_variable_details <- read.csv("P:/10619/Dropbox/htnport/worksheets/variable-de
 ```{r}
 # Impute data
 set.seed(123)
-imputed_cycles1to6_data <- impute_variables(dplyr::select(cycles1to6_data, -c(cardiov, anymed2, ccc_32)), outcomes = recodeflow:::select_vars_by_role(c("Predictor", "cali-subgroup"), my_variables), predictors = recodeflow:::select_vars_by_role(c("imputation-predictor"), my_variables))
+imputed_cycles1to6_data <- impute_variables(cycles1to6_data, outcomes = recodeflow:::select_vars_by_role(c("Predictor", "cali-subgroup"), my_variables), predictors = recodeflow:::select_vars_by_role(c("imputation-predictor"), my_variables))
 
 # Synthetic dataset for test use outside RDC
 # imputed_cycles1to6_data <- data.frame(

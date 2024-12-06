@@ -265,7 +265,7 @@ gtsummary::tbl_svysummary(
 ```{r}
 # Impute data
 set.seed(123)
-imputed_cycles1to6_data <- impute_variables(dplyr::select(cycles1to6_data, -c(cardiov, anymed2, ccc_32)), outcomes = recodeflow:::select_vars_by_role(c("Predictor", "cali-subgroup"), my_variables), predictors = recodeflow:::select_vars_by_role(c("imputation-predictor"), my_variables))
+imputed_cycles1to6_data <- impute_variables(cycles1to6_data, outcomes = recodeflow:::select_vars_by_role(c("Predictor", "cali-subgroup"), my_variables), predictors = recodeflow:::select_vars_by_role(c("imputation-predictor"), my_variables))
 
 # Code for unweighted Table 1b
 # imputed_table1_data <- get_descriptive_data(
