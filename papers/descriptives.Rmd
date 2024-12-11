@@ -137,10 +137,10 @@ cycles1to6_data <- cycles1to6_data %>%
   dplyr::select(c(wgt_full, clc_sex, recodeflow:::select_vars_by_role(c("imputation-predictor"), my_variables)))
 
 # Ensure derived categorical variables present in all six cycles can be properly tabulated
-cycles1to6_data$ckd <- recode_na_b(cycles1to6_data$ckd)
-cycles1to6_data$diabx <- recode_na_b(cycles1to6_data$diabx)
-cycles1to6_data$low_drink_score1 <- recode_na_b(cycles1to6_data$low_drink_score1)
-cycles1to6_data$working <- recode_na_b(cycles1to6_data$working)
+# cycles1to6_data$ckd <- recode_na_b(cycles1to6_data$ckd)
+# cycles1to6_data$diabx <- recode_na_b(cycles1to6_data$diabx)
+# cycles1to6_data$low_drink_score1 <- recode_na_b(cycles1to6_data$low_drink_score1)
+# cycles1to6_data$working <- recode_na_b(cycles1to6_data$working)
 ```
 
 ## 5. Table 1a - Weighted unimputed data

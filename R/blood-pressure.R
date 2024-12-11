@@ -119,6 +119,8 @@ determine_hypertension <- function(BPMDPBPS, BPMDPBPD, ANYMED2, CCC_32 = 2, CARD
   # Set ANYMED2 to 0 if CCC_32 = 2 and either CARDIOV, CKD, or DIABX = 1
   if (CCC_32 == 2 && (CARDIOV == 1 || CKD == 1 || DIABX == 1)) {
     ANYMED2 <- 0
+  } else if (!is.na(ANYMED2) && ANYMED2 == "NA(b)") {
+    ANYMED2 <- NA
   }
   
   if (is.na(BPMDPBPS) || is.na(BPMDPBPD)) {
@@ -147,7 +149,8 @@ determine_hypertension <- function(BPMDPBPS, BPMDPBPD, ANYMED2, CCC_32 = 2, CARD
     } else {
       return(highBP14090)
     }
-  } else {
+  } 
+  else {
     if (140 <= BPMDPBPS && BPMDPBPS < 996) {
       highsys140 <- 1
     } else if (0 <= BPMDPBPS && BPMDPBPS < 140) {
@@ -225,8 +228,10 @@ determine_adjusted_hypertension <- function(SBP_adj, DBP_adj, ANYMED2, CCC_32 = 
   highBP14090_adj <- haven::tagged_na("b")
   
   # Set ANYMED2 to 0 if CCC_32 = 2 and either CARDIOV, CKD, or DIABX = 1
-  if (CCC_32 == 2 && (CARDIOV == 1 || CKD == 1 || DIABX == 1)) {
+  if ((!is.na(CCC_32) && CCC_32 == 2) && ((!is.na(CARDIOV) && CARDIOV == 1) || (!is.na(CKD) && CKD == 1) || (!is.na(DIABX) && DIABX == 1))) {
     ANYMED2 <- 0
+  } else if (!is.na(ANYMED2) && ANYMED2 == "NA(b)") {
+    ANYMED2 <- NA
   }
   
   if (is.na(SBP_adj) || is.na(DBP_adj)) {
@@ -249,7 +254,7 @@ determine_adjusted_hypertension <- function(SBP_adj, DBP_adj, ANYMED2, CCC_32 = 
     else {
       return(highBP14090_adj)
     }
-    
+
     if (80 <= DBP_adj && DBP_adj < 996) {
       highdias90_adj <- 1
     } else if (0 <= DBP_adj && DBP_adj < 80) {
@@ -277,7 +282,7 @@ determine_adjusted_hypertension <- function(SBP_adj, DBP_adj, ANYMED2, CCC_32 = 
     else {
       return(highBP14090_adj)
     }
-  }
+ }
   
   # Initialize and calculate highBP14090_adj
   if (highsys140_adj == 1 || highdias90_adj == 1) {
@@ -341,6 +346,8 @@ determine_controlled_hypertension <- function(BPMDPBPS, BPMDPBPD, ANYMED2, CCC_3
   # Set ANYMED2 to 0 if CCC_32 = 2 and either CARDIOV, CKD, or DIABX = 1
   if (CCC_32 == 2 && (CARDIOV == 1 || CKD == 1 || DIABX == 1)) {
     ANYMED2 <- 0
+  } else if (!is.na(ANYMED2) && ANYMED2 == "NA(b)") {
+    ANYMED2 <- NA
   }
   
   if (is.na(BPMDPBPS) || is.na(BPMDPBPD)) {
@@ -364,7 +371,8 @@ determine_controlled_hypertension <- function(BPMDPBPS, BPMDPBPD, ANYMED2, CCC_3
     } else {
       return(highBP14090)
     }
-  } else {
+  } 
+  else {
     if (140 <= BPMDPBPS && BPMDPBPS < 996) {
       highsys140 <- 1
     } else if (0 <= BPMDPBPS && BPMDPBPS < 140) {
@@ -441,6 +449,8 @@ determine_controlled_adjusted_hypertension <- function(SBP_adj, DBP_adj, ANYMED2
   # Set ANYMED2 to 0 if CCC_32 = 2 and either CARDIOV, CKD, or DIABX = 1
   if (CCC_32 == 2 && (CARDIOV == 1 || CKD == 1 || DIABX == 1)) {
     ANYMED2 <- 0
+  } else if (!is.na(ANYMED2) && ANYMED2 == "NA(b)") {
+    ANYMED2 <- NA
   }
   
   if (is.na(SBP_adj) || is.na(DBP_adj)) {

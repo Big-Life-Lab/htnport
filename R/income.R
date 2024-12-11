@@ -137,7 +137,7 @@ in_lowest_income_qunitle <- function(incq) {
   
   incq1 <- haven::tagged_na("b")
   
-  if (is.na(incq)) {
+  if (is.na(incq) || (!is.na(incq) && incq == "NA(b)")) {
     return(incq1)
   }
   else {
