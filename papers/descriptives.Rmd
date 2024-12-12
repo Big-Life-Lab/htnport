@@ -198,19 +198,19 @@ cycles1to6_data <- cycles1to6_data %>%
 weighted_data <- survey::svydesign(
   id = ~1,
   weights = ~wgt_full,
-  data = cycles1to6_data 
+  data = cycles1to6_data %>% dplyr::filter(!is.na(clc_sex))
 )
 
 # Generate table itself
 gtsummary::tbl_svysummary(
-  data = weighted_imputed_data, 
+  data = weighted_data, 
   by = clc_sex,
   include = -c(cycle, highbp14090_adj),
   statistic = list(
     all_continuous() ~ "{median} ({p25}, {p75})",
     all_categorical() ~ "{n_unweighted} ({p}%)"
   ),
-  missing = "no"
+  missing = "no",
 ) %>%
   # Rename columns
   gtsummary::modify_header(label = "**Characteristic**") %>%
@@ -226,6 +226,9 @@ gtsummary::tbl_svysummary(
     ~ .x %>%
       dplyr::mutate(
         label = dplyr::case_when(
+          label == "NA(a)" ~ "Not applicble",
+          label == "NA(b)" ~ "Missing",
+          label == "NA(c)" ~ "Not asked",
           variable == "Marital status" & label == "1" ~ "Married or common-law",
           variable == "Marital status" & label == "2" ~ "Widowed, separated, or divorced",
           variable == "Marital status" & label == "3" ~ "Single",

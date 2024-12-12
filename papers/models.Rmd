@@ -27,7 +27,105 @@ my_variables <- read.csv("P:/10619/Dropbox/htnport/worksheets/variables.csv")
 my_variable_details <- read.csv("P:/10619/Dropbox/htnport/worksheets/variable-details.csv")
 ```
 
-## 2. Reobtain imputed data, segregrate such data by sex, and weight all data. Run steps 1-4 of descriptives.Rmd prior to running this step.
+## 2. Load medication data and recode medication variables
+
+```{r}
+# Load medication data
+cycle1_meds <- read_sas("data/cycle1/cycle1-meds.sas7bdat")
+names(cycle1_meds) <- tolower(names(cycle1_meds)) 
+cycle2_meds <- read_sas("data/cycle2/cycle2-meds.sas7bdat")
+cycle3_meds <- read_stata("data/cycle3/cycle3-meds.dta")
+cycle4_meds <- read_stata("data/cycle4/cycle4-meds.dta")
+names(cycle4_meds) <- tolower(names(cycle4_meds)) 
+cycle5_meds <- read_stata("data/cycle5/cycle5-meds.dta")
+cycle6_meds <- read_stata("data/cycle6/cycle6-meds.dta")
+names(cycle6_meds) <- tolower(names(cycle6_meds)) 
+
+# Recode medication variables from medication data
+cycle1_medication_data <- recodeflow::rec_with_table(cycle1_meds, c("clinicid", recodeflow:::select_vars_by_role("Drugs", my_variables)), variable_details = my_variable_details)
+cycle2_medication_data <- recodeflow::rec_with_table(cycle2_meds, c("clinicid", recodeflow:::select_vars_by_role("Drugs", my_variables)), variable_details = my_variable_details)
+cycle3_medication_data <- recodeflow::rec_with_table(cycle3_meds, c("clinicid", "meucatc", "npi_25b", "anymed", "diab_drug"), variable_details = my_variable_details)
+cycle4_medication_data <- recodeflow::rec_with_table(cycle4_meds, c("clinicid", "meucatc", "npi_25b", "anymed", "diab_drug"), variable_details = my_variable_details)
+cycle5_medication_data <- recodeflow::rec_with_table(cycle5_meds, c("clinicid", "meucatc", "npi_25b", "anymed", "diab_drug"), variable_details = my_variable_details)
+cycle6_medication_data <- recodeflow::rec_with_table(cycle6_meds, c("clinicid", "meucatc", "npi_25b", "anymed", "diab_drug"), variable_details = my_variable_details)
+```
+
+## 3. Load overall data, flatten/merge medication data to overall data, and recode all variables from each cycle
+
+```{r}
+# Load overall cycle data
+cycle1 <- read_stata("data/cycle1/cycle1.dta")
+cycle2 <- read_stata("data/cycle2/cycle2.dta")
+cycle3 <- read_stata("data/cycle3/cycle3.dta")
+cycle4 <- read_stata("data/cycle4/cycle4.dta")
+cycle5 <- read_stata("data/cycle5/cycle5.dta")
+cycle6 <- read_stata("data/cycle6/cycle6.dta")
+names(cycle6) <- tolower(names(cycle6)) 
+
+# Assign cycle variable to each cycle for imputation purposes
+cycle1$cycle <- 1
+cycle2$cycle <- 2
+cycle3$cycle <- 3
+cycle4$cycle <- 4
+cycle5$cycle <- 5
+cycle6$cycle <- 6
+
+# Derive outcome medication criterion in medication data, and merge that data to overall cycle data
+cycle1_medication_data$anymed2 <- as.numeric(as.character(cycle1_medication_data$anymed))
+cycle2_medication_data$anymed2 <- as.numeric(as.character(cycle2_medication_data$anymed))
+
+cycle1_medication_data$diab_drug2 <- as.numeric(as.character(cycle1_medication_data$diab_drug))
+cycle2_medication_data$diab_drug2 <- as.numeric(as.character(cycle2_medication_data$diab_drug))
+
+cycle1_medication_data <- dplyr::select(cycle1_medication_data, clinicid, anymed2, diab_drug2)
+cycle2_medication_data <- dplyr::select(cycle2_medication_data, clinicid, anymed2, diab_drug2)
+
+cycle1 <- merge(cycle1, cycle1_medication_data, by = "clinicid")
+cycle2 <- merge(cycle2, cycle2_medication_data, by = "clinicid")
+cycle3 <- process_long_medication_data(cycle3, cycle3_medication_data)
+cycle4 <- process_long_medication_data(cycle4, cycle4_medication_data)
+cycle5 <- process_long_medication_data(cycle5, cycle5_medication_data)
+cycle6 <- process_long_medication_data(cycle6, cycle6_medication_data)
+
+# Recode variables from each cycle
+cycle1_data <- recodeflow::rec_with_table(cycle1, recodeflow:::select_vars_by_role(c("Recode", "Fam"), my_variables), variable_details = my_variable_details, log = TRUE)
+cycle2_data <- recodeflow::rec_with_table(cycle2, recodeflow:::select_vars_by_role(c("Recode", "Fam"), my_variables), variable_details = my_variable_details, log = TRUE)
+cycle3_data <- recodeflow::rec_with_table(cycle3, recodeflow:::select_vars_by_role(c("Recode", "Fam"), my_variables), variable_details = my_variable_details, log = TRUE)
+cycle4_data <- recodeflow::rec_with_table(cycle4, recodeflow:::select_vars_by_role(c("Recode", "Fam"), my_variables), variable_details = my_variable_details, log = TRUE)
+cycle5_data <- recodeflow::rec_with_table(cycle5, recodeflow:::select_vars_by_role(c("Recode"), my_variables), variable_details = my_variable_details, log = TRUE)
+cycle6_data <- recodeflow::rec_with_table(cycle6, recodeflow:::select_vars_by_role(c("Recode"), my_variables), variable_details = my_variable_details, log = TRUE)
+```
+
+## 4. Combine cycles to obtain sample, and merge extra exercise data to the sample data
+
+```{r}
+# Combine cycles to obtain sample
+cycles1to6_data <- cchsflow::merge_rec_data(cycle1_data, cycle2_data, cycle3_data, cycle4_data, cycle5_data, cycle6_data)
+cycles1to6_data <- dplyr::filter(cycles1to6_data, insample == 1)
+
+# Load and merge extra accelerometer data to sample data
+tracey <- read_sas("data/From Tracy/CHMS_AM_validdays_1to3.sas7bdat")
+tracey$clinicid <-tracey$CLINICID
+tracey$mvpa_min <- tracey$avg_mvpa
+tracey$minperweek <- minperday_to_minperweek(tracey$mvpa_min)
+tracey <- subset(tracey, select = -c(CLINICID, avg_mvpa, adultPAG))
+
+cycles1to6_data <- dplyr::left_join(cycles1to6_data, tracey, by = c("clinicid"))
+cycles1to6_data <- cycles1to6_data %>%
+  dplyr::mutate(mvpa_min = coalesce(mvpa_min.x, mvpa_min.y),
+         minperweek = coalesce(minperweek.x, minperweek.y)) %>%
+  dplyr::mutate(mvpa_min = ifelse(is.na(mvpa_min), haven::tagged_na("b"), mvpa_min),
+         minperweek = ifelse(is.na(minperweek), haven::tagged_na("b"), minperweek)) %>%
+  dplyr::select(c(wgt_full, clc_sex, recodeflow:::select_vars_by_role(c("imputation-predictor"), my_variables)))
+
+# Ensure derived categorical variables present in all six cycles can be properly tabulated
+# cycles1to6_data$ckd <- recode_na_b(cycles1to6_data$ckd)
+# cycles1to6_data$diabx <- recode_na_b(cycles1to6_data$diabx)
+# cycles1to6_data$low_drink_score1 <- recode_na_b(cycles1to6_data$low_drink_score1)
+# cycles1to6_data$working <- recode_na_b(cycles1to6_data$working)
+```
+
+## 5. Reobtain imputed data, segregrate such data by sex, and weight all data.
 
 ```{r}
 # Impute data
@@ -125,7 +223,7 @@ weighted_female <- survey::svydesign(
 )
 ```
 
-## 3. Fit male and female models using weighted male and female data.
+## 6. Fit male and female models using weighted male and female data.
 
 ```{r}
 # Fit male and female models
@@ -134,7 +232,7 @@ male_model <- survey::svyglm(highbp14090_adj ~ rcs(clc_age, 4) + married + edudr
 female_model <- survey::svyglm(highbp14090_adj ~ rcs(clc_age, 4) + married + edudr04 + working + gendmhi + gen_025 + gen_045 + fmh_15 + rcs(hwmdbmi, 3) + rcs(whr, 3) + low_drink_score1 + rcs(minperweek, 3) + smoke + slp_11 + totalfv + diabx + ckd + rcs(clc_age, 4)*gen_045 + rcs(clc_age, 4)*rcs(hwmdbmi, 3) + rcs(clc_age, 4)*rcs(whr, 3) + rcs(clc_age, 4)*rcs(minperweek, 3) + rcs(clc_age, 4)*smoke + rcs(clc_age, 4)*slp_11 + rcs(clc_age, 4)*diabx + rcs(clc_age, 4)*ckd + rcs(hwmdbmi, 3)*rcs(whr, 3), design = weighted_female, family = quasibinomial())
 ```
 
-## 4. Multicollinearity and linearity assessments
+## 7. Multicollinearity and linearity assessments
 
 ```{r}
 # Multicollinearity assessment
@@ -154,7 +252,7 @@ plot(female_data$totalfv, female_model$fitted.values, xlab = "Times per day prod
 # female_model <- svyglm(highbp14090_adj ~ rcs(clc_age, 4) + married + edudr04 + working + gendmhi + gen_025 + gen_045 + fmh_15 + rcs(hwmdbmi, 3) + low_drink_score1 + rcs(minperweek, 3) + smoke + slp_11 + totalfv + diabx + ckd + rcs(clc_age, 4)*smoke + rcs(clc_age, 4)*slp_11 + rcs(clc_age, 4)*diabx + rcs(clc_age, 4)*ckd, design = weighted_female, family = quasibinomial())
 ```
 
-## 5. Model specification
+## 8. Model specification
 
 ```{r}
 # Apply stepdown function to male and female models
@@ -174,7 +272,7 @@ lrt_svyglm(male_reduced_model, male_null_model)
 lrt_svyglm(female_reduced_model, female_null_model)
 ```
 
-## 6. Model assessment for original/whole sample
+## 9. Model assessment for original/whole sample
 
 ```{r}
 male_predicted_probabilities <- generate_predicted_probabilities(male_reduced_model, male_data)
@@ -189,7 +287,7 @@ compare_probs(male_data, male_predicted_probabilities)
 compare_probs(female_data, female_predicted_probabilities)
 ```
 
-## 7. Model assessment for bootstrap samples - BOOTSTRAP VALIDATION
+## 10. Model assessment for bootstrap samples - BOOTSTRAP VALIDATION
 
 ```{r}
 # Perform bootstrapping for both male and female models
@@ -243,7 +341,7 @@ results_summary <- data.frame(
 print(results_summary)
 ```
 
-## 8. Calibration across subgroups 
+## 11. Calibration across subgroups 
 
 ```{r}
 # Obtain calibration subgroups
@@ -292,7 +390,7 @@ for (subgroup in subgroups) {
 female_calibration_results
 ```
 
-## 9. Model presentation (ignore for now)
+## 12. Model presentation (ignore for now)
 
 ```{r}
 # Create the Predictor object with 'response' to get probabilities
