@@ -16,30 +16,37 @@ calculate_simplified_vif <- function(design) {
 
 # Function for stepdown procedure by Harrell and Ambler
 stepdown <- function(full_model, data, threshold = 0.95) {
-  initial_r2 <- calculate_nagelkerke_r2(full_model, data)
+  # Ensure predictions are based on the full model
+  predicted_values <- predict(full_model, type = "response")
+  
+  # Calculate initial R² based on predicted values
+  initial_r2 <- calculate_r2(predicted_values, predict(full_model, type = "response"))
+  
   current_model <- full_model
   current_r2 <- initial_r2
   removed_terms <- c()
   
-  # Get the terms in the model
+  # Extract terms in the model
   terms_in_model <- attr(terms(full_model), "term.labels")
   
-  # Iteratively remove terms and check R²
   while (length(terms_in_model) > 0) {
+    # Compute R² drops for removing each term
     r2_drop <- sapply(terms_in_model, function(term) {
       reduced_model <- try(update(current_model, as.formula(paste(". ~ . -", term))), silent = TRUE)
       if (inherits(reduced_model, "try-error")) return(Inf)
-      calculate_nagelkerke_r2(reduced_model, data)
+      reduced_predictions <- predict(reduced_model, type = "response")
+      calculate_r2(predicted_values, reduced_predictions)
     })
     
-    # Identify the term with the least impact on R²
+    # Find the term with the least impact on R²
     term_to_remove <- terms_in_model[which.max(r2_drop)]
     max_r2_drop <- r2_drop[which.max(r2_drop)]
     
-    # Check if the current R² after removing the term is still above the threshold
+    # Check if the updated R² meets the threshold condition
     if (max_r2_drop < threshold * initial_r2) {
       break
     } else {
+      # Update the current model and terms
       current_model <- update(current_model, as.formula(paste(". ~ . -", term_to_remove)))
       terms_in_model <- setdiff(terms_in_model, term_to_remove)
       removed_terms <- c(removed_terms, term_to_remove)
@@ -48,6 +55,13 @@ stepdown <- function(full_model, data, threshold = 0.95) {
   }
   
   return(current_model)
+}
+
+# Helper function to calculate ordinary R² for approximation accuracy
+calculate_r2 <- function(full_predictions, reduced_predictions) {
+  ss_total <- sum((full_predictions - mean(full_predictions))^2)
+  ss_residual <- sum((full_predictions - reduced_predictions)^2)
+  return(1 - (ss_residual / ss_total))
 }
 
 # Function to perform Likelihood Ratio Test (LRT) for svyglm models
@@ -105,13 +119,22 @@ calculate_brier_score <- function(model, data) {
 
 # c-statistic via ROC
 calculate_auc <- function(model, data) {
-  # Generate predicted_probabilities
+  # Generate predicted probabilities
   predicted_probabilities <- predict(model, newdata = data, type = "response")
   
-  # Calculate ROC curve and AUC
-  auc_value <- pROC::auc(pROC::roc(data$highbp14090_adj, predicted_probabilities))
+  # Calculate ROC curve
+  roc_curve <- pROC::roc(data$highbp14090_adj, predicted_probabilities)
   
-  return(auc_value)
+  # Calculate AUC
+  auc_value <- pROC::auc(roc_curve)
+  
+  # Calculate 95% confidence interval for AUC
+  ci_auc <- pROC::ci.auc(roc_curve)
+  
+  return(list(
+    AUC = auc_value,
+    CI = ci_auc
+  ))
 }
 
 # Calibration - comparing observed and predicted probabilities, both in-the-whole and across percentiles
@@ -124,7 +147,7 @@ compare_probs <- function(data, predicted_probs) {
   overall_predicted <- mean(data$predicted)
   
   # Relative difference overall
-  relative_difference_overall <- (overall_observed - overall_predicted) / overall_predicted
+  relative_difference_overall <- (overall_observed - overall_predicted) / overall_observed
   
   # Calculate 90th and 10th percentiles of predicted probabilities
   percentile_90 <- quantile(data$predicted, 0.9)
@@ -137,11 +160,11 @@ compare_probs <- function(data, predicted_probs) {
   predicted_10 <- mean(data$predicted[data$predicted <= percentile_10])
   
   # Relative differences for 90th and 10th percentiles
-  relative_diff_90 <- (observed_90 - predicted_90) / predicted_90
-  relative_diff_10 <- (observed_10 - predicted_10) / predicted_10
+  relative_diff_90 <- (observed_90 - predicted_90) / observed_90
+  relative_diff_10 <- (observed_10 - predicted_10) / observed_10
   
   # Ratio of relative differences for 90th vs 10th percentile
-  ratio_90_10 <- relative_diff_90 / relative_diff_10
+  ratio_90_10 <- abs(relative_diff_90 / relative_diff_10)
   
   # Calculate 95th and 5th percentiles of predicted probabilities
   percentile_95 <- quantile(data$predicted, 0.95)
@@ -154,11 +177,11 @@ compare_probs <- function(data, predicted_probs) {
   predicted_5 <- mean(data$predicted[data$predicted <= percentile_5])
   
   # Relative differences for 95th and 5th percentiles
-  relative_diff_95 <- (observed_95 - predicted_95) / predicted_95
-  relative_diff_5 <- (observed_5 - predicted_5) / predicted_5
+  relative_diff_95 <- (observed_95 - predicted_95) / observed_95
+  relative_diff_5 <- (observed_5 - predicted_5) / observed_5
   
   # Ratio of relative differences for 95th vs 5th percentile
-  ratio_95_5 <- relative_diff_95 / relative_diff_5
+  ratio_95_5 <- abs(relative_diff_95 / relative_diff_5)
   
   # Return results
   return(list(
@@ -201,8 +224,10 @@ bootstrap_function <- function(data, indices, model) {
   # Calculate Brier Score
   brier_score <- calculate_brier_score(boot_model, data)
   
-  # Calculate AUC
-  auc_value <- calculate_auc(boot_model, data)
+  # Calculate AUC and its CI using custom function
+  auc_result <- calculate_auc(boot_model, data)
+  auc_value <- auc_result$AUC
+  auc_ci <- auc_result$CI
   
   # Calibration Comparison (Relative Differences and Ratios)
   calibration_comparison <- compare_probs(data, predicted_probs)
@@ -216,6 +241,8 @@ bootstrap_function <- function(data, indices, model) {
     nagelkerke_r2 = nagelkerke_r2,
     brier_score = brier_score,
     auc_value = auc_value,
+    auc_ci_lower = auc_ci[1],  # Lower bound of AUC CI
+    auc_ci_upper = auc_ci[3],  # Upper bound of AUC CI
     relative_difference_overall = calibration_comparison$relative_difference_overall,
     ratio_90_10 = calibration_comparison$ratio_90_10,
     ratio_95_5 = calibration_comparison$ratio_95_5,

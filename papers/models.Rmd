@@ -259,7 +259,7 @@ plot(female_data$totalfv, female_model$fitted.values, xlab = "Times per day prod
 male_reduced_model <- stepdown(male_model, male_data)
 female_reduced_model <- stepdown(female_model, female_data)
 
-# Perform likelihood ratio tests to confirm reduced models as better fit (ie. p > 0.05)
+# Perform likelihood ratio tests to determine if reduced models are better fit (ie. p > 0.05)
 lrt_svyglm(male_model, male_reduced_model)
 lrt_svyglm(female_model, female_reduced_model)
 
@@ -267,14 +267,35 @@ lrt_svyglm(female_model, female_reduced_model)
 male_null_model <- survey::svyglm(highbp14090_adj ~ 1, design = weighted_male, family = quasibinomial())
 female_null_model <- survey::svyglm(highbp14090_adj ~ 1, design = weighted_female, family = quasibinomial())
 
+# Perform likelihood ratio tests to determine overall significance of full models (ie. p < 0.05)
+lrt_svyglm(male_model, male_null_model)
+lrt_svyglm(female_model, female_null_model)
+
 # Perform likelihood ratio tests to determine overall significance of reduced models (ie. p < 0.05)
 lrt_svyglm(male_reduced_model, male_null_model)
 lrt_svyglm(female_reduced_model, female_null_model)
 ```
 
-## 9. Model assessment for original/whole sample
+## 9. Full model assessment for original sample
 
 ```{r}
+# Generate predicted probabilities for full models
+male_predicted_probabilities <- generate_predicted_probabilities(male_model, male_data)
+female_predicted_probabilities <- generate_predicted_probabilities(female_model, female_data)
+
+# Calibration plots with performance metrics
+calibration(male_predicted_probabilities, male_data$highbp14090_adj)
+calibration(female_predicted_probabilities, female_data$highbp14090_adj)
+
+# Calibration in-the-whole and across percentiles
+compare_probs(male_data, male_predicted_probabilities)
+compare_probs(female_data, female_predicted_probabilities)
+```
+
+# 10. Reduced model assessment for original sample
+
+```{r}
+# Generate predicted probabilities for reduced models
 male_predicted_probabilities <- generate_predicted_probabilities(male_reduced_model, male_data)
 female_predicted_probabilities <- generate_predicted_probabilities(female_reduced_model, female_data)
 
@@ -287,29 +308,31 @@ compare_probs(male_data, male_predicted_probabilities)
 compare_probs(female_data, female_predicted_probabilities)
 ```
 
-## 10. Model assessment for bootstrap samples - BOOTSTRAP VALIDATION
+## 11. Full model assessment for bootstrap samples - BOOTSTRAP VALIDATION 1/2
 
 ```{r}
-# Perform bootstrapping for both male and female models
+# Perform bootstrapping for both male and female full models
 set.seed(123)
 n_bootstrap <- 10  # Number of bootstrap resamples
 
-# For male model
+# For male full model
 bootstrap_results_male <- replicate(n_bootstrap, {
   boot_indices <- sample(1:nrow(male_data), replace = TRUE)
-  bootstrap_function(male_data, boot_indices, male_reduced_model)
+  bootstrap_function(male_data, boot_indices, male_model)
 }, simplify = FALSE)
 
-# For female model
+# For female full model
 bootstrap_results_female <- replicate(n_bootstrap, {
   boot_indices <- sample(1:nrow(female_data), replace = TRUE)
-  bootstrap_function(female_data, boot_indices, female_reduced_model)
+  bootstrap_function(female_data, boot_indices, female_model)
 }, simplify = FALSE)
 
 # Aggregate and summarize results for male
 nagelkerke_r2_male <- sapply(bootstrap_results_male, function(x) x$nagelkerke_r2)
 brier_score_male <- sapply(bootstrap_results_male, function(x) x$brier_score)
 auc_male <- sapply(bootstrap_results_male, function(x) x$auc_value)
+auc_male_ci_lower <- sapply(bootstrap_results_male, function(x) x$auc_ci_lower)
+auc_male_ci_upper <- sapply(bootstrap_results_male, function(x) x$auc_ci_upper)
 relative_difference_overall_male <- sapply(bootstrap_results_male, function(x) x$relative_difference_overall)
 ratio_90_10_male <- sapply(bootstrap_results_male, function(x) x$ratio_90_10)
 ratio_95_5_male <- sapply(bootstrap_results_male, function(x) x$ratio_95_5)
@@ -319,6 +342,8 @@ calibration_slope_male <- sapply(bootstrap_results_male, function(x) x$calibrati
 nagelkerke_r2_female <- sapply(bootstrap_results_female, function(x) x$nagelkerke_r2)
 brier_score_female <- sapply(bootstrap_results_female, function(x) x$brier_score)
 auc_female <- sapply(bootstrap_results_female, function(x) x$auc_value)
+auc_female_ci_lower <- sapply(bootstrap_results_female, function(x) x$auc_ci_lower)
+auc_female_ci_upper <- sapply(bootstrap_results_female, function(x) x$auc_ci_upper)
 relative_difference_overall_female <- sapply(bootstrap_results_female, function(x) x$relative_difference_overall)
 ratio_90_10_female <- sapply(bootstrap_results_female, function(x) x$ratio_90_10)
 ratio_95_5_female <- sapply(bootstrap_results_female, function(x) x$ratio_95_5)
@@ -326,13 +351,15 @@ calibration_slope_female <- sapply(bootstrap_results_female, function(x) x$calib
 
 # Combine into a data frame
 results_summary <- data.frame(
-  Metric = c("Mean Nagelkerke R²", "Mean Brier Score", "Mean AUC", 
-             "Mean Observed v. Predicted", "Mean 90:10 Observed v. Predicted",
-             "Mean 95:5 Observed v. Predicted", "Mean Calibration Slope"),
+  Metric = c("Mean Nagelkerke R²", "Mean Brier Score", "Mean AUC", "Mean AUC 95% CI Lower", 
+            "Mean AUC 95% CI Upper", "Mean Observed v. Predicted (Overall)", "Mean Observed v. Predicted (90:10)",
+             "Mean Observed v. Predicted (95:5)", "Mean Calibration Slope"),
   Male = c(mean(nagelkerke_r2_male), mean(brier_score_male), mean(auc_male), 
+           mean(auc_male_ci_lower), mean(auc_male_ci_upper),
            mean(relative_difference_overall_male), mean(ratio_90_10_male),
            mean(ratio_95_5_male), mean(calibration_slope_male)),
-  Female = c(mean(nagelkerke_r2_female), mean(brier_score_female), mean(auc_female), 
+  Female = c(mean(nagelkerke_r2_female), mean(brier_score_female), mean(auc_female),
+             mean(auc_female_ci_lower), mean(auc_female_ci_upper),
              mean(relative_difference_overall_female), mean(ratio_90_10_female),
              mean(ratio_95_5_female), mean(calibration_slope_female))
 )
@@ -341,9 +368,73 @@ results_summary <- data.frame(
 print(results_summary)
 ```
 
-## 11. Calibration across subgroups 
+## 12. Reduced model assessment for bootstrap samples - BOOTSTRAP VALIDATION 2/2
 
 ```{r}
+# Perform bootstrapping for both male and female reduced models
+set.seed(123)
+n_bootstrap <- 10  # Number of bootstrap resamples
+
+# For male reduced model
+bootstrap_results_male <- replicate(n_bootstrap, {
+  boot_indices <- sample(1:nrow(male_data), replace = TRUE)
+  bootstrap_function(male_data, boot_indices, male_reduced_model)
+}, simplify = FALSE)
+
+# For female reduced model
+bootstrap_results_female <- replicate(n_bootstrap, {
+  boot_indices <- sample(1:nrow(female_data), replace = TRUE)
+  bootstrap_function(female_data, boot_indices, female_reduced_model)
+}, simplify = FALSE)
+
+# Aggregate and summarize results for male
+nagelkerke_r2_male <- sapply(bootstrap_results_male, function(x) x$nagelkerke_r2)
+brier_score_male <- sapply(bootstrap_results_male, function(x) x$brier_score)
+auc_male <- sapply(bootstrap_results_male, function(x) x$auc_value)
+auc_male_ci_lower <- sapply(bootstrap_results_male, function(x) x$auc_ci_lower)
+auc_male_ci_upper <- sapply(bootstrap_results_male, function(x) x$auc_ci_upper)
+relative_difference_overall_male <- sapply(bootstrap_results_male, function(x) x$relative_difference_overall)
+ratio_90_10_male <- sapply(bootstrap_results_male, function(x) x$ratio_90_10)
+ratio_95_5_male <- sapply(bootstrap_results_male, function(x) x$ratio_95_5)
+calibration_slope_male <- sapply(bootstrap_results_male, function(x) x$calibration_slope)
+
+# Aggregate and summarize results for female
+nagelkerke_r2_female <- sapply(bootstrap_results_female, function(x) x$nagelkerke_r2)
+brier_score_female <- sapply(bootstrap_results_female, function(x) x$brier_score)
+auc_female <- sapply(bootstrap_results_female, function(x) x$auc_value)
+auc_female_ci_lower <- sapply(bootstrap_results_female, function(x) x$auc_ci_lower)
+auc_female_ci_upper <- sapply(bootstrap_results_female, function(x) x$auc_ci_upper)
+relative_difference_overall_female <- sapply(bootstrap_results_female, function(x) x$relative_difference_overall)
+ratio_90_10_female <- sapply(bootstrap_results_female, function(x) x$ratio_90_10)
+ratio_95_5_female <- sapply(bootstrap_results_female, function(x) x$ratio_95_5)
+calibration_slope_female <- sapply(bootstrap_results_female, function(x) x$calibration_slope)
+
+# Combine into a data frame
+results_summary <- data.frame(
+  Metric = c("Mean Nagelkerke R²", "Mean Brier Score", "Mean AUC", "Mean AUC 95% CI Lower", 
+            "Mean AUC 95% CI Upper", "Mean Observed v. Predicted (Overall)", "Mean Observed v. Predicted (90:10)",
+             "Mean Observed v. Predicted (95:5)", "Mean Calibration Slope"),
+  Male = c(mean(nagelkerke_r2_male), mean(brier_score_male), mean(auc_male), 
+           mean(auc_male_ci_lower), mean(auc_male_ci_upper),
+           mean(relative_difference_overall_male), mean(ratio_90_10_male),
+           mean(ratio_95_5_male), mean(calibration_slope_male)),
+  Female = c(mean(nagelkerke_r2_female), mean(brier_score_female), mean(auc_female),
+             mean(auc_female_ci_lower), mean(auc_female_ci_upper),
+             mean(relative_difference_overall_female), mean(ratio_90_10_female),
+             mean(ratio_95_5_female), mean(calibration_slope_female))
+)
+
+# Print the summary data frame
+print(results_summary)
+```
+
+## 13. Calibration across subgroups (for full models only)
+
+```{r}
+# Generate predicted probabilities for full model
+male_predicted_probabilities <- generate_predicted_probabilities(male_model, male_data)
+female_predicted_probabilities <- generate_predicted_probabilities(female_model, female_data)
+
 # Obtain calibration subgroups
 subgroups <- recodeflow:::select_vars_by_role(c("Predictor", "cali-subgroup"), my_variables)
 
@@ -390,7 +481,7 @@ for (subgroup in subgroups) {
 female_calibration_results
 ```
 
-## 12. Model presentation (ignore for now)
+## 14. Model presentation (ignore for now)
 
 ```{r}
 # Create the Predictor object with 'response' to get probabilities
