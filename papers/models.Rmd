@@ -428,7 +428,7 @@ results_summary <- data.frame(
 print(results_summary)
 ```
 
-## 13. Calibration across subgroups (for full models only)
+## 13. Calibration across subgroups for full models
 
 ```{r}
 # Generate predicted probabilities for full model
@@ -481,7 +481,60 @@ for (subgroup in subgroups) {
 female_calibration_results
 ```
 
-## 14. Model presentation (ignore for now)
+## 14. Calibration across subgroups for reduced models
+
+```{r}
+# Generate predicted probabilities for full model
+male_predicted_probabilities <- generate_predicted_probabilities(male_reduced_model, male_data)
+female_predicted_probabilities <- generate_predicted_probabilities(female_reduced_model, female_data)
+
+# Obtain calibration subgroups
+subgroups <- recodeflow:::select_vars_by_role(c("Predictor", "cali-subgroup"), my_variables)
+
+# Initialize an empty list to store calibration results
+male_calibration_results <- list()
+
+# Loop through each subgroup
+for (subgroup in subgroups) {
+  # Ensure the group variable is not missing or invalid
+  if (all(!is.na(male_data[[subgroup]]))) {
+    # Perform calibration and store the result
+    male_calibration_results[[subgroup]] <- calibration(
+      male_predicted_probabilities,
+      male_data$highbp14090_adj,
+      group = male_data[[subgroup]]
+    )
+  } else {
+    warning(paste("Skipping subgroup:", subgroup, "due to missing values."))
+  }
+}
+
+# Inspect the results for each subgroup
+male_calibration_results
+
+# Initialize an empty list to store calibration results
+female_calibration_results <- list()
+
+# Loop through each subgroup in the female dataset
+for (subgroup in subgroups) {
+  # Ensure the group variable is not missing or invalid
+  if (all(!is.na(female_data[[subgroup]]))) {
+    # Perform calibration and store the result
+    female_calibration_results[[subgroup]] <- calibration(
+      female_predicted_probabilities,
+      female_data$highbp14090_adj,
+      group = female_data[[subgroup]]
+    )
+  } else {
+    warning(paste("Skipping subgroup:", subgroup, "due to missing values."))
+  }
+}
+
+# Inspect the results for each subgroup
+female_calibration_results
+```
+
+## 15. Model presentation (ignore for now)
 
 ```{r}
 # Create the Predictor object with 'response' to get probabilities
