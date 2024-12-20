@@ -14,6 +14,26 @@ calculate_simplified_vif <- function(design) {
   return(vif_values)
 }
 
+# Function to calculate ORs and CIs from a model
+get_or_table <- function(model) {
+  # Extract coefficients and confidence intervals
+  coef_table <- coef(summary(model))
+  ci <- confint(model)  # Get confidence intervals
+  or_table <- data.frame(
+    Variable = rownames(coef_table),
+    OR = exp(coef_table[, "Estimate"]),
+    `Lower CI` = exp(ci[, 1]),
+    `Upper CI` = exp(ci[, 2]),
+    stringsAsFactors = FALSE
+  )
+  return(or_table)
+}
+
+# Function to merge the OR tables for comparison
+compare_ors <- function(weighted, unweighted) {
+  merge(weighted, unweighted, by = "Variable", suffixes = c("_Weighted", "_Unweighted"))
+}
+
 # Function for stepdown procedure by Harrell and Ambler
 stepdown <- function(full_model, data, threshold = 0.95) {
   # Ensure predictions are based on the full model
@@ -57,7 +77,7 @@ stepdown <- function(full_model, data, threshold = 0.95) {
   return(current_model)
 }
 
-# Helper function to calculate ordinary R² for approximation accuracy
+# Stepdown's helper function to calculate ordinary R² for approximation accuracy
 calculate_r2 <- function(full_predictions, reduced_predictions) {
   ss_total <- sum((full_predictions - mean(full_predictions))^2)
   ss_residual <- sum((full_predictions - reduced_predictions)^2)

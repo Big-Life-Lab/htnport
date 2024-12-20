@@ -65,6 +65,31 @@ truncate_skewed <- function(df, threshold = 0.995, skew_threshold = 1) {
   return(df_truncated)
 }
 
+# Function to center continuous variables
+center_variable <- function(var, design) {
+  var <- design$variables[[var]]
+  weighted_mean <- survey::svymean(~var, design = design)[1]
+  centered_var <- var - weighted_mean
+  return(centered_var)
+}
+
+# Function to re-level categorical variables based on weighted percentages
+# relevel_variable <- function(var_name, design) {
+#   # Extract the variable from the design object
+#   var <- design$variables[[var_name]]
+#   
+#   # Calculate weighted frequencies
+#   freq_table <- survey::svytable(as.formula(paste("~", var_name)), design = design)
+#   
+#   # Find the level with the highest weighted frequency
+#   reference_level <- names(which.max(freq_table))
+#   
+#   # Re-level the factor
+#   var <- relevel(var, ref = reference_level)
+#   
+#   return(var)
+# }
+
 # Function to fit crude models and return ORs and CIs for all levels of a predictor
 fit_crude_model <- function(predictor, design) {
   formula <- as.formula(paste("highbp14090_adj ~", predictor))

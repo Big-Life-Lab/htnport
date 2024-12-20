@@ -630,6 +630,24 @@ weighted_female <- survey::svydesign(
   data = female_data
 )
 
+# Center continious variables
+cont_vars <- c("clc_age", "hwmdbmi", "minperweek", "totalfv", "whr", "slp_11")
+
+for (var in cont_vars) {
+  weighted_male$variables[[var]] <- center_variable(var, weighted_male)
+}
+for (var in cont_vars) {
+  weighted_female$variables[[var]] <- center_variable(var, weighted_female)
+}
+
+# Center categorical variables
+# for (var_name in cat_variables) {
+#   weighted_male$variables[[var_name]] <- relevel_variable(var_name, weighted_male)
+# }
+# for (var_name in cat_variables) {
+#   weighted_female$variables[[var_name]] <- relevel_variable(var_name, weighted_female)
+# }
+
 # List of predictors
 predictors <- recodeflow:::select_vars_by_role(c("Predictor"), my_variables)
 

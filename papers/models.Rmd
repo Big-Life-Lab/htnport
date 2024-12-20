@@ -125,7 +125,7 @@ cycles1to6_data <- cycles1to6_data %>%
 # cycles1to6_data$working <- recode_na_b(cycles1to6_data$working)
 ```
 
-## 5. Reobtain imputed data, segregrate such data by sex, and weight all data.
+## 5. Reobtain imputed data, segregrate such data by sex, weight all data, and center variables.
 
 ```{r}
 # Impute data
@@ -221,6 +221,16 @@ weighted_female <- survey::svydesign(
   weights = ~wgt_full,
   data = female_data
 )
+
+# Center continious variables
+cont_vars <- c("clc_age", "hwmdbmi", "minperweek", "totalfv", "whr", "slp_11")
+
+for (var in cont_vars) {
+  weighted_male$variables[[var]] <- center_variable(var, weighted_male)
+}
+for (var in cont_vars) {
+  weighted_female$variables[[var]] <- center_variable(var, weighted_female)
+}
 ```
 
 ## 6. Fit male and female models using weighted male and female data.
@@ -239,20 +249,47 @@ female_model <- survey::svyglm(highbp14090_adj ~ rcs(clc_age, 4) + married + edu
 calculate_simplified_vif(design = weighted_male)
 calculate_simplified_vif(design = weighted_female)
 
+# Refit male and female models without whr if high collinearity detected
+# male_model <- svyglm(highbp14090_adj ~ rcs(clc_age, 4) + married + edudr04 + working + gendmhi + gen_025 + gen_045 + fmh_15 +  rcs(hwmdbmi, 3) + low_drink_score1 + rcs(minperweek, 3) + smoke + slp_11 + totalfv + diabx + ckd + rcs(clc_age, 4)*gen_045 + rcs(clc_age, 4)*rcs(hwmdbmi, 3) + rcs(clc_age, 4)*rcs(minperweek, 3) + rcs(clc_age, 4)*smoke + rcs(clc_age, 4)*slp_11 + rcs(clc_age, 4)*diabx + rcs(clc_age, 4)*ckd, design = weighted_male, family = quasibinomial())
+# 
+# female_model <- svyglm(highbp14090_adj ~ rcs(clc_age, 4) + married + edudr04 + working + gendmhi + gen_025 + gen_045 + fmh_15 + rcs(hwmdbmi, 3) + low_drink_score1 + rcs(minperweek, 3) + smoke + slp_11 + totalfv + diabx + ckd + rcs(clc_age, 4)*smoke + rcs(clc_age, 4)*slp_11 + rcs(clc_age, 4)*diabx + rcs(clc_age, 4)*ckd, design = weighted_female, family = quasibinomial())
+
 # Linearity assessment for slp_11 and totalfv
 plot(male_data$slp_11, male_model$fitted.values, xlab = "Hours slept per night", ylab = "Male model fitted values") 
 plot(male_data$totalfv, male_model$fitted.values, xlab = "Times per day produce consumed", ylab = "Male model fitted values") 
 
 plot(female_data$slp_11, female_model$fitted.values, xlab = "Hours slept per night", ylab = "Female model fitted values") 
 plot(female_data$totalfv, female_model$fitted.values, xlab = "Times per day produce consumed", ylab = "Female model fitted values")
-
-# Refit male and female models without whr if high collinearity detected
-# male_model <- svyglm(highbp14090_adj ~ rcs(clc_age, 4) + married + edudr04 + working + gendmhi + gen_025 + gen_045 + fmh_15 +  rcs(hwmdbmi, 3) + low_drink_score1 + rcs(minperweek, 3) + smoke + slp_11 + totalfv + diabx + ckd + rcs(clc_age, 4)*gen_045 + rcs(clc_age, 4)*rcs(hwmdbmi, 3) + rcs(clc_age, 4)*rcs(minperweek, 3) + rcs(clc_age, 4)*smoke + rcs(clc_age, 4)*slp_11 + rcs(clc_age, 4)*diabx + rcs(clc_age, 4)*ckd, design = weighted_male, family = quasibinomial())
-# 
-# female_model <- svyglm(highbp14090_adj ~ rcs(clc_age, 4) + married + edudr04 + working + gendmhi + gen_025 + gen_045 + fmh_15 + rcs(hwmdbmi, 3) + low_drink_score1 + rcs(minperweek, 3) + smoke + slp_11 + totalfv + diabx + ckd + rcs(clc_age, 4)*smoke + rcs(clc_age, 4)*slp_11 + rcs(clc_age, 4)*diabx + rcs(clc_age, 4)*ckd, design = weighted_female, family = quasibinomial())
 ```
 
-## 8. Model specification
+## 8. Fit male and female models using unweighted male and female data, and compare to weighted models
+
+```{r}
+# Fit unweighted models
+male_model_unweighted <- glm(highbp14090_adj ~ rcs(clc_age, 4) + married + edudr04 + working + gendmhi + gen_025 + gen_045 + fmh_15 + rcs(hwmdbmi, 3) + rcs(whr, 3) + low_drink_score1 + rcs(minperweek, 3) + smoke + slp_11 + totalfv + diabx + ckd + rcs(clc_age, 4)*gen_045 + rcs(clc_age, 4)*rcs(hwmdbmi, 3) + rcs(clc_age, 4)*rcs(whr, 3) + rcs(clc_age, 4)*rcs(minperweek, 3) + rcs(clc_age, 4)*smoke + rcs(clc_age, 4)*slp_11 + rcs(clc_age, 4)*diabx + rcs(clc_age, 4)*ckd + rcs(hwmdbmi, 3)*rcs(whr, 3), data = male_data, family = binomial())
+
+female_model_unweighted <- glm(highbp14090_adj ~ rcs(clc_age, 4) + married + edudr04 + working + gendmhi + gen_025 + gen_045 + fmh_15 + rcs(hwmdbmi, 3) + rcs(whr, 3) + low_drink_score1 + rcs(minperweek, 3) + smoke + slp_11 + totalfv + diabx + ckd + rcs(clc_age, 4)*gen_045 + rcs(clc_age, 4)*rcs(hwmdbmi, 3) + rcs(clc_age, 4)*rcs(whr, 3) + rcs(clc_age, 4)*rcs(minperweek, 3) + rcs(clc_age, 4)*smoke + rcs(clc_age, 4)*slp_11 + rcs(clc_age, 4)*diabx + rcs(clc_age, 4)*ckd + rcs(hwmdbmi, 3)*rcs(whr, 3), data = female_data, family = binomial())
+
+# Get ORs for male weighted and unweighted models
+male_or_weighted <- get_or_table(male_model)
+male_or_unweighted <- get_or_table(male_model_unweighted)
+
+# Get ORs for female weighted and unweighted models
+female_or_weighted <- get_or_table(female_model)
+female_or_unweighted <- get_or_table(female_model_unweighted)
+
+male_compare <- compare_ors(male_or_weighted, male_or_unweighted)
+female_compare <- compare_ors(female_or_weighted, female_or_unweighted)
+
+# View the comparison tables
+print("Male Model ORs Comparison:")
+print(male_compare)
+
+print("Female Model ORs Comparison:")
+print(female_compare)
+```
+
+## 9. Model specification
 
 ```{r}
 # Apply stepdown function to male and female models
@@ -276,7 +313,7 @@ lrt_svyglm(male_reduced_model, male_null_model)
 lrt_svyglm(female_reduced_model, female_null_model)
 ```
 
-## 9. Full model assessment for original sample
+## 10. Full model assessment for original sample
 
 ```{r}
 # Generate predicted probabilities for full models
@@ -292,7 +329,7 @@ compare_probs(male_data, male_predicted_probabilities)
 compare_probs(female_data, female_predicted_probabilities)
 ```
 
-# 10. Reduced model assessment for original sample
+## 11. Reduced model assessment for original sample
 
 ```{r}
 # Generate predicted probabilities for reduced models
@@ -308,7 +345,7 @@ compare_probs(male_data, male_predicted_probabilities)
 compare_probs(female_data, female_predicted_probabilities)
 ```
 
-## 11. Full model assessment for bootstrap samples - BOOTSTRAP VALIDATION 1/2
+## 12. Full model assessment for bootstrap samples - BOOTSTRAP VALIDATION 1/2
 
 ```{r}
 # Perform bootstrapping for both male and female full models
@@ -368,7 +405,7 @@ results_summary <- data.frame(
 print(results_summary)
 ```
 
-## 12. Reduced model assessment for bootstrap samples - BOOTSTRAP VALIDATION 2/2
+## 13. Reduced model assessment for bootstrap samples - BOOTSTRAP VALIDATION 2/2
 
 ```{r}
 # Perform bootstrapping for both male and female reduced models
@@ -428,7 +465,7 @@ results_summary <- data.frame(
 print(results_summary)
 ```
 
-## 13. Calibration across subgroups for full models
+## 14. Calibration across subgroups for full models
 
 ```{r}
 # Generate predicted probabilities for full model
@@ -481,7 +518,7 @@ for (subgroup in subgroups) {
 female_calibration_results
 ```
 
-## 14. Calibration across subgroups for reduced models
+## 15. Calibration across subgroups for reduced models
 
 ```{r}
 # Generate predicted probabilities for full model
@@ -534,7 +571,7 @@ for (subgroup in subgroups) {
 female_calibration_results
 ```
 
-## 15. Model presentation (ignore for now)
+## 16. Model presentation (ignore for now)
 
 ```{r}
 # Create the Predictor object with 'response' to get probabilities
