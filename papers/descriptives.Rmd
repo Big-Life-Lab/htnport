@@ -396,7 +396,7 @@ gtsummary::tbl_svysummary(
 #   ckd = sample(1:2, 9627, replace = TRUE), # Binary
 #   edudr04 = sample(1:3, 9627, replace = TRUE), # 3 categories
 #   fmh_15 = sample(1:2, 9627, replace = TRUE), # Binary
-#   gendmhi = sample(1:3, 9627, replace = TRUE), # 3 categories
+#   gendmhi = sample(1:2, 9627, replace = TRUE), # 3 categories
 #   gen_025 = sample(1:2, 9627, replace = TRUE), # Binary
 #   gen_045 = sample(1:2, 9627, replace = TRUE), # Binary
 #   low_drink_score1 = sample(1:4, 9627, replace = TRUE), # 4 categories
@@ -429,7 +429,7 @@ gtsummary::tbl_svysummary(
 #   lab_hba1 = runif(9627, 4, 14), # Numeric HbA1c
 #   mvpa150wk = sample(1:2, 9627, replace = TRUE), # Binary moderate-vigorous activity
 #   nonhdltodd = sample(1:2, 9627, replace = TRUE), # Binary non-HDL cholesterol
-#   poordiet = sample(1:2, 9627, replace = TRUE), # Binary poor diet indicator
+#   gooddiet = sample(1:2, 9627, replace = TRUE), # Binary poor diet indicator
 #   pgdcgt = sample(1:13, 9627, replace = TRUE) # Categorical food group codes
 # )
 ```
@@ -593,15 +593,11 @@ imputed_cycles1to6_data <- imputed_cycles1to6_data %>%
                 ckd = ifelse(ckd == 2, 0, ckd),
                 diabx = ifelse(diabx == 2, 0, diabx),
                 fmh_15 = ifelse(fmh_15 == 2, 0, fmh_15),
+                gendmhi = ifelse(gendmhi == 2, 0, gendmhi),
                 edudr04 = case_when(
                   edudr04 == 1 ~ 2,
                   edudr04 == 2 ~ 1,
                   edudr04 == 3 ~ 0
-                ),
-                gendmhi = case_when(
-                  gendmhi == 1 ~ 2,
-                  gendmhi == 2 ~ 1,
-                  gendmhi == 3 ~ 0
                 ),
                 smoke = case_when(
                   smoke == 1 ~ 2,
@@ -634,19 +630,19 @@ weighted_female <- survey::svydesign(
 cont_vars <- c("clc_age", "hwmdbmi", "minperweek", "totalfv", "whr", "slp_11")
 
 for (var in cont_vars) {
-  weighted_male$variables[[var]] <- center_variable(var, weighted_male)
+  weighted_male$variables[[var]] <- center_cont_variable(var, weighted_male)
 }
 for (var in cont_vars) {
-  weighted_female$variables[[var]] <- center_variable(var, weighted_female)
+  weighted_female$variables[[var]] <- center_cont_variable(var, weighted_female)
 }
 
 # Center categorical variables
-# for (var_name in cat_variables) {
-#   weighted_male$variables[[var_name]] <- relevel_variable(var_name, weighted_male)
-# }
-# for (var_name in cat_variables) {
-#   weighted_female$variables[[var_name]] <- relevel_variable(var_name, weighted_female)
-# }
+for (var in cat_variables) {
+  weighted_male$variables[[var]] <- center_cat_variable(var, weighted_male)
+}
+for (var in cat_variables) {
+  weighted_female$variables[[var]] <- center_cat_variable(var, weighted_female)
+}
 
 # List of predictors
 predictors <- recodeflow:::select_vars_by_role(c("Predictor"), my_variables)

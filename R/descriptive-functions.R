@@ -66,29 +66,42 @@ truncate_skewed <- function(df, threshold = 0.995, skew_threshold = 1) {
 }
 
 # Function to center continuous variables
-center_variable <- function(var, design) {
+center_cont_variable <- function(var, design) {
   var <- design$variables[[var]]
   weighted_mean <- survey::svymean(~var, design = design)[1]
   centered_var <- var - weighted_mean
   return(centered_var)
 }
 
-# Function to re-level categorical variables based on weighted percentages
-# relevel_variable <- function(var_name, design) {
-#   # Extract the variable from the design object
-#   var <- design$variables[[var_name]]
-#   
-#   # Calculate weighted frequencies
-#   freq_table <- survey::svytable(as.formula(paste("~", var_name)), design = design)
-#   
-#   # Find the level with the highest weighted frequency
-#   reference_level <- names(which.max(freq_table))
-#   
-#   # Re-level the factor
-#   var <- relevel(var, ref = reference_level)
-#   
-#   return(var)
-# }
+# Function to center categorical variables using dummy variables (excluding reference category)
+center_cat_variable <- function(var, design) {
+  var_data <- design$variables[[var]]  # Extract the variable
+  
+  # Calculate weighted frequencies using dynamically created formula
+  freq_table <- survey::svytable(as.formula(paste0("~", var)), design = design)
+  
+  # Weighted mean (proportions for each category)
+  weighted_mean <- freq_table / sum(freq_table)  # Proportion for each category
+  
+  # Exclude the lowest-numbered category (reference)
+  categories <- levels(var_data)[-1]  # Exclude the first level
+  
+  # Create centered dummy variables for remaining categories
+  centered_dummies <- sapply(categories, function(category) {
+    dummy <- as.numeric(var_data == category)  # Create dummy for the current category
+    centered_dummy <- dummy - weighted_mean[category]  # Center the dummy variable
+    return(centered_dummy)
+  })
+  
+  # Ensure output is a matrix (even if there is only one category left)
+  if (is.vector(centered_dummies)) {
+    centered_dummies <- matrix(centered_dummies, ncol = 1)
+  }
+  
+  # Name columns for clarity
+  colnames(centered_dummies) <- paste0(var, "_", categories)
+  return(centered_dummies)  # Return as a matrix
+}
 
 # Function to fit crude models and return ORs and CIs for all levels of a predictor
 fit_crude_model <- function(predictor, design) {
@@ -114,29 +127,28 @@ fit_crude_model <- function(predictor, design) {
   
   results <- results %>%
     dplyr::mutate(Level = recode(Level,
-                                 "ckd1" = "Chronic kidney disease",
+                                 "ckd" = "Chronic kidney disease",
                                  "clc_age" = "Age",
-                                 "diabx1" = "Diabetes",
-                                 "edudr041" = "High school graduate only",
-                                 "edudr042" = "Did not graduate high school",
-                                 "fmh_151" = "Family history for hypertension",
-                                 "gendmhi1" = "Fair or good mental health",
-                                 "gendmhi2" = "Poor mental health",
-                                 "gen_0252" = "Quite a bit or extremely stressed",
-                                 "gen_0452" = "Weak sense of belonging",
+                                 "diabx" = "Diabetes",
+                                 "edudr04edudr04_1" = "High school graduate only",
+                                 "edudr04edudr04_2" = "Did not graduate high school",
+                                 "fmh_15" = "Family history for hypertension",
+                                 "gendmhi" = "Poor or fair mental health",
+                                 "gen_025" = "Quite a bit or extremely stressed",
+                                 "gen_045" = "Weak sense of belonging",
                                  "hwmdbmi" = "Body mass index",
-                                 "low_drink_score12" = "Former drinker",
-                                 "low_drink_score13" = "Light drinker",
-                                 "low_drink_score14" = "Moderate to heavy drinker",
-                                 "married2" = "Widowed, separated, or divorced",
-                                 "married3" = "Single",
+                                 "low_drink_score1low_drink_score1_2" = "Former drinker",
+                                 "low_drink_score1low_drink_score1_3" = "Light drinker",
+                                 "low_drink_score1low_drink_score1_4" = "Moderate to heavy drinker",
+                                 "marriedmarried_2" = "Widowed, separated, or divorced",
+                                 "marriedmarried_3" = "Single",
                                  "minperweek" = "Minutes of exercise per week",
                                  "slp_11" = "Sleep duration",
-                                 "smoke1" = "Former smoker",
-                                 "smoke2" = "Current smoker",
+                                 "smokesmoke_1" = "Former smoker",
+                                 "smokesmoke_2" = "Current smoker",
                                  "totalfv" = "Daily fruit and vegetable consumption",
                                  "whr" = "Waist-to-height ratio",
-                                 "working2" = "Does not have a job"))
+                                 "working" = "Does not have a job"))
   
   return(results)
 }
