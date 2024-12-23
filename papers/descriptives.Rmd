@@ -627,12 +627,12 @@ weighted_female <- survey::svydesign(
 )
 
 # Center continious variables
-cont_vars <- c("clc_age", "hwmdbmi", "minperweek", "totalfv", "whr", "slp_11")
+cont_variables <- c("clc_age", "hwmdbmi", "minperweek", "totalfv", "whr", "slp_11")
 
-for (var in cont_vars) {
+for (var in cont_variables) {
   weighted_male$variables[[var]] <- center_cont_variable(var, weighted_male)
 }
-for (var in cont_vars) {
+for (var in cont_variables) {
   weighted_female$variables[[var]] <- center_cont_variable(var, weighted_female)
 }
 
