@@ -16,16 +16,25 @@ calculate_simplified_vif <- function(design) {
 
 # Function to calculate ORs and CIs from a model
 get_or_table <- function(model) {
-  # Extract coefficients and confidence intervals
+  # Extract coefficients and standard errors
   coef_table <- coef(summary(model))
-  ci <- confint(model)  # Get confidence intervals
+  estimates <- coef_table[, "Estimate"]
+  std_errors <- coef_table[, "Std. Error"]
+  
+  # Calculate OR and confidence intervals
+  OR <- exp(estimates)
+  lower_CI <- exp(estimates - 1.96 * std_errors)
+  upper_CI <- exp(estimates + 1.96 * std_errors)
+  
+  # Create a data frame
   or_table <- data.frame(
     Variable = rownames(coef_table),
-    OR = exp(coef_table[, "Estimate"]),
-    `Lower CI` = exp(ci[, 1]),
-    `Upper CI` = exp(ci[, 2]),
+    OR = OR,
+    `Lower CI` = lower_CI,
+    `Upper CI` = upper_CI,
     stringsAsFactors = FALSE
   )
+  
   return(or_table)
 }
 
@@ -85,10 +94,25 @@ calculate_r2 <- function(full_predictions, reduced_predictions) {
 }
 
 # Function to perform Likelihood Ratio Test (LRT) for svyglm models
-lrt_svyglm <- function(full_model, reduced_model) {
-  # Calculate the log-likelihoods
-  logLik_full <- logLik(full_model)
-  logLik_reduced <- logLik(reduced_model)
+lrt_svyglm <- function(full_model, reduced_model, design) {
+  
+  # Approximate log-likelihood for a survey-weighted model
+  calculate_loglik <- function(model, design) {
+    # Extract model predictions and response
+    predicted_probs <- predict(model, type = "response")
+    observed <- model$y
+    
+    # Compute the log-likelihood contributions
+    loglik_contrib <- observed * log(predicted_probs) + (1 - observed) * log(1 - predicted_probs)
+    
+    # Adjust for survey weights
+    loglik_weighted <- sum(loglik_contrib * weights(design, type = "sampling"))
+    return(loglik_weighted)
+  }
+  
+  # Calculate log-likelihoods for both models
+  logLik_full <- calculate_loglik(full_model, design)
+  logLik_reduced <- calculate_loglik(reduced_model, design)
   
   # Compute the test statistic
   test_statistic <- -2 * (logLik_reduced - logLik_full)
@@ -99,7 +123,7 @@ lrt_svyglm <- function(full_model, reduced_model) {
   # Calculate p-value
   p_value <- pchisq(test_statistic, df = df_diff, lower.tail = FALSE)
   
-  # Return the test statistic and p-value as a list
+  # Return the test statistic and p-value
   return(list(statistic = test_statistic, p_value = p_value))
 }
 

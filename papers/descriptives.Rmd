@@ -18,6 +18,7 @@ setwd("P:/10619/Dropbox/htnport")
 library(dplyr)
 library(recodeflow)
 library(survey)
+library(srvyr)
 library(gtsummary)
 library(flextable)
 library(e1071)
@@ -114,7 +115,7 @@ cycle5_data <- recodeflow::rec_with_table(cycle5, recodeflow:::select_vars_by_ro
 cycle6_data <- recodeflow::rec_with_table(cycle6, recodeflow:::select_vars_by_role(c("Recode"), my_variables), variable_details = my_variable_details, log = TRUE)
 ```
 
-## 4. Combine cycles to obtain sample, and merge extra exercise data to the sample data
+## 4. Combine cycles to obtain sample, and merge extra exercise data and bootstrap weights to the sample data
 
 ```{r}
 # Combine cycles to obtain sample
@@ -141,37 +142,24 @@ cycles1to6_data <- cycles1to6_data %>%
 # cycles1to6_data$diabx <- recode_na_b(cycles1to6_data$diabx)
 # cycles1to6_data$low_drink_score1 <- recode_na_b(cycles1to6_data$low_drink_score1)
 # cycles1to6_data$working <- recode_na_b(cycles1to6_data$working)
+
+# Load bootstrap weights for each cycle and row bind them together before merging them to sample data
+# cycle1_bsw <- read_stata("data/cycle1/cycle1_bsw.dta")
+# cycle2_bsw <- read_stata("data/cycle2/cycle2_bsw.dta")
+# cycle3_bsw <- read_stata("data/cycle3/cycle3_bsw.dta")
+# cycle4_bsw <- read_stata("data/cycle4/cycle4_bsw.dta")
+# cycle5_bsw <- read_stata("data/cycle5/cycle5_bsw.dta")
+# cycle6_bsw <- read_stata("data/cycle6/cycle6_bsw.dta")
+# names(cycle6_bsw) <- tolower(names(cycle6_bsw)) 
+
+# cycles1to6_bsw <- rbind(cycle1_bsw, cycle2_bsw, cycle3_bsw, cycle4_bsw, cycle5_bsw, cycle6_bsw)
+
+# cycles1to6_data <- dplyr::left_join(cycles1to6_data, cycles1to6_bsw, by = c("clinicid"))
 ```
 
 ## 5. Table 1a - Weighted unimputed data
 
 ```{r}
-# Code for unweighted Table 1a
-# table1_data <- get_descriptive_data(
-#   cycles1to6_data,
-#   my_variables,
-#   my_variable_details,
-#   # All the variables whose descriptive statistics we want
-#   recodeflow:::select_vars_by_role(
-#     c("Table 1"),
-#     my_variables
-#   ),
-#   # Sets the stratifier
-#   list("all" = list("clc_sex"))
-# )
-# 
-# create_descriptive_table(
-#   table1_data,
-#   my_variables,
-#   my_variable_details,
-#   recodeflow:::select_vars_by_role(
-#     c("Table 1"),
-#     my_variables
-#   ),
-#   column_stratifier = c("clc_sex"),
-#   subjects_order = c("Age", "Sex", "Marital status", "Education", "Occupation", "Family history", "Exercise", "Diet", "Weight", "Chronic disease", "Alcohol", "Smoking", "Sleep", "General")
-# )
-
 # Rename variables for table
 cycles1to6_data <- cycles1to6_data %>%
   dplyr::rename(
@@ -270,33 +258,6 @@ gtsummary::tbl_svysummary(
 set.seed(123)
 imputed_cycles1to6_data <- impute_variables(cycles1to6_data, outcomes = recodeflow:::select_vars_by_role(c("Predictor", "cali-subgroup"), my_variables), predictors = recodeflow:::select_vars_by_role(c("imputation-predictor"), my_variables))
 
-# Code for unweighted Table 1b
-# imputed_table1_data <- get_descriptive_data(
-#   imputed_cycles1to6_data,
-#   my_variables,
-#   my_variable_details,
-#   # All the variables whose descriptive statistics we want
-#   recodeflow:::select_vars_by_role(
-#     c("Table 1"),
-#     my_variables
-#   ),
-#   # Sets the stratifier
-#   list("all" = list("clc_sex"))
-# )
-# 
-# create_descriptive_table(
-#   imputed_table1_data,
-#   my_variables,
-#   my_variable_details,
-#   recodeflow:::select_vars_by_role(
-#     c("Table 1"),
-#     my_variables
-#   ),
-#   column_stratifier = c("clc_sex"),
-#   subjects_order = c("Age", "Sex", "Marital status", "Education", "Occupation", "Family history", "Exercise", "Diet", "Weight", "Chronic disease", "Alcohol", "Smoking", "Sleep", "General")
-# )
-
-
 # Rename variables for table
 imputed_cycles1to6_data <- imputed_cycles1to6_data %>%
   dplyr::rename(
@@ -384,11 +345,6 @@ gtsummary::tbl_svysummary(
       )
   )
 
-# Add extra variables to imputed dataset for extra tables 2d-e
-# imputed_cycles1to6_data$cardiov <- cycles1to6_data$cardiov
-# imputed_cycles1to6_data$anymed2 <- cycles1to6_data$anymed2
-# imputed_cycles1to6_data$ccc_32 <- cycles1to6_data$ccc_32
-
 # Synthetic dataset for test use outside RDC
 # imputed_cycles1to6_data <- data.frame(
 #   highbp14090_adj = sample(1:2, 9627, replace = TRUE), # Binary outcome
@@ -430,32 +386,15 @@ gtsummary::tbl_svysummary(
 #   mvpa150wk = sample(1:2, 9627, replace = TRUE), # Binary moderate-vigorous activity
 #   nonhdltodd = sample(1:2, 9627, replace = TRUE), # Binary non-HDL cholesterol
 #   gooddiet = sample(1:2, 9627, replace = TRUE), # Binary poor diet indicator
-#   pgdcgt = sample(1:13, 9627, replace = TRUE) # Categorical food group codes
+#   pgdcgt = sample(1:13, 9627, replace = TRUE), # Categorical food group codes]
+#   bsw1 = runif(9627, 0, 1), # Continuous bootstrap weights
+#   bsw2 = runif(9627, 0, 1) # Continuous bootstrap weights
 # )
 ```
 
 ## 7. Table 2a - weighted outcome x sex distribution
 
 ```{r}
-# Code for unweighted Table 2a
-# table2a_data <- get_descriptive_data(
-#   imputed_cycles1to6_data,
-#   my_variables,
-#   my_variable_details,
-#   # All the variables whose descriptive statistics we want
-#   "highbp14090_adj",
-#   # Sets the stratifier
-#   list("all" = list("clc_sex"))
-# )
-# 
-# create_descriptive_table(
-#   table2a_data,
-#   my_variables,
-#   my_variable_details,
-#   "highbp14090_adj",
-#   column_stratifier = c("clc_sex")
-# )
-
 # Rename hypertension variable for table
 imputed_cycles1to6_data <- imputed_cycles1to6_data %>%
   dplyr::rename(
@@ -614,17 +553,43 @@ male_data <- dplyr::filter(imputed_cycles1to6_data, clc_sex == 1)
 female_data <- dplyr::filter(imputed_cycles1to6_data, clc_sex == 2)
 
 # Apply survey weights to male and female data
-weighted_male <- survey::svydesign(
-  id = ~1,
-  weights = ~wgt_full,
-  data = male_data
-)
+# weighted_male <- survey::svydesign(
+#   id = ~1,
+#   weights = ~wgt_full,
+#   data = male_data
+# )
+# 
+# weighted_female <- survey::svydesign(
+#   id = ~1,
+#   weights = ~wgt_full,
+#   data = female_data
+# )
 
-weighted_female <- survey::svydesign(
-  id = ~1,
-  weights = ~wgt_full,
-  data = female_data
-)
+male_replicate_weights <- male_data %>%
+  dplyr::select(dplyr::starts_with("bsw")) %>%
+  names()
+
+weighted_male <- male_data %>%
+  srvyr::as_survey_rep(
+    weights = wgt_full,
+    repweights = all_of(male_replicate_weights),
+    type = "bootstrap"
+  )
+
+weighted_male$degf <- 68
+
+female_replicate_weights <- female_data %>%
+  dplyr::select(dplyr::starts_with("bsw")) %>%
+  names()
+
+weighted_female <- female_data %>%
+  srvyr::as_survey_rep(
+    weights = wgt_full,
+    repweights = all_of(female_replicate_weights),
+    type = "bootstrap"
+  )
+
+weighted_female$degf <- 68
 
 # Center continious variables
 cont_variables <- c("clc_age", "hwmdbmi", "minperweek", "totalfv", "whr", "slp_11")
@@ -678,69 +643,4 @@ combined_crude_models <- combined_crude_models[c("Sex", "Level", "OR", "CI_Lower
 
 # Print the combined data frame as a table
 flextable::flextable(combined_crude_models)
-```
-
-## 10. Extra table 2s
-
-```{r}
-# Generate Table 2c - predictor x outcome distribution
-# table2c_data <- get_descriptive_data(
-#   imputed_cycles1to6_data,
-#   my_variables,
-#   my_variable_details,
-#   # All the variables whose descriptive statistics we want
-#   recodeflow:::select_vars_by_role(
-#     c("Predictor"),
-#     my_variables
-#   ),
-#   # Sets the stratifier
-#   list("all" = list("highbp14090_adj"))
-# )
-# 
-# create_descriptive_table(
-#   table2c_data,
-#   my_variables,
-#   my_variable_details,
-#   recodeflow:::select_vars_by_role(
-#     c("Predictor"),
-#     my_variables
-#   ),
-#   column_stratifier = c("highbp14090_adj"),
-#   subjects_order = c("Age", "Marital status", "Education", "Occupation", "Family history", "Exercise", "Diet", "Weight", "Chronic disease", "Alcohol", "Smoking", "Sleep", "General")
-# )
-#
-# # Generate Table 2d - meds distribution
-# table2d_data <- get_descriptive_data(
-#   imputed_cycles1to6_data,
-#   my_variables,
-#   my_variable_details,
-#   # All the variables whose descriptive statistics we want
-#   "ccc_32",
-#   # Sets the stratifier
-#   list("all" = list("anymed2"))
-# )
-# 
-# create_descriptive_table(
-#   table2d_data,
-#   my_variables,
-#   my_variable_details,
-#   "ccc_32",
-#   column_stratifier = c("anymed2")
-# )
-# 
-# # Generate Table 2e - misclassified meds distribution for chronic conditions
-# imputed_cycles1to6_data$misclassified_meds <- ifelse(imputed_cycles1to6_data$anymed2 == 1 & imputed_cycles1to6_data$ccc_32 == 2, 1, 0)
-# 
-# table2e_data <- imputed_cycles1to6_data %>%
-#   group_by(misclassified_meds) %>%
-#   summarise(
-#     diabx_1_count = sum(diabx == 1, na.rm = TRUE),
-#     diabx_2_count = sum(diabx == 2, na.rm = TRUE),
-#     cardiov_1_count = sum(cardiov == 1, na.rm = TRUE),
-#     cardiov_2_count = sum(cardiov == 2, na.rm = TRUE),
-#     ckd_1_count = sum(ckd == 1, na.rm = TRUE),
-#     ckd_2_count = sum(ckd == 2, na.rm = TRUE)
-#   )
-# 
-# flextable::flextable(table2e_data)
 ```

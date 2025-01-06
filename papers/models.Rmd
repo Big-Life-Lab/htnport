@@ -15,6 +15,11 @@ setwd("P:/10619/Dropbox/htnport")
 
 # Load packages and functions
 .libPaths("P:/10619/Rpackages")
+library(dplyr)
+library(recodeflow)
+library(survey)
+library(srvyr)
+library(e1071)
 library(rms)
 # library(iml)
 
@@ -96,7 +101,7 @@ cycle5_data <- recodeflow::rec_with_table(cycle5, recodeflow:::select_vars_by_ro
 cycle6_data <- recodeflow::rec_with_table(cycle6, recodeflow:::select_vars_by_role(c("Recode"), my_variables), variable_details = my_variable_details, log = TRUE)
 ```
 
-## 4. Combine cycles to obtain sample, and merge extra exercise data to the sample data
+## 4. Combine cycles to obtain sample, and merge extra exercise data and bootstrap weights to the sample data
 
 ```{r}
 # Combine cycles to obtain sample
@@ -123,6 +128,19 @@ cycles1to6_data <- cycles1to6_data %>%
 # cycles1to6_data$diabx <- recode_na_b(cycles1to6_data$diabx)
 # cycles1to6_data$low_drink_score1 <- recode_na_b(cycles1to6_data$low_drink_score1)
 # cycles1to6_data$working <- recode_na_b(cycles1to6_data$working)
+
+# Load bootstrap weights for each cycle and row bind them together before merging them to sample data
+# cycle1_bsw <- read_stata("data/cycle1/cycle1_bsw.dta")
+# cycle2_bsw <- read_stata("data/cycle2/cycle2_bsw.dta")
+# cycle3_bsw <- read_stata("data/cycle3/cycle3_bsw.dta")
+# cycle4_bsw <- read_stata("data/cycle4/cycle4_bsw.dta")
+# cycle5_bsw <- read_stata("data/cycle5/cycle5_bsw.dta")
+# cycle6_bsw <- read_stata("data/cycle6/cycle6_bsw.dta")
+# names(cycle6_bsw) <- tolower(names(cycle6_bsw)) 
+
+# cycles1to6_bsw <- rbind(cycle1_bsw, cycle2_bsw, cycle3_bsw, cycle4_bsw, cycle5_bsw, cycle6_bsw)
+
+# cycles1to6_data <- dplyr::left_join(cycles1to6_data, cycles1to6_bsw, by = c("clinicid"))
 ```
 
 ## 5. Reobtain imputed data, segregrate such data by sex, weight all data, and center variables.
@@ -173,7 +191,9 @@ imputed_cycles1to6_data <- impute_variables(cycles1to6_data, outcomes = recodefl
 #   mvpa150wk = sample(1:2, 9627, replace = TRUE), # Binary moderate-vigorous activity
 #   nonhdltodd = sample(1:2, 9627, replace = TRUE), # Binary non-HDL cholesterol
 #   gooddiet = sample(1:2, 9627, replace = TRUE), # Binary poor diet indicator
-#   pgdcgt = sample(1:13, 9627, replace = TRUE) # Categorical food group codes
+#   pgdcgt = sample(1:13, 9627, replace = TRUE), # Categorical food group codes
+#   bsw1 = runif(9627, 0, 1), # Continuous bootstrap weights
+#   bsw2 = runif(9627, 0, 1) # Continuous bootstrap weights
 # )
 
 # Truncate skewed continuous variables if necessary
@@ -206,17 +226,31 @@ male_data <- dplyr::filter(imputed_cycles1to6_data, clc_sex == 1)
 female_data <- dplyr::filter(imputed_cycles1to6_data, clc_sex == 2)
 
 # Apply survey weights to male and female data
-weighted_male <- survey::svydesign(
-  id = ~1,
-  weights = ~wgt_full,
-  data = male_data
-)
+male_replicate_weights <- male_data %>%
+  dplyr::select(dplyr::starts_with("bsw")) %>%
+  names()
 
-weighted_female <- survey::svydesign(
-  id = ~1,
-  weights = ~wgt_full,
-  data = female_data
-)
+weighted_male <- male_data %>%
+  srvyr::as_survey_rep(
+    weights = wgt_full,
+    repweights = all_of(male_replicate_weights),
+    type = "bootstrap"
+  )
+
+weighted_male$degf <- 68
+
+female_replicate_weights <- female_data %>%
+  dplyr::select(dplyr::starts_with("bsw")) %>%
+  names()
+
+weighted_female <- female_data %>%
+  srvyr::as_survey_rep(
+    weights = wgt_full,
+    repweights = all_of(female_replicate_weights),
+    type = "bootstrap"
+  )
+
+weighted_female$degf <- 68
 
 # Center continious variables
 cont_variables <- c("clc_age", "hwmdbmi", "minperweek", "totalfv", "whr", "slp_11")
@@ -252,8 +286,20 @@ female_model <- survey::svyglm(highbp14090_adj ~ rcs(clc_age, 4) + married + edu
 
 ```{r}
 # Multicollinearity assessment
-calculate_simplified_vif(design = weighted_male)
-calculate_simplified_vif(design = weighted_female)
+simple_weighted_male <- survey::svydesign(
+  id = ~1,
+  weights = ~wgt_full,
+  data = male_data
+)
+
+simple_weighted_female <- survey::svydesign(
+  id = ~1,
+  weights = ~wgt_full,
+  data = female_data
+)
+
+calculate_simplified_vif(design = simple_weighted_male)
+calculate_simplified_vif(design = simple_weighted_female)
 
 # Refit male and female models without whr if high collinearity detected
 # male_model <- svyglm(highbp14090_adj ~ rcs(clc_age, 4) + married + edudr04 + working + gendmhi + gen_025 + gen_045 + fmh_15 +  rcs(hwmdbmi, 3) + low_drink_score1 + rcs(minperweek, 3) + smoke + slp_11 + totalfv + diabx + ckd + rcs(clc_age, 4)*gen_045 + rcs(clc_age, 4)*rcs(hwmdbmi, 3) + rcs(clc_age, 4)*rcs(minperweek, 3) + rcs(clc_age, 4)*smoke + rcs(clc_age, 4)*slp_11 + rcs(clc_age, 4)*diabx + rcs(clc_age, 4)*ckd, design = weighted_male, family = quasibinomial())
@@ -303,20 +349,20 @@ male_reduced_model <- stepdown(male_model, male_data)
 female_reduced_model <- stepdown(female_model, female_data)
 
 # Perform likelihood ratio tests to determine if reduced models are better fit (ie. p > 0.05)
-lrt_svyglm(male_model, male_reduced_model)
-lrt_svyglm(female_model, female_reduced_model)
+lrt_svyglm(male_model, male_reduced_model, weighted_male)
+lrt_svyglm(female_model, female_reduced_model, weighted_female)
 
 # Develop null models for likelihood ratio tests below
 male_null_model <- survey::svyglm(highbp14090_adj ~ 1, design = weighted_male, family = quasibinomial())
 female_null_model <- survey::svyglm(highbp14090_adj ~ 1, design = weighted_female, family = quasibinomial())
 
 # Perform likelihood ratio tests to determine overall significance of full models (ie. p < 0.05)
-lrt_svyglm(male_model, male_null_model)
-lrt_svyglm(female_model, female_null_model)
+lrt_svyglm(male_model, male_null_model, weighted_male)
+lrt_svyglm(female_model, female_null_model, weighted_female)
 
 # Perform likelihood ratio tests to determine overall significance of reduced models (ie. p < 0.05)
-lrt_svyglm(male_reduced_model, male_null_model)
-lrt_svyglm(female_reduced_model, female_null_model)
+lrt_svyglm(male_reduced_model, male_null_model, weighted_male)
+lrt_svyglm(female_reduced_model, female_null_model, weighted_female)
 ```
 
 ## 10. Full model assessment for original sample
