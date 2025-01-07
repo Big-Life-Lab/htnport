@@ -9,12 +9,13 @@ knit: (function(inputFile, encoding) {
 
 ## 1. Load packages, functions, and metadeta
 
-```{r}
+```{r, echo = false}
 # Set working directory at RDC
 setwd("P:/10619/Dropbox/htnport")
 
 # Load packages and functions
 .libPaths("P:/10619/Rpackages")
+library(haven)
 library(dplyr)
 library(recodeflow)
 library(survey)
@@ -34,7 +35,7 @@ my_variable_details <- read.csv("P:/10619/Dropbox/htnport/worksheets/variable-de
 
 ## 2. Load medication data and recode medication variables
 
-```{r}
+```{r, echo = false}
 # Load medication data
 cycle1_meds <- read_sas("data/cycle1/cycle1-meds.sas7bdat")
 names(cycle1_meds) <- tolower(names(cycle1_meds)) 
@@ -57,7 +58,7 @@ cycle6_medication_data <- recodeflow::rec_with_table(cycle6_meds, c("clinicid", 
 
 ## 3. Load overall data, flatten/merge medication data to overall data, and recode all variables from each cycle
 
-```{r}
+```{r, echo = false}
 # Load overall cycle data
 cycle1 <- read_stata("data/cycle1/cycle1.dta")
 cycle2 <- read_stata("data/cycle2/cycle2.dta")
@@ -103,7 +104,7 @@ cycle6_data <- recodeflow::rec_with_table(cycle6, recodeflow:::select_vars_by_ro
 
 ## 4. Combine cycles to obtain sample, and merge extra exercise data and bootstrap weights to the sample data
 
-```{r}
+```{r, echo = false}
 # Combine cycles to obtain sample
 cycles1to6_data <- cchsflow::merge_rec_data(cycle1_data, cycle2_data, cycle3_data, cycle4_data, cycle5_data, cycle6_data)
 cycles1to6_data <- dplyr::filter(cycles1to6_data, insample == 1)
@@ -121,34 +122,24 @@ cycles1to6_data <- cycles1to6_data %>%
          minperweek = coalesce(minperweek.x, minperweek.y)) %>%
   dplyr::mutate(mvpa_min = ifelse(is.na(mvpa_min), haven::tagged_na("b"), mvpa_min),
          minperweek = ifelse(is.na(minperweek), haven::tagged_na("b"), minperweek)) %>%
-  dplyr::select(c(wgt_full, clc_sex, recodeflow:::select_vars_by_role(c("imputation-predictor"), my_variables)))
-
-# Ensure derived categorical variables present in all six cycles can be properly tabulated
-# cycles1to6_data$ckd <- recode_na_b(cycles1to6_data$ckd)
-# cycles1to6_data$diabx <- recode_na_b(cycles1to6_data$diabx)
-# cycles1to6_data$low_drink_score1 <- recode_na_b(cycles1to6_data$low_drink_score1)
-# cycles1to6_data$working <- recode_na_b(cycles1to6_data$working)
-
-# Load bootstrap weights for each cycle and row bind them together before merging them to sample data
-# cycle1_bsw <- read_stata("data/cycle1/cycle1_bsw.dta")
-# cycle2_bsw <- read_stata("data/cycle2/cycle2_bsw.dta")
-# cycle3_bsw <- read_stata("data/cycle3/cycle3_bsw.dta")
-# cycle4_bsw <- read_stata("data/cycle4/cycle4_bsw.dta")
-# cycle5_bsw <- read_stata("data/cycle5/cycle5_bsw.dta")
-# cycle6_bsw <- read_stata("data/cycle6/cycle6_bsw.dta")
-# names(cycle6_bsw) <- tolower(names(cycle6_bsw)) 
-
-# cycles1to6_bsw <- rbind(cycle1_bsw, cycle2_bsw, cycle3_bsw, cycle4_bsw, cycle5_bsw, cycle6_bsw)
-
-# cycles1to6_data <- dplyr::left_join(cycles1to6_data, cycles1to6_bsw, by = c("clinicid"))
+  dplyr::select(c(clinicid, wgt_full, clc_sex, recodeflow:::select_vars_by_role(c("imputation-predictor"), my_variables)))
 ```
 
-## 5. Reobtain imputed data, segregrate such data by sex, weight all data, and center variables.
+## 5. Reobtain imputed data and bootstrap weights, segregrate such data by sex, weight all data, and center variables.
 
-```{r}
+```{r, echo = false}
 # Impute data
 set.seed(123)
 imputed_cycles1to6_data <- impute_variables(cycles1to6_data, outcomes = recodeflow:::select_vars_by_role(c("Predictor", "cali-subgroup"), my_variables), predictors = recodeflow:::select_vars_by_role(c("imputation-predictor"), my_variables))
+
+# Load bootstrap weights for all cycles and merge them to imputed sample data
+cycles1to6_bsw <- read_stata("data/cycles1to6_bsw.dta")
+names(cycles1to6_bsw) <- tolower(names(cycles1to6_bsw)) 
+
+cycles1to6_bsw <- cycles1to6_bsw %>%
+  dplyr::select(c(clinicid, starts_with("bsw")))
+
+imputed_cycles1to6_data <- dplyr::left_join(imputed_cycles1to6_data, cycles1to6_bsw, by = c("clinicid"))
 
 # Synthetic dataset for test use outside RDC
 # imputed_cycles1to6_data <- data.frame(

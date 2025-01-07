@@ -9,12 +9,13 @@ knit: (function(inputFile, encoding) {
 
 ## 1. Load packages, functions, and metadata
 
-```{r}
+```{r, echo = false}
 # Set working directory at RDC
 setwd("P:/10619/Dropbox/htnport")
 
 # Load packages and functions
 .libPaths("P:/10619/Rpackages")
+library(haven)
 library(dplyr)
 library(recodeflow)
 library(survey)
@@ -48,7 +49,7 @@ my_variable_details <- read.csv("P:/10619/Dropbox/htnport/worksheets/variable-de
 
 ## 2. Load medication data and recode medication variables
 
-```{r}
+```{r, echo = false}
 # Load medication data
 cycle1_meds <- read_sas("data/cycle1/cycle1-meds.sas7bdat")
 names(cycle1_meds) <- tolower(names(cycle1_meds)) 
@@ -71,7 +72,7 @@ cycle6_medication_data <- recodeflow::rec_with_table(cycle6_meds, c("clinicid", 
 
 ## 3. Load overall data, flatten/merge medication data to overall data, and recode all variables from each cycle
 
-```{r}
+```{r, echo = false}
 # Load overall cycle data
 cycle1 <- read_stata("data/cycle1/cycle1.dta")
 cycle2 <- read_stata("data/cycle2/cycle2.dta")
@@ -115,9 +116,9 @@ cycle5_data <- recodeflow::rec_with_table(cycle5, recodeflow:::select_vars_by_ro
 cycle6_data <- recodeflow::rec_with_table(cycle6, recodeflow:::select_vars_by_role(c("Recode"), my_variables), variable_details = my_variable_details, log = TRUE)
 ```
 
-## 4. Combine cycles to obtain sample, and merge extra exercise data and bootstrap weights to the sample data
+## 4. Combine cycles to obtain sample, and merge extra exercise data to the sample data
 
-```{r}
+```{r, echo = false}
 # Combine cycles to obtain sample
 cycles1to6_data <- cchsflow::merge_rec_data(cycle1_data, cycle2_data, cycle3_data, cycle4_data, cycle5_data, cycle6_data)
 cycles1to6_data <- dplyr::filter(cycles1to6_data, insample == 1)
@@ -126,7 +127,7 @@ cycles1to6_data <- dplyr::filter(cycles1to6_data, insample == 1)
 tracey <- read_sas("data/From Tracy/CHMS_AM_validdays_1to3.sas7bdat")
 tracey$clinicid <-tracey$CLINICID
 tracey$mvpa_min <- tracey$avg_mvpa
-tracey$minperweek <- minperday_to_minperweek(tracey$mvpa_min)
+tracey$minperweek <- tracey$mvpa_min * 7
 tracey <- subset(tracey, select = -c(CLINICID, avg_mvpa, adultPAG))
 
 cycles1to6_data <- dplyr::left_join(cycles1to6_data, tracey, by = c("clinicid"))
@@ -135,31 +136,19 @@ cycles1to6_data <- cycles1to6_data %>%
          minperweek = coalesce(minperweek.x, minperweek.y)) %>%
   dplyr::mutate(mvpa_min = ifelse(is.na(mvpa_min), haven::tagged_na("b"), mvpa_min),
          minperweek = ifelse(is.na(minperweek), haven::tagged_na("b"), minperweek)) %>%
-  dplyr::select(c(wgt_full, clc_sex, recodeflow:::select_vars_by_role(c("imputation-predictor"), my_variables)))
-
-# Ensure derived categorical variables present in all six cycles can be properly tabulated
-# cycles1to6_data$ckd <- recode_na_b(cycles1to6_data$ckd)
-# cycles1to6_data$diabx <- recode_na_b(cycles1to6_data$diabx)
-# cycles1to6_data$low_drink_score1 <- recode_na_b(cycles1to6_data$low_drink_score1)
-# cycles1to6_data$working <- recode_na_b(cycles1to6_data$working)
-
-# Load bootstrap weights for each cycle and row bind them together before merging them to sample data
-# cycle1_bsw <- read_stata("data/cycle1/cycle1_bsw.dta")
-# cycle2_bsw <- read_stata("data/cycle2/cycle2_bsw.dta")
-# cycle3_bsw <- read_stata("data/cycle3/cycle3_bsw.dta")
-# cycle4_bsw <- read_stata("data/cycle4/cycle4_bsw.dta")
-# cycle5_bsw <- read_stata("data/cycle5/cycle5_bsw.dta")
-# cycle6_bsw <- read_stata("data/cycle6/cycle6_bsw.dta")
-# names(cycle6_bsw) <- tolower(names(cycle6_bsw)) 
-
-# cycles1to6_bsw <- rbind(cycle1_bsw, cycle2_bsw, cycle3_bsw, cycle4_bsw, cycle5_bsw, cycle6_bsw)
-
-# cycles1to6_data <- dplyr::left_join(cycles1to6_data, cycles1to6_bsw, by = c("clinicid"))
+  dplyr::select(c(clinicid, wgt_full, clc_sex, recodeflow:::select_vars_by_role(c("imputation-predictor"), my_variables)))
 ```
 
 ## 5. Table 1a - Weighted unimputed data
 
 ```{r}
+# Ensure derived categorical variables present in all six cycles can be properly tabulated
+cycles1to6_data$ckd <- recode_na_b(cycles1to6_data$ckd)
+cycles1to6_data$diabx <- recode_na_b(cycles1to6_data$diabx)
+cycles1to6_data$low_drink_score1 <- recode_na_b(cycles1to6_data$low_drink_score1)
+cycles1to6_data$working <- recode_na_b(cycles1to6_data$working)
+cycles1to6_data$clc_sex <- droplevels(cycles1to6_data$clc_sex)
+
 # Rename variables for table
 cycles1to6_data <- cycles1to6_data %>%
   dplyr::rename(
@@ -193,7 +182,25 @@ weighted_data <- survey::svydesign(
 gtsummary::tbl_svysummary(
   data = weighted_data, 
   by = clc_sex,
-  include = -c(cycle, highbp14090_adj),
+  include = c(
+    'Age',
+    `Marital status`,
+    `Highest education level`,
+    `Working status`,
+    `Hypertension family history`,
+    `Minutes of exercise per week`,
+    `Daily fruit and vegetable consumption`,
+    `Body mass index`,
+    `Waist-to-height ratio`,
+    `Chronic kidney disease`,
+    'Diabetes',
+    `Alcohol consumption level`,
+    `Smoking status`,
+    `Hours of sleep per day`,
+    `Self-rated mental health`,
+    'Stress',
+    `Sense of belonging`
+  ),
   statistic = list(
     all_continuous() ~ "{median} ({p25}, {p75})",
     all_categorical() ~ "{n_unweighted} ({p}%)"
@@ -238,9 +245,8 @@ gtsummary::tbl_svysummary(
           variable == "Smoking status" & label == "1" ~ "Current smoker",
           variable == "Smoking status" & label == "2" ~ "Former smoker",
           variable == "Smoking status" & label == "3" ~ "Never smoker",
-          variable == "Self-rated mental health" & label == "1" ~ "Poor",
-          variable == "Self-rated mental health" & label == "2" ~ "Fair or good",
-          variable == "Self-rated mental health" & label == "3" ~ "Very good or excellent",
+          variable == "Self-rated mental health" & label == "1" ~ "Poor or fair",
+          variable == "Self-rated mental health" & label == "2" ~ "Good, very good, or excellent",
           variable == "Stress" & label == "1" ~ "Not at all to a bit",
           variable == "Stress" & label == "2" ~ "Quite a bit or extremely",
           variable == "Sense of belonging" & label == "1" ~ "Strong",
@@ -251,12 +257,22 @@ gtsummary::tbl_svysummary(
   )
 ```
 
-## 6. Table 1b - weighted imputed data (re-run step 4 prior to running this step)
+## 6. Table 1b - weighted imputed data (re-run step 4 prior to running this step); bootstrap weights added here
 
 ```{r}
 # Impute data
 set.seed(123)
-imputed_cycles1to6_data <- impute_variables(cycles1to6_data, outcomes = recodeflow:::select_vars_by_role(c("Predictor", "cali-subgroup"), my_variables), predictors = recodeflow:::select_vars_by_role(c("imputation-predictor"), my_variables))
+imputed_cycles1to6_data <- impute_variables(dplyr::select(cycles1to6_data, -clinicid), outcomes = recodeflow:::select_vars_by_role(c("Predictor", "cali-subgroup"), my_variables), predictors = recodeflow:::select_vars_by_role(c("imputation-predictor"), my_variables))
+imputed_cycles1to6_data$clinicid <- cycles1to6_data$clinicid
+
+# Load bootstrap weights for all cycles and merge them to imputed sample data
+cycles1to6_bsw <- read_stata("data/cycles1to6_bsw.dta")
+names(cycles1to6_bsw) <- tolower(names(cycles1to6_bsw)) 
+
+cycles1to6_bsw <- cycles1to6_bsw %>%
+  dplyr::select(c(clinicid, starts_with("bsw")))
+
+imputed_cycles1to6_data <- dplyr::left_join(imputed_cycles1to6_data, cycles1to6_bsw, by = c("clinicid"))
 
 # Rename variables for table
 imputed_cycles1to6_data <- imputed_cycles1to6_data %>%
@@ -291,7 +307,25 @@ weighted_imputed_data <- survey::svydesign(
 gtsummary::tbl_svysummary(
   data = weighted_imputed_data, 
   by = clc_sex,
-  include = -wgt_full,
+  include = c(
+    'Age',
+    `Marital status`,
+    `Highest education level`,
+    `Working status`,
+    `Hypertension family history`,
+    `Minutes of exercise per week`,
+    `Daily fruit and vegetable consumption`,
+    `Body mass index`,
+    `Waist-to-height ratio`,
+    `Chronic kidney disease`,
+    'Diabetes',
+    `Alcohol consumption level`,
+    `Smoking status`,
+    `Hours of sleep per day`,
+    `Self-rated mental health`,
+    'Stress',
+    `Sense of belonging`
+  ),
   statistic = list(
     all_continuous() ~ "{median} ({p25}, {p75})",
     all_categorical() ~ "{n_unweighted} ({p}%)"
@@ -333,9 +367,8 @@ gtsummary::tbl_svysummary(
           variable == "Smoking status" & label == "1" ~ "Current smoker",
           variable == "Smoking status" & label == "2" ~ "Former smoker",
           variable == "Smoking status" & label == "3" ~ "Never smoker",
-          variable == "Self-rated mental health" & label == "1" ~ "Poor",
-          variable == "Self-rated mental health" & label == "2" ~ "Fair or good",
-          variable == "Self-rated mental health" & label == "3" ~ "Very good or excellent",
+          variable == "Self-rated mental health" & label == "1" ~ "Poor or fair",
+          variable == "Self-rated mental health" & label == "2" ~ "Good, very good, or excellent",
           variable == "Stress" & label == "1" ~ "Not at all to a bit",
           variable == "Stress" & label == "2" ~ "Quite a bit or extremely",
           variable == "Sense of belonging" & label == "1" ~ "Strong",
@@ -553,18 +586,6 @@ male_data <- dplyr::filter(imputed_cycles1to6_data, clc_sex == 1)
 female_data <- dplyr::filter(imputed_cycles1to6_data, clc_sex == 2)
 
 # Apply survey weights to male and female data
-# weighted_male <- survey::svydesign(
-#   id = ~1,
-#   weights = ~wgt_full,
-#   data = male_data
-# )
-# 
-# weighted_female <- survey::svydesign(
-#   id = ~1,
-#   weights = ~wgt_full,
-#   data = female_data
-# )
-
 male_replicate_weights <- male_data %>%
   dplyr::select(dplyr::starts_with("bsw")) %>%
   names()
