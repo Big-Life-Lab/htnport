@@ -1,15 +1,12 @@
 ---
 title: "HTNPoRT Paper - Modelling"
 author: "Rafidul Islam"
-date: "27/11/2024"
 output: pdf_document
-knit: (function(inputFile, encoding) {
-  rmarkdown::render(inputFile, encoding = encoding, output_dir = "../dist/models") })
 ---
 
-## 1. Load packages, functions, and metadeta
+<!-- ## Load packages, functions, and metadeta -->
 
-```{r, echo = false}
+```{r, include = FALSE, warning = FALSE, message = FALSE}
 # Set working directory at RDC
 setwd("P:/10619/Dropbox/htnport")
 
@@ -33,9 +30,9 @@ my_variables <- read.csv("P:/10619/Dropbox/htnport/worksheets/variables.csv")
 my_variable_details <- read.csv("P:/10619/Dropbox/htnport/worksheets/variable-details.csv")
 ```
 
-## 2. Load medication data and recode medication variables
+<!-- ## Load medication data and recode medication variables -->
 
-```{r, echo = false}
+```{r, include = FALSE, warning = FALSE, message = FALSE}
 # Load medication data
 cycle1_meds <- read_sas("data/cycle1/cycle1-meds.sas7bdat")
 names(cycle1_meds) <- tolower(names(cycle1_meds)) 
@@ -56,9 +53,9 @@ cycle5_medication_data <- recodeflow::rec_with_table(cycle5_meds, c("clinicid", 
 cycle6_medication_data <- recodeflow::rec_with_table(cycle6_meds, c("clinicid", "meucatc", "npi_25b", "anymed", "diab_drug"), variable_details = my_variable_details)
 ```
 
-## 3. Load overall data, flatten/merge medication data to overall data, and recode all variables from each cycle
+<!-- ## Load overall data, flatten/merge medication data to overall data, and recode all variables from each cycle -->
 
-```{r, echo = false}
+```{r, include = FALSE, warning = FALSE, message = FALSE}
 # Load overall cycle data
 cycle1 <- read_stata("data/cycle1/cycle1.dta")
 cycle2 <- read_stata("data/cycle2/cycle2.dta")
@@ -102,9 +99,9 @@ cycle5_data <- recodeflow::rec_with_table(cycle5, recodeflow:::select_vars_by_ro
 cycle6_data <- recodeflow::rec_with_table(cycle6, recodeflow:::select_vars_by_role(c("Recode"), my_variables), variable_details = my_variable_details, log = TRUE)
 ```
 
-## 4. Combine cycles to obtain sample, and merge extra exercise data and bootstrap weights to the sample data
+<!-- ## Combine cycles to obtain sample, and merge extra exercise data and bootstrap weights to the sample data -->
 
-```{r, echo = false}
+```{r, include = FALSE, warning = FALSE, message = FALSE}
 # Combine cycles to obtain sample
 cycles1to6_data <- cchsflow::merge_rec_data(cycle1_data, cycle2_data, cycle3_data, cycle4_data, cycle5_data, cycle6_data)
 cycles1to6_data <- dplyr::filter(cycles1to6_data, insample == 1)
@@ -125,9 +122,9 @@ cycles1to6_data <- cycles1to6_data %>%
   dplyr::select(c(clinicid, wgt_full, clc_sex, recodeflow:::select_vars_by_role(c("imputation-predictor"), my_variables)))
 ```
 
-## 5. Reobtain imputed data and bootstrap weights, segregrate such data by sex, weight all data, and center variables.
+<!-- ## Reobtain imputed data and bootstrap weights, segregrate such data by sex, weight all data, and center variables. -->
 
-```{r, echo = false}
+```{r, include = FALSE, warning = FALSE, message = FALSE}
 # Impute data
 set.seed(123)
 imputed_cycles1to6_data <- impute_variables(cycles1to6_data, outcomes = recodeflow:::select_vars_by_role(c("Predictor", "cali-subgroup"), my_variables), predictors = recodeflow:::select_vars_by_role(c("imputation-predictor"), my_variables))
@@ -264,18 +261,18 @@ for (var in cat_variables) {
 }
 ```
 
-## 6. Fit male and female models using weighted male and female data.
+## Fit male and female models using weighted male and female data.
 
-```{r}
+```{r, warning = FALSE, message = FALSE}
 # Fit male and female models
 male_model <- survey::svyglm(highbp14090_adj ~ rcs(clc_age, 4) + married + edudr04 + working + gendmhi + gen_025 + gen_045 + fmh_15 + rcs(hwmdbmi, 3) + rcs(whr, 3) + low_drink_score1 + rcs(minperweek, 3) + smoke + slp_11 + totalfv + diabx + ckd + rcs(clc_age, 4)*gen_045 + rcs(clc_age, 4)*rcs(hwmdbmi, 3) + rcs(clc_age, 4)*rcs(whr, 3) + rcs(clc_age, 4)*rcs(minperweek, 3) + rcs(clc_age, 4)*smoke + rcs(clc_age, 4)*slp_11 + rcs(clc_age, 4)*diabx + rcs(clc_age, 4)*ckd + rcs(hwmdbmi, 3)*rcs(whr, 3), design = weighted_male, family = quasibinomial())
 
 female_model <- survey::svyglm(highbp14090_adj ~ rcs(clc_age, 4) + married + edudr04 + working + gendmhi + gen_025 + gen_045 + fmh_15 + rcs(hwmdbmi, 3) + rcs(whr, 3) + low_drink_score1 + rcs(minperweek, 3) + smoke + slp_11 + totalfv + diabx + ckd + rcs(clc_age, 4)*gen_045 + rcs(clc_age, 4)*rcs(hwmdbmi, 3) + rcs(clc_age, 4)*rcs(whr, 3) + rcs(clc_age, 4)*rcs(minperweek, 3) + rcs(clc_age, 4)*smoke + rcs(clc_age, 4)*slp_11 + rcs(clc_age, 4)*diabx + rcs(clc_age, 4)*ckd + rcs(hwmdbmi, 3)*rcs(whr, 3), design = weighted_female, family = quasibinomial())
 ```
 
-## 7. Multicollinearity and linearity assessments
+## Multicollinearity and linearity assessments
 
-```{r}
+```{r, warning = FALSE, message = FALSE}
 # Multicollinearity assessment
 simple_weighted_male <- survey::svydesign(
   id = ~1,
@@ -305,9 +302,9 @@ plot(female_data$slp_11, female_model$fitted.values, xlab = "Hours slept per nig
 plot(female_data$totalfv, female_model$fitted.values, xlab = "Times per day produce consumed", ylab = "Female model fitted values")
 ```
 
-## 8. Fit male and female models using unweighted male and female data, and compare to weighted models
+## Fit male and female models using unweighted male and female data, and compare to weighted models
 
-```{r}
+```{r, warning = FALSE, message = FALSE}
 # Fit unweighted models
 male_model_unweighted <- glm(highbp14090_adj ~ rcs(clc_age, 4) + married + edudr04 + working + gendmhi + gen_025 + gen_045 + fmh_15 + rcs(hwmdbmi, 3) + rcs(whr, 3) + low_drink_score1 + rcs(minperweek, 3) + smoke + slp_11 + totalfv + diabx + ckd + rcs(clc_age, 4)*gen_045 + rcs(clc_age, 4)*rcs(hwmdbmi, 3) + rcs(clc_age, 4)*rcs(whr, 3) + rcs(clc_age, 4)*rcs(minperweek, 3) + rcs(clc_age, 4)*smoke + rcs(clc_age, 4)*slp_11 + rcs(clc_age, 4)*diabx + rcs(clc_age, 4)*ckd + rcs(hwmdbmi, 3)*rcs(whr, 3), data = male_data, family = binomial())
 
@@ -332,9 +329,9 @@ print("Female Model ORs Comparison:")
 print(female_compare)
 ```
 
-## 9. Model specification
+## Model specification
 
-```{r}
+```{r, warning = FALSE, message = FALSE}
 # Apply stepdown function to male and female models
 male_reduced_model <- stepdown(male_model, male_data)
 female_reduced_model <- stepdown(female_model, female_data)
@@ -356,9 +353,9 @@ lrt_svyglm(male_reduced_model, male_null_model, weighted_male)
 lrt_svyglm(female_reduced_model, female_null_model, weighted_female)
 ```
 
-## 10. Full model assessment for original sample
+## Full model assessment for original sample
 
-```{r}
+```{r, warning = FALSE, message = FALSE}
 # Generate predicted probabilities for full models
 male_predicted_probabilities <- generate_predicted_probabilities(male_model, male_data)
 female_predicted_probabilities <- generate_predicted_probabilities(female_model, female_data)
@@ -372,9 +369,9 @@ compare_probs(male_data, male_predicted_probabilities)
 compare_probs(female_data, female_predicted_probabilities)
 ```
 
-## 11. Reduced model assessment for original sample
+## Reduced model assessment for original sample
 
-```{r}
+```{r, warning = FALSE, message = FALSE}
 # Generate predicted probabilities for reduced models
 male_predicted_probabilities <- generate_predicted_probabilities(male_reduced_model, male_data)
 female_predicted_probabilities <- generate_predicted_probabilities(female_reduced_model, female_data)
@@ -388,9 +385,9 @@ compare_probs(male_data, male_predicted_probabilities)
 compare_probs(female_data, female_predicted_probabilities)
 ```
 
-## 12. Full model assessment for bootstrap samples - BOOTSTRAP VALIDATION 1/2
+## Full model assessment for bootstrap samples - BOOTSTRAP VALIDATION 1/2
 
-```{r}
+```{r, warning = FALSE, message = FALSE}
 # Perform bootstrapping for both male and female full models
 set.seed(123)
 n_bootstrap <- 10  # Number of bootstrap resamples
@@ -448,9 +445,9 @@ results_summary <- data.frame(
 print(results_summary)
 ```
 
-## 13. Reduced model assessment for bootstrap samples - BOOTSTRAP VALIDATION 2/2
+## Reduced model assessment for bootstrap samples - BOOTSTRAP VALIDATION 2/2
 
-```{r}
+```{r, warning = FALSE, message = FALSE}
 # Perform bootstrapping for both male and female reduced models
 set.seed(123)
 n_bootstrap <- 10  # Number of bootstrap resamples
@@ -508,9 +505,9 @@ results_summary <- data.frame(
 print(results_summary)
 ```
 
-## 14. Calibration across subgroups for full models
+## Calibration across subgroups for full models
 
-```{r}
+```{r, warning = FALSE, message = FALSE}
 # Generate predicted probabilities for full model
 male_predicted_probabilities <- generate_predicted_probabilities(male_model, male_data)
 female_predicted_probabilities <- generate_predicted_probabilities(female_model, female_data)
@@ -561,9 +558,9 @@ for (subgroup in subgroups) {
 female_calibration_results
 ```
 
-## 15. Calibration across subgroups for reduced models
+## Calibration across subgroups for reduced models
 
-```{r}
+```{r, warning = FALSE, message = FALSE}
 # Generate predicted probabilities for full model
 male_predicted_probabilities <- generate_predicted_probabilities(male_reduced_model, male_data)
 female_predicted_probabilities <- generate_predicted_probabilities(female_reduced_model, female_data)
@@ -614,9 +611,9 @@ for (subgroup in subgroups) {
 female_calibration_results
 ```
 
-## 16. Model presentation (ignore for now)
+<!-- ## Model presentation (ignore for now) -->
 
-```{r}
+```{r, include = FALSE, warning = FALSE, message = FALSE}
 # Create the Predictor object with 'response' to get probabilities
 # male_explainer <- iml::Predictor$new(
 #   model = male_reduced_model,                                     # Pass the model

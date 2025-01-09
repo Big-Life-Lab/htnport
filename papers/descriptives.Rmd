@@ -1,15 +1,12 @@
 ---
 title: "HTNPoRT Paper - Descriptive Analysis"
 author: "Rafidul Islam"
-date: "27/11/2024"
 output: pdf_document
-knit: (function(inputFile, encoding) {
-  rmarkdown::render(inputFile, encoding = encoding, output_dir = "../dist/descriptives") })
 ---
 
-## 1. Load packages, functions, and metadata
+<!-- ## Load packages, functions, and metadata -->
 
-```{r, echo = false}
+```{r, include = FALSE, warning = FALSE, message = FALSE}
 # Set working directory at RDC
 setwd("P:/10619/Dropbox/htnport")
 
@@ -47,9 +44,9 @@ my_variables <- read.csv("P:/10619/Dropbox/htnport/worksheets/variables.csv")
 my_variable_details <- read.csv("P:/10619/Dropbox/htnport/worksheets/variable-details.csv")
 ```
 
-## 2. Load medication data and recode medication variables
+<!-- ## Load medication data and recode medication variables -->
 
-```{r, echo = false}
+```{r, include = FALSE, warning = FALSE, message = FALSE}
 # Load medication data
 cycle1_meds <- read_sas("data/cycle1/cycle1-meds.sas7bdat")
 names(cycle1_meds) <- tolower(names(cycle1_meds)) 
@@ -70,9 +67,9 @@ cycle5_medication_data <- recodeflow::rec_with_table(cycle5_meds, c("clinicid", 
 cycle6_medication_data <- recodeflow::rec_with_table(cycle6_meds, c("clinicid", "meucatc", "npi_25b", "anymed", "diab_drug"), variable_details = my_variable_details)
 ```
 
-## 3. Load overall data, flatten/merge medication data to overall data, and recode all variables from each cycle
+<!-- ## Load overall data, flatten/merge medication data to overall data, and recode all variables from each cycle -->
 
-```{r, echo = false}
+```{r, include = FALSE, warning = FALSE, message = FALSE}
 # Load overall cycle data
 cycle1 <- read_stata("data/cycle1/cycle1.dta")
 cycle2 <- read_stata("data/cycle2/cycle2.dta")
@@ -116,9 +113,9 @@ cycle5_data <- recodeflow::rec_with_table(cycle5, recodeflow:::select_vars_by_ro
 cycle6_data <- recodeflow::rec_with_table(cycle6, recodeflow:::select_vars_by_role(c("Recode"), my_variables), variable_details = my_variable_details, log = TRUE)
 ```
 
-## 4. Combine cycles to obtain sample, and merge extra exercise data to the sample data
+## Table 1a - Weighted unimputed data
 
-```{r, echo = false}
+```{r, warning = FALSE, message = FALSE}
 # Combine cycles to obtain sample
 cycles1to6_data <- cchsflow::merge_rec_data(cycle1_data, cycle2_data, cycle3_data, cycle4_data, cycle5_data, cycle6_data)
 cycles1to6_data <- dplyr::filter(cycles1to6_data, insample == 1)
@@ -137,11 +134,7 @@ cycles1to6_data <- cycles1to6_data %>%
   dplyr::mutate(mvpa_min = ifelse(is.na(mvpa_min), haven::tagged_na("b"), mvpa_min),
          minperweek = ifelse(is.na(minperweek), haven::tagged_na("b"), minperweek)) %>%
   dplyr::select(c(clinicid, wgt_full, clc_sex, recodeflow:::select_vars_by_role(c("imputation-predictor"), my_variables)))
-```
 
-## 5. Table 1a - Weighted unimputed data
-
-```{r}
 # Ensure derived categorical variables present in all six cycles can be properly tabulated
 cycles1to6_data$ckd <- recode_na_b(cycles1to6_data$ckd)
 cycles1to6_data$diabx <- recode_na_b(cycles1to6_data$diabx)
@@ -257,12 +250,31 @@ gtsummary::tbl_svysummary(
   )
 ```
 
-## 6. Table 1b - weighted imputed data (re-run step 4 prior to running this step); bootstrap weights added here
+## Table 1b - Weighted imputed data
 
-```{r}
+```{r, warning = FALSE, message = FALSE}
+# Combine cycles to reobtain sample
+cycles1to6_data <- cchsflow::merge_rec_data(cycle1_data, cycle2_data, cycle3_data, cycle4_data, cycle5_data, cycle6_data)
+cycles1to6_data <- dplyr::filter(cycles1to6_data, insample == 1)
+
+# Reload and remerge extra accelerometer data to sample data
+tracey <- read_sas("data/From Tracy/CHMS_AM_validdays_1to3.sas7bdat")
+tracey$clinicid <-tracey$CLINICID
+tracey$mvpa_min <- tracey$avg_mvpa
+tracey$minperweek <- tracey$mvpa_min * 7
+tracey <- subset(tracey, select = -c(CLINICID, avg_mvpa, adultPAG))
+
+cycles1to6_data <- dplyr::left_join(cycles1to6_data, tracey, by = c("clinicid"))
+cycles1to6_data <- cycles1to6_data %>%
+  dplyr::mutate(mvpa_min = coalesce(mvpa_min.x, mvpa_min.y),
+         minperweek = coalesce(minperweek.x, minperweek.y)) %>%
+  dplyr::mutate(mvpa_min = ifelse(is.na(mvpa_min), haven::tagged_na("b"), mvpa_min),
+         minperweek = ifelse(is.na(minperweek), haven::tagged_na("b"), minperweek)) %>%
+  dplyr::select(c(clinicid, wgt_full, clc_sex, recodeflow:::select_vars_by_role(c("imputation-predictor"), my_variables)))
+
 # Impute data
 set.seed(123)
-imputed_cycles1to6_data <- impute_variables(dplyr::select(cycles1to6_data, -clinicid), outcomes = recodeflow:::select_vars_by_role(c("Predictor", "cali-subgroup"), my_variables), predictors = recodeflow:::select_vars_by_role(c("imputation-predictor"), my_variables))
+imputed_cycles1to6_data <- impute_variables(dplyr::select(cycles1to6_data, -clinicid), outcomes = recodeflow:::select_vars_by_role(c("Predictor"), my_variables), predictors = recodeflow:::select_vars_by_role(c("imputation-predictor"), my_variables))
 imputed_cycles1to6_data$clinicid <- cycles1to6_data$clinicid
 
 # Load bootstrap weights for all cycles and merge them to imputed sample data
@@ -425,9 +437,9 @@ gtsummary::tbl_svysummary(
 # )
 ```
 
-## 7. Table 2a - weighted outcome x sex distribution
+## Table 2a - Weighted outcome x sex distribution
 
-```{r}
+```{r, warning = FALSE, message = FALSE}
 # Rename hypertension variable for table
 imputed_cycles1to6_data <- imputed_cycles1to6_data %>%
   dplyr::rename(
@@ -497,9 +509,9 @@ original_names <- c(
 names(imputed_cycles1to6_data) <- dplyr::recode(names(imputed_cycles1to6_data), !!!original_names)
 ```
 
-## 8. Density plots for continuous variables
+## Density plots for continuous variables
 
-```{r}
+```{r, warning = FALSE, message = FALSE}
 # Unimputed data
 create_weighted_density_plots(
   data = cycles1to6_data,
@@ -553,9 +565,9 @@ create_weighted_density_plots(
 )
 ```
 
-## 9. Table 2b - Crude ORs and CIs for candidate predictors
+## Table 2b - Weighted crude ORs and CIs for candidate predictors
 
-```{r}
+```{r, warning = FALSE, message = FALSE}
 # Truncate skewed continuous variables if necessary
 imputed_cycles1to6_data <- truncate_skewed(imputed_cycles1to6_data)
 
