@@ -1,6 +1,6 @@
 #' @title Adjust systolic blood pressure
 #' 
-#' This function adjusts systolic blood pressure based on the respondent's systolic average blood pressure across 
+#' @description This function adjusts systolic blood pressure based on the respondent's systolic average blood pressure across 
 #' six measurements. The adjustment is made using specific correction factors. The adjusted systolic blood pressure
 #' is returned as a numeric value.
 #'
@@ -37,7 +37,7 @@ adjust_SBP <- function(BPMDPBPS) {
 
 #' @title Adjust diastolic blood pressure
 #' 
-#' This function adjusts diastolic blood pressure based on the respondent's diastolic average blood pressure across 
+#' @description This function adjusts diastolic blood pressure based on the respondent's diastolic average blood pressure across 
 #' six measurements. The adjustment is made using specific correction factors. The adjusted diastolic blood pressure
 #' is returned as a numeric value.
 #'

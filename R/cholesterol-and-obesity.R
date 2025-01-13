@@ -19,8 +19,7 @@
 #'
 #' @examples
 #'
-#' # Example: Calculate non-HDL cholesterol level for a respondent with total cholesterol of 50 mmol/L and 
-#' HDL cholesterol of 5 mmol/L.
+#' # Example: Calculate non-HDL cholesterol level for a respondent with total cholesterol of 50 mmol/L and HDL cholesterol of 5 mmol/L.
 #' calculate_nonHDL(LAB_CHOL = 50, LAB_HDL = 5)
 #' # Output: 45 (non-HDL cholesterol = total cholesterol - HDL cholesterol = 50 - 5 = 45)
 #' 
@@ -82,8 +81,7 @@ categorize_nonHDL <- function(nonHDL) {
 
 #' @title Calculate Waist-to-Height Ratio (WHR)
 #'
-#' @description
-#' This function calculates the Waist-to-Height Ratio (WHR) by dividing the waist circumference by the height of the respondent.
+#' @description This function calculates the Waist-to-Height Ratio (WHR) by dividing the waist circumference by the height of the respondent.
 #'
 #' @param HWM_11CM A numeric value representing the height of the respondent in centimeters.
 #' @param HWM_14CX A numeric value representing the waist circumference of the respondent in centimeters.
@@ -111,7 +109,7 @@ calculate_WHR <- function(HWM_11CM, HWM_14CX) {
     WHR <- haven::tagged_na("b")
   }
   else {
-    WHR <- (HWM_14CX / HWM_11CM) * 100
+    WHR <- HWM_14CX / HWM_11CM
   }
   
   return(WHR)

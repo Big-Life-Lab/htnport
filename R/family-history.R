@@ -76,8 +76,10 @@ determine_CVD_Family_History <- function(FMH_11, FMH_12, FMH_13, FMH_14) {
   famstroke60 <- 0
   famCVD60 <- haven::tagged_na("b")
   
-  # If all inputs are missing, return NA(b)
-  if (is.na(FMH_11) && is.na(FMH_12) && is.na(FMH_13) && is.na(FMH_14)) {
+  # If all FMH_11 and FMH_13 are missing, return NA(b)
+  if (is.na(FMH_11) && is.na(FMH_13)) {
+    return(famCVD60)
+  } else if ((!is.na(FMH_11) && FMH_11 == 1) && (is.na(FMH_12)) && (!is.na(FMH_13) && FMH_13 == 1) && (is.na(FMH_14))) {
     return(famCVD60)
   }
   

@@ -1,6 +1,6 @@
 #' @title Calculate daily fruit and vegetable consumption in a year for respondent in CHMS cycles 1-2.
 #' 
-#' This function calculates the daily fruit and vegetable consumption in a year for respondent in the Canadian Health Measures 
+#' @description This function calculates the daily fruit and vegetable consumption in a year for respondent in the Canadian Health Measures 
 #' Survey (CHMS) cycles 1-2. It takes seven parameters, each representing the number of times per year a specific fruit or vegetable item
 #' was consumed. The function then sums up the consumption frequencies of all these items and divides the total by 365 to
 #' obtain the average daily consumption of fruits and vegetables in a year.
@@ -54,7 +54,7 @@ find_totalFV_cycles1and2 <- function(WSDD14Y, GFVD17Y, GFVD18Y, GFVD19Y, GFVD20Y
 
 #' @title Calculate daily fruit and vegetable consumption in a year for respondents in CHMS cycles 3-6.
 #' 
-#' This function calculates the daily fruit and vegetable consumption in a year for respondents in the Canadian Health Measures 
+#' @description This function calculates the daily fruit and vegetable consumption in a year for respondents in the Canadian Health Measures 
 #' Survey (CHMS) cycles 3-6. It takes eleven parameters, each representing the number of times per year a specific fruit or 
 #' vegetable item was consumed. The function then sums up the consumption frequencies of all these items and divides the total
 #' by 365 to obtain the average daily consumption of fruits and vegetables in a year.
@@ -113,9 +113,9 @@ find_totalFV_cycles3to6 <- function(WSDD34Y, WSDD35Y, GFVD17AY, GFVD17BY, GFVD17
   return(totalFV)
 }
       
-#' Diet Categorization 
+#' @title Diet Categorization 
 #'
-#' This function categorizes individuals' diet quality based on their total fruit and vegetable consumption.
+#' @description This function categorizes individuals' diet quality based on their total fruit and vegetable consumption.
 #'
 #' @param totalFV Numeric value representing the average times per day fruits and vegetables were consumed in a year.
 #'
