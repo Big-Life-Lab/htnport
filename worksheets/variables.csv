@@ -110,7 +110,7 @@ gfvd23y,Recode,Other vegetable consumption in year,Eats all other types of veget
 gooddiet,"Recode, cali-subgroup",Healthy diet indicator,Diet quality - eats fruits/veg >= 5 times per day,Health behaviour,Diet,Categorical,N/A,"cycle1, cycle2, cycle3, cycle4, cycle5, cycle6",DerivedVar::[totalfv],
 highbp14090,,Hypertensive 140/90,Hypertensive 140/90 - using general population criteria,Health status,Hypertension,Categorical,N/A,"cycle1, cycle2, cycle3, cycle4, cycle5, cycle6","DerivedVar::[bpmdpbps, bpmdpbpd, anymed2, ccc_32, cardiov, diabx, ckd]",
 highbp14090_adj,"Recode, imputation-predictor",Hypertensive (adjusted) 140/90,Hypertensive (adjusted) 140/90 - using general population criteria,Health status,Hypertension,Categorical,N/A,"cycle1, cycle2, cycle3, cycle4, cycle5, cycle6","DerivedVar::[sbp_adj, dbp_adj, anymed2, ccc_32, cardiov, diabx, ckd]",
-hwm_11cm,,Height,Standing height measured (centimetres),Health status,Height,Continuous,cm,"cycle1, cycle2, cycle3, cycle4, cycle5, cycle6",[hwm_11cm],
+hwm_11cm,Recode,Height,Standing height measured (centimetres),Health status,Height,Continuous,cm,"cycle1, cycle2, cycle3, cycle4, cycle5, cycle6",[hwm_11cm],
 hwm_13kg,"Recode, cali-subgroup",Weight,Weight measured (kilograms),Health status,Weight,Continuous,kg,"cycle1, cycle2, cycle3, cycle4, cycle5, cycle6",[hwm_13kg],
 hwm_14cx,"Recode, cali-subgroup",Waist circumference,Waist circumference (centimetres) - NIH protocol,Health status,Weight,Continuous,cm,"cycle1, cycle2, cycle3, cycle4, cycle5, cycle6","cycle1::hwm_14cm, [hwm_14cx]",
 hwmdbmi,"Recode, Table 1, Predictor, imputation-predictor",Body mass index,Body Mass Index - (D),Health status,Weight,Continuous,kg/m2,"cycle1, cycle2, cycle3, cycle4, cycle5, cycle6",[hwmdbmi],
