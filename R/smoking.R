@@ -34,12 +34,13 @@
 #'
 #' @examples
 #'
-#' # Example 1: Calculate pack years for a 40 year-old respondent, who is a daily smoker, started smoking age 20, and smokes 30 cigarettes per day (1.5 packs/day).
+#' # Example 1: Age = 40, daily smoker, started smoking at 20, and smokes 30 cigs/day (1.5 packs/day).
 #' pack_years_fun(SMKDSTY = 1, CLC_AGE = 40, SMK_52 = 20, SMK_31 = 30)
 #' # Output: 30 (pack years)
 #'
-#' # Example 2: Calculate pack years for a former occasional smoker (non-smoker now) who smoked at least 100 cigarettes in their lifetime.
-#' pack_years_fun(SMKDSTY = 5, CLC_AGE = 50, SMKDSTP = 40, SMK_52 = 18, SMK_31 = NA, SMK_41 = 15, SMK_53 = NA, SMK_23 = 3, SMK_21 = 25, SMK_11 = 1)
+#' # Example 2: A former occasional smoker who smoked at least 100 cigarettes in their lifetime.
+#' pack_years_fun(SMKDSTY = 5, CLC_AGE = 50, SMKDSTP = 40, SMK_52 = 18, SMK_31 = NA, 
+#' SMK_41 = 15, SMK_53 = NA, SMK_23 = 3, SMK_21 = 25, SMK_11 = 1)
 #' # Output: 0.0137 (pack years)
 #'
 #' @export

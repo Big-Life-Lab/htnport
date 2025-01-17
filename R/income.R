@@ -19,15 +19,15 @@
 #'
 #' @examples
 #'
-#' # Example 1: Calculate adjusted household income for a respondent with $50,000 income and a household size of 3.
+#' # Example 1: Respondent with $50,000 income and a household size of 3.
 #' calculate_Hhld_Income(THI_01 = 50000, DHHDHSZ = 3)
 #' # Output: 29411.76
 #'
-#' # Example 2: Calculate adjusted household income for a respondent with $75000 income and a household size of 2.
+#' # Example 2: Respondent with $75000 income and a household size of 2.
 #' calculate_Hhld_Income(THI_01 = 75000, DHHDHSZ = 2)
 #' # Output: 53571.43
 #'
-#' # Example 3: Calculate adjusted household income for a respondent with $90000 income and a household size of 1.
+#' # Example 3: Respondent with $90000 income and a household size of 1.
 #' calculate_Hhld_Income(THI_01 = 90000, DHHDHSZ = 1)
 #' # Output: 90000
 #' 
@@ -124,7 +124,7 @@ categorize_income <- function(adj_hh_inc) {
 #'   - NA(b): Missing or invalid input
 #'
 #' @examples
-#' # Example 1: Check if an income category of 3 (between $35,000 and $50,000) is in the lowest quintile
+#' # Example 1: Check if an income category of 3 (between $35,000-50,000) is in the lowest quintile
 #' in_lowest_income_qunitle(3)
 #' # Output: 2
 #'

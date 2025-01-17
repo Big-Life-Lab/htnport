@@ -19,7 +19,7 @@
 #'
 #' @examples
 #'
-#' # Example: Calculate non-HDL cholesterol level for a respondent with total cholesterol of 50 mmol/L and HDL cholesterol of 5 mmol/L.
+#' # Example: Respondent has total cholesterol of 50 mmol/L and HDL cholesterol of 5 mmol/L.
 #' calculate_nonHDL(LAB_CHOL = 50, LAB_HDL = 5)
 #' # Output: 45 (non-HDL cholesterol = total cholesterol - HDL cholesterol = 50 - 5 = 45)
 #' 

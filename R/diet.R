@@ -22,7 +22,7 @@
 #' 
 #' @examples
 #' 
-#' # Example: Calculate the average daily fruit and vegetable consumption for one Cycle 1 or 2 respondent.
+#' # Example: Calculate average daily fruit and vegetable consumption for a cycle 1-2 respondent.
 #' # Let's assume the following annual consumption frequencies for each item:
 #' # WSDD14Y (fruit juice) = 50 times
 #' # GFVD17Y (fruit, excluding juice) = 150 times
@@ -32,9 +32,9 @@
 #' # GFVD22Y (potatoes) = 120 times
 #' # GFVD23Y (other vegetables) = 90 times
 #' # Using the function:
-#' find_totalFV_cycles1and2(WSDD14Y = 50, GFVD17Y = 150, GFVD18Y = 200, GFVD19Y = 100, GFVD20Y = 80, GFVD22Y = 120, GFVD23Y = 90)
+#' find_totalFV_cycles1and2(WSDD14Y = 50, GFVD17Y = 150, GFVD18Y = 200, GFVD19Y = 100, GFVD20Y = 80, 
+#' GFVD22Y = 120, GFVD23Y = 90)
 #' # Output: 2.164384
-#' # The average daily consumption of fruits and vegetables in a year is approximately 2.16 times per day based on CHMS cycles 1-2 data.
 #' 
 #' @export
 find_totalFV_cycles1and2 <- function(WSDD14Y, GFVD17Y, GFVD18Y, GFVD19Y, GFVD20Y, GFVD22Y, GFVD23Y) {
@@ -80,7 +80,7 @@ find_totalFV_cycles1and2 <- function(WSDD14Y, GFVD17Y, GFVD18Y, GFVD19Y, GFVD20Y
 #' 
 #' @examples
 #' 
-#' # Example: Calculate the average daily fruit and vegetable consumption for a respondent in CHMS cycles 3-6.
+#' # Example: Calculate average daily fruit and vegetable consumption for a cycle 3-6 respondent
 #' # Let's assume the following annual consumption frequencies for each item:
 #' # WSDD34Y (orange or grapefruit juice) = 50 times
 #' # WSDD35Y (other fruit juices) = 100 times
@@ -94,10 +94,9 @@ find_totalFV_cycles1and2 <- function(WSDD14Y, GFVD17Y, GFVD18Y, GFVD19Y, GFVD20Y
 #' # GFVD22Y (potatoes) = 120 times
 #' # GFVD23Y (other vegetables) = 90 times
 #' # Using the function:
-#' find_totalFV_cycles3to6(WSDD34Y = 50, WSDD35Y = 100, GFVD17AY = 150, GFVD17BY = 80, GFVD17CY = 40, GFVD17DY = 200,
-#'                         GFVD18Y = 100, GFVD19Y = 80, GFVD20Y = 60, GFVD22Y = 120, GFVD23Y = 90)
+#' find_totalFV_cycles3to6(WSDD34Y = 50, WSDD35Y = 100, GFVD17AY = 150, GFVD17BY = 80, GFVD17CY = 40, 
+#' GFVD17DY = 200, GFVD18Y = 100, GFVD19Y = 80, GFVD20Y = 60, GFVD22Y = 120, GFVD23Y = 90)
 #' # Output: 2.931507
-#' # The average daily consumption of fruits and vegetables in a year for this respondent is approximately 2.91 times per day based on CHMS cycles 3-6 data.
 #' 
 #' @export
 find_totalFV_cycles3to6 <- function(WSDD34Y, WSDD35Y, GFVD17AY, GFVD17BY, GFVD17CY, GFVD17DY, GFVD18Y, GFVD19Y, GFVD20Y, GFVD22Y, GFVD23Y) {

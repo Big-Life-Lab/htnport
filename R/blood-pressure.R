@@ -16,7 +16,7 @@
 #'
 #' @examples
 #' 
-#' # Example: Calculate adjusted systolic blood pressure for a respondent with an average systolic blood pressure of 120 mmHg.
+#' # Example: Adjust for a respondent with average systolic blood pressure of 120 mmHg.
 #' adjust_SBP(BPMDPBPS = 120)
 #' # Output: 123
 #' 
@@ -53,7 +53,7 @@ adjust_SBP <- function(BPMDPBPS) {
 #'
 #' @examples
 #' 
-#' # Example: Calculate adjusted diastolic blood pressure for a respondent with an average diastolic blood pressure of 80 mmHg.
+#' # Example: Adjust for a respondent with average diastolic blood pressure of 80 mmHg.
 #' adjust_DBP(BPMDPBPD = 80)
 #' # Output: 82
 #' 
@@ -102,11 +102,11 @@ adjust_DBP <- function(BPMDPBPD) {
 #'
 #' @examples
 #' 
-#' # Example 1: Determine hypertension status for a respondent with systolic BP = 150, diastolic BP = 95, and on medication.
+#' # Example 1: Respondent has systolic BP = 150, diastolic BP = 95, and on medication.
 #' determine_hypertension(BPMDPBPS = 150, BPMDPBPD = 95, ANYMED2 = 1)
 #' # Output: 1 (High blood pressure due to systolic BP, diastolic BP, and medication usage).
 #'
-#' # Example 2: Determine hypertension status for a respondent with systolic BP = 120, diastolic BP = 80, and not on medication.
+#' # Example 2: Respondent has systolic BP = 120, diastolic BP = 80, and not on medication.
 #' determine_hypertension(BPMDPBPS = 120, BPMDPBPD = 80, ANYMED2 = 2)
 #' # Output: 2 (Normal blood pressure as BP is below 140/90 mmHg and not on medication).
 #' 
@@ -213,11 +213,11 @@ determine_hypertension <- function(BPMDPBPS, BPMDPBPD, ANYMED2, CCC_32 = 2, CARD
 #'
 #' @examples
 #' 
-#' # Example 1: Determine adjusted hypertension status for a respondent with adjusted systolic BP = 150, adjusted diastolic BP = 95, and on medication.
+#' # Example 1: Respondent has adjusted SBP = 150, adjusted DBP = 95, and on medication.
 #' determine_adjusted_hypertension(SBP_adj = 150, DBP_adj = 95, ANYMED2 = 1)
-#' # Output: 1 (High blood pressure due to adjusted systolic BP, adjusted diastolic BP, and medication usage).
+#' # Output: 1 (High blood pressure due to adjusted SBP, adjusted DBP, and medication usage).
 #'
-#' # Example 2: Determine adjusted hypertension status for a respondent with adjusted systolic BP = 120, adjusted diastolic BP = 80, and not on medication.
+#' # Example 2: Respondent has adjusted SBP = 120, adjusted DBP = 80, and not on medication.
 #' determine_adjusted_hypertension(SBP_adj = 120, DBP_adj = 80, ANYMED2 = 2)
 #' # Output: 2 (Normal blood pressure as adjusted BP is below 140/90 mmHg and not on medication).
 #' 
@@ -329,11 +329,11 @@ determine_adjusted_hypertension <- function(SBP_adj, DBP_adj, ANYMED2, CCC_32 = 
 #'
 #' @examples
 #' 
-#' # Example 1: Determine controlled hypertension status for a respondent with systolic BP = 150, diastolic BP = 95, and on medication.
+#' # Example 1: Respondent has systolic BP = 150, diastolic BP = 95, and on medication.
 #' determine_controlled_hypertension(BPMDPBPS = 150, BPMDPBPD = 95, ANYMED2 = 1)
-#' # Output: 2 (Hypertension not controlled due to high systolic and diastolic BP despite medication usage).
+#' # Output: 2 (Hypertension not controlled due to high SBP and SBP despite medication usage).
 #'
-#' # Example 2: Determine controlled hypertension status for a respondent with systolic BP = 120, diastolic BP = 80, and on medication.
+#' # Example 2: Respondent has systolic BP = 120, diastolic BP = 80, and on medication.
 #' determine_controlled_hypertension(BPMDPBPS = 120, BPMDPBPD = 80, ANYMED2 = 1)
 #' # Output: 1 (Hypertension controlled as BP is below 140/90 mmHg and on medication).
 #' 
@@ -361,7 +361,7 @@ determine_controlled_hypertension <- function(BPMDPBPS, BPMDPBPD, ANYMED2, CCC_3
     } else if (0 <= BPMDPBPS && BPMDPBPS < 130) {
       highsys140 <- 2
     } else {
-      return(highBP14090)
+      return(Control14090)
     }
     
     if (80 <= BPMDPBPD && BPMDPBPD < 996) {
@@ -369,7 +369,7 @@ determine_controlled_hypertension <- function(BPMDPBPS, BPMDPBPD, ANYMED2, CCC_3
     } else if (0 <= BPMDPBPD && BPMDPBPD < 80) {
       highdias90 <- 2
     } else {
-      return(highBP14090)
+      return(Control14090)
     }
   } 
   else {
@@ -378,7 +378,7 @@ determine_controlled_hypertension <- function(BPMDPBPS, BPMDPBPD, ANYMED2, CCC_3
     } else if (0 <= BPMDPBPS && BPMDPBPS < 140) {
       highsys140 <- 2
     } else {
-      return(highBP14090)
+      return(Control14090)
     }
     
     if (90 <= BPMDPBPD && BPMDPBPD < 996) {
@@ -386,7 +386,7 @@ determine_controlled_hypertension <- function(BPMDPBPS, BPMDPBPD, ANYMED2, CCC_3
     } else if (0 <= BPMDPBPD && BPMDPBPD < 90) {
       highdias90 <- 2
     } else {
-      return(highBP14090)
+      return(Control14090)
     }
   }
   
@@ -432,11 +432,11 @@ determine_controlled_hypertension <- function(BPMDPBPS, BPMDPBPD, ANYMED2, CCC_3
 #'
 #' @examples
 #' 
-#' # Example 1: Determine controlled adjusted hypertension status for a respondent with adjusted systolic BP = 150, adjusted diastolic BP = 95, and on medication.
+#' # Example 1: Respondent has adjusted SBP = 150, adjusted DBP = 95, and on medication.
 #' determine_controlled_adjusted_hypertension(SBP_adj = 150, DBP_adj = 95, ANYMED2 = 1)
-#' # Output: 2 (Hypertension not controlled due to high adjusted systolic and diastolic BP despite medication usage).
+#' # Output: 2 (Hypertension not controlled due to high adjusted SBP and DBP despite medication usage).
 #'
-#' # Example 2: Determine controlled adjusted hypertension status for a respondent with adjusted systolic BP = 120, adjusted diastolic BP = 80, and on medication.
+#' # Example 2: Respondent has adjusted SBP = 120, adjusted DBP = 80, and on medication.
 #' determine_controlled_adjusted_hypertension(SBP_adj = 120, DBP_adj = 80, ANYMED2 = 1)
 #' # Output: 1 (Hypertension controlled as adjusted BP is below 140/90 mmHg and on medication).
 #' 
@@ -465,7 +465,7 @@ determine_controlled_adjusted_hypertension <- function(SBP_adj, DBP_adj, ANYMED2
       highsys140_adj <- 2
     }
     else {
-      return(highBP14090_adj)
+      return(Control14090_adj)
     }
     
     if (80 <= DBP_adj && DBP_adj < 996) {
@@ -474,7 +474,7 @@ determine_controlled_adjusted_hypertension <- function(SBP_adj, DBP_adj, ANYMED2
       highdias90_adj <- 2
     }
     else {
-      return(highBP14090_adj)
+      return(Control14090_adj)
     }
   }
   else {
@@ -484,7 +484,7 @@ determine_controlled_adjusted_hypertension <- function(SBP_adj, DBP_adj, ANYMED2
       highsys140_adj <- 2
     }
     else {
-      return(highBP14090_adj)
+      return(Control14090_adj)
     }
     
     if (90 <= DBP_adj && DBP_adj < 996) {
@@ -493,7 +493,7 @@ determine_controlled_adjusted_hypertension <- function(SBP_adj, DBP_adj, ANYMED2
       highdias90_adj <- 2
     }
     else {
-      return(highBP14090_adj)
+      return(Control14090_adj)
     }
   }
   

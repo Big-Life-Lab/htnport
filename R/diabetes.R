@@ -19,7 +19,7 @@
 #' determine_inclusive_diabetes(diab_m = 1, CCC_51 = 2, diab_drug2 = 2)
 #' # Output: 1 (Inclusive diabetes status is "Yes").
 #'
-#' # Example: Determine the inclusive diabetes status for a respondent with all factors indicating no diabetes.
+#' # Example: Determine the inclusive diabetes status for a respondent no diabetes all around.
 #' determine_inclusive_diabetes(diab_m = 2, CCC_51 = 2, diab_drug2 = 2)
 #' # Output: 2 (Inclusive diabetes status is "No").
 #'

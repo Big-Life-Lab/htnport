@@ -107,18 +107,14 @@ is_taking_drug_class <- function(df, class_var_name, med_vars, last_taken_vars, 
 #' @details This function identifies whether a medication is a beta blocker based on their ATC codes, which
 #'          typically start with "C07". Additionally, specific sub-codes 'C07AA07', 'C07AA12', and 'C07AG02' are excluded 
 #'          from the beta blocker class. A respondent is classified as taking a beta blocker (return = 1) if the ATC code matches the pattern and is not in the exclusion list, and the 
-#'          medication was taken within the last month (NPI_25B <= 4), otherwise the respondent is not taking a betablocker (return = 0)
+#'          medication was taken within the last month (NPI_25B <= 4), otherwise the respondent is not taking a beta blocker (return = 0)
 #'
 #' @examples 
 #' 
-#' # Suppose a CHMS respondent's medication has the ATC code "C07AA13", and they took it within the last week. By
-#' # passing the code and the integer time response (3 in this case) into the function, you can check whether the medication
-#' # is classified as a beta blocker (1 = TRUE) or not (0 = FALSE).
-#' 
-#' # Example 1: Medication ATC code is "C07AA13", and it was taken within the last week (NPI_25B = 3)
+#' # Example 1: Medication ATC code is "C07AA13", and it was taken within the last week
 #' is_beta_blocker("C07AA13", 3) # Should return 1 (TRUE)
 #'
-#' # Example 2: Medication ATC code is "C07AA07" (excluded code), and it was taken within the last month (NPI_25B = 4)
+#' # Example 2: Medication ATC code is "C07AA07" (excluded code), and it was taken within last month
 #' is_beta_blocker("C07AA07", 4) # Should return 0 (FALSE)
 #' 
 #' @export
@@ -156,11 +152,9 @@ is_beta_blocker <- function(MEUCATC, NPI_25B) {
 #' 
 #' @examples
 #' 
-#' # Let's say for one respondent's medication, the ATC code is "C09AB03" and the time they last took it was yesterday. 
-#' # By passing in the code and integer time response (2 in this case) into the function, it can be checked if the 
-#' # given respondent's medication is an ACE inhibitor (1) or not (0).
+#' # Let's say the ATC code is "C09AB03" and the time last taken was yesterday (2). 
 #' 
-#' is_ace_inhibitor("C09AB03", 2)
+#' is_ace_inhibitor("C09AB03", 2) # Should return 1 (TRUE)
 #' 
 #' @export
 is_ace_inhibitor <- function(MEUCATC, NPI_25B) {
@@ -193,11 +187,9 @@ is_ace_inhibitor <- function(MEUCATC, NPI_25B) {
 #' 
 #' @examples
 #' 
-#' # Let's say a for one respondent's medication, the ATC code is C03AA03 and the time they last took it was within the last 
-#' # week. By passing in the code and integer time response (3 in this case) into the function, it can be checked if the 
-#' # given respondent's medication is a diuretic (1) or not (0).
+#' # Let's say the ATC code is "C03AA03" and the time last taken was within last week (3). 
 #' 
-#' is_diuretic("C03AA03", 3)
+#' is_diuretic("C03AA03", 3) # Should return 1 (TRUE)
 #' 
 #' @export
 is_diuretic <- function(MEUCATC, NPI_25B) {
@@ -229,11 +221,9 @@ is_diuretic <- function(MEUCATC, NPI_25B) {
 #' 
 #' @examples
 #' 
-#' # Let's say a for one respondent's medication, the ATC code is C08CA05 and the time they last took it was today. By 
-#' # passing in the code and integer time response (1 in this case) into the function, it can be checked if the given 
-#' # respondent's medication is a calcium channel blocker (1) or not (0).
+#' # Let's say the ATC code is "C08CA05" and the time last taken was today (1).
 #' 
-#' is_calcium_channel_blocker("C08CA05", 1)
+#' is_calcium_channel_blocker("C08CA05", 1) # Should return 1 (TRUE)
 #' 
 #' @export
 is_calcium_channel_blocker <- function(MEUCATC, NPI_25B) {
@@ -266,11 +256,9 @@ is_calcium_channel_blocker <- function(MEUCATC, NPI_25B) {
 #' 
 #' @examples
 #' 
-#' # Let's say a for one respondent's medication, the ATC code is C02AC04 and the time they last took it was within the last 
-#' # week. By passing in the code and integer time response (3 in this case) into the function, it can be checked if the 
-#' # given respondent's medication is another anti-hypertensive drug (1) or not (0).
+#' # Let's say the ATC code is "C02AC04" and the time last taken was within last week (3).
 #' 
-#' is_other_antiHTN_med("C02AC04", 3)
+#' is_other_antiHTN_med("C02AC04", 3) # Should return 1 (TRUE)
 #' 
 #' @export
 is_other_antiHTN_med <- function(MEUCATC, NPI_25B) {
@@ -304,11 +292,9 @@ is_other_antiHTN_med <- function(MEUCATC, NPI_25B) {
 #' 
 #' @examples
 #' 
-#' # Let's say a for one respondent's medication, the ATC code is C07AB02 and the time they last took it was within the last 
-#' # month. By passing in the code and integer time response (4 in this case) into the function, it can be checked if the 
-#' # given respondent's medication is an anti-hypertensive drug (1) or not (0).
+#' # Let's say the ATC code is "C07AB02" and the time last taken was within last month (4).
 #' 
-#' is_any_antiHTN_med("C07AB02", 4)
+#' is_any_antiHTN_med("C07AB02", 4) # Should return 1 (TRUE)
 #' 
 #' @export
 is_any_antiHTN_med <- function(MEUCATC, NPI_25B) {
@@ -340,11 +326,9 @@ is_any_antiHTN_med <- function(MEUCATC, NPI_25B) {
 #' 
 #' @examples
 #' 
-#' # Let's say a for one respondent's medication, the ATC code is M01AB05 and the time they last took it was today. By
-#' # passing in the code and integer time response (1 in this case) into the function, it can be checked if the given
-#' # respondent's medication is an NSAID (1) or not (0).
+#' # Let's say the ATC code is "M01AB05" and the time last taken was today (1).
 #' 
-#' is_NSAID("M01AB05", 1)
+#' is_NSAID("M01AB05", 1) # Should return 1 (TRUE)
 #' 
 #' @export
 is_NSAID <- function(MEUCATC, NPI_25B) {
@@ -376,11 +360,9 @@ is_NSAID <- function(MEUCATC, NPI_25B) {
 #' 
 #' @examples
 #' 
-#' # Let's say a for one respondent's medication, the ATC code is A10BB09 and the time they last took it was within the last 
-#' # week. By passing in the code and integer time response (3 in this case) into the function, it can be checked if the 
-#' # given respondent's medication is a diabetes drug (1) or not (0).
+#' # Let's say the ATC code is "A10BB09" and the time last taken was within last week (3).
 #' 
-#' is_diabetes_drug("A10BB09", 3)
+#' is_diabetes_drug("A10BB09", 3) # Should return 1 (TRUE)
 #' 
 #' @export
 is_diabetes_drug <- function(MEUCATC, NPI_25B) {
