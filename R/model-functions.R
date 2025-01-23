@@ -30,49 +30,60 @@ get_or_table <- function(model) {
   or_table <- data.frame(
     Variable = rownames(coef_table),
     OR = OR,
-    `Lower CI` = lower_CI,
-    `Upper CI` = upper_CI,
-    stringsAsFactors = FALSE
+    Lower_CI = lower_CI,
+    Upper_CI = upper_CI,
+    stringsAsFactors = TRUE
   )
   
   return(or_table)
 }
 
-# Function to merge the OR tables for comparison
-compare_ors <- function(weighted, unweighted) {
-  merge(weighted, unweighted, by = "Variable", suffixes = c("_Weighted", "_Unweighted"))
-}
-
 # Function for stepdown procedure by Harrell and Ambler
 stepdown <- function(full_model, data, threshold = 0.95) {
-  # Ensure predictions are based on the full model
-  predicted_values <- predict(full_model, type = "response")
+  # Predict full model's predicted values
+  full_model_predictions <- predict(full_model, type = "response")
   
-  # Calculate initial R² based on predicted values
-  initial_r2 <- calculate_r2(predicted_values, predict(full_model, type = "response"))
-  
+  # Calculate the initial R² using ordinary R²
+  initial_r2 <- calculate_r2(full_model_predictions, data$highbp14090_adj)
   current_model <- full_model
   current_r2 <- initial_r2
   removed_terms <- c()
   
-  # Extract terms in the model
+  # Get the terms in the model
   terms_in_model <- attr(terms(full_model), "term.labels")
   
+  # Iteratively remove terms and check R²
   while (length(terms_in_model) > 0) {
-    # Compute R² drops for removing each term
+    # Debugging: Display current terms in the model
+    print(paste("Current Terms:", paste(terms_in_model, collapse = ", ")))
+    
+    # Calculate the impact of removing each term on R²
     r2_drop <- sapply(terms_in_model, function(term) {
-      reduced_model <- try(update(current_model, as.formula(paste(". ~ . -", term))), silent = TRUE)
-      if (inherits(reduced_model, "try-error")) return(Inf)
+      reduced_model <- update(current_model, as.formula(paste(". ~ . -", term)))
       reduced_predictions <- predict(reduced_model, type = "response")
-      calculate_r2(predicted_values, reduced_predictions)
+      calculate_r2(reduced_predictions, full_model_predictions)
     })
     
-    # Find the term with the least impact on R²
+    # Debugging: Display R² drops
+    print(paste("R² Drops:", paste(round(r2_drop, 3), collapse = ", ")))
+    
+    # Identify the term with the least impact on R² (highest R² after removal)
     term_to_remove <- terms_in_model[which.max(r2_drop)]
     max_r2_drop <- r2_drop[which.max(r2_drop)]
     
-    # Check if the updated R² meets the threshold condition
+    # Debugging: Display the term to be removed and the current R²
+    print(paste("Term to Remove:", term_to_remove))
+    print(paste("Max R² Drop:", round(max_r2_drop, 3)))
+    
+    # Handle cases where max_r2_drop is NA, NaN, or infinite
+    if (is.na(max_r2_drop) || is.nan(max_r2_drop) || is.infinite(max_r2_drop)) {
+      print("Encountered invalid R² value (NA, NaN, or Inf). Stopping.")
+      break
+    }
+    
+    # Check if removing the term keeps the R² above the threshold
     if (max_r2_drop < threshold * initial_r2) {
+      print("Stopping: Removing additional terms would lower R² below the threshold.")
       break
     } else {
       # Update the current model and terms
@@ -83,14 +94,10 @@ stepdown <- function(full_model, data, threshold = 0.95) {
     }
   }
   
+  print("Removed Terms:")
+  print(removed_terms)
+  
   return(current_model)
-}
-
-# Stepdown's helper function to calculate ordinary R² for approximation accuracy
-calculate_r2 <- function(full_predictions, reduced_predictions) {
-  ss_total <- sum((full_predictions - mean(full_predictions))^2)
-  ss_residual <- sum((full_predictions - reduced_predictions)^2)
-  return(1 - (ss_residual / ss_total))
 }
 
 # Function to perform Likelihood Ratio Test (LRT) for svyglm models
@@ -128,6 +135,13 @@ lrt_svyglm <- function(full_model, reduced_model, design) {
 }
 
 # Metric-generating functions
+# Ordinary R²
+calculate_r2 <- function(predicted, actual) {
+  ss_total <- sum((actual - mean(actual))^2)
+  ss_residual <- sum((actual - predicted)^2)
+  return(1 - (ss_residual / ss_total))
+}
+
 # Nagelkerke's R²
 calculate_nagelkerke_r2 <- function(model, data) {
   # Get the number of observations
@@ -153,7 +167,7 @@ calculate_nagelkerke_r2 <- function(model, data) {
 # Brier score
 calculate_brier_score <- function(model, data) {
   # Generate predicted_probabilities
-  predicted_probabilities <- predict(model, newdata = data, type = "response")
+  predicted_probabilities <- predict(model, type = "response")
   
   # Calculate Brier score
   brier_score <- mean((predicted_probabilities - data$highbp14090_adj)^2)
@@ -164,7 +178,7 @@ calculate_brier_score <- function(model, data) {
 # c-statistic via ROC
 calculate_auc <- function(model, data) {
   # Generate predicted probabilities
-  predicted_probabilities <- predict(model, newdata = data, type = "response")
+  predicted_probabilities <- predict(model, type = "response")
   
   # Calculate ROC curve
   roc_curve <- pROC::roc(data$highbp14090_adj, predicted_probabilities)
@@ -243,8 +257,8 @@ calibration_slope <- function(data, predicted_probs) {
 }
 
 # Predicted probabilities for models
-generate_predicted_probabilities <- function(model, data) {
-  predicted_probabilities <- predict(model, newdata = data, type = "response")
+generate_predicted_probabilities <- function(model) {
+  predicted_probabilities <- predict(model, type = "response")
   return(predicted_probabilities)
 }
 
@@ -260,7 +274,7 @@ bootstrap_function <- function(data, indices, model) {
   boot_model <- update(model, data = boot_data, design = boot_design)
   
   # Generate predicted probabilities on the original (out-of-bag) data
-  predicted_probs <- predict(boot_model, newdata = data, type = "response")
+  predicted_probs <- predict(boot_model, type = "response")
   
   # Calculate Nagelkerke's R²
   nagelkerke_r2 <- calculate_nagelkerke_r2(boot_model, data)

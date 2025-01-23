@@ -42,7 +42,6 @@ truncate_skewed <- function(df, threshold = 0.995, skew_threshold = 1) {
   
   # Loop over all the numeric columns
   for (col in c("clc_age", "hwmdbmi", "minperweek", "totalfv", "whr", "slp_11")) {
-    if (is.numeric(df[[col]])) {
       
       # Calculate skewness
       skewness_value <- e1071::skewness(df[[col]], na.rm = TRUE)
@@ -59,7 +58,6 @@ truncate_skewed <- function(df, threshold = 0.995, skew_threshold = 1) {
         # Print message indicating that the column was truncated
         message(paste("Truncated column:", col, "| Skewness:", round(skewness_value, 2)))
       }
-    }
   }
   
   return(df_truncated)

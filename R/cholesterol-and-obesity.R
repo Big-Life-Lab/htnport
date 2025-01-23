@@ -109,7 +109,7 @@ calculate_WHR <- function(HWM_11CM, HWM_14CX) {
     WHR <- haven::tagged_na("b")
   }
   else {
-    WHR <- HWM_14CX / HWM_11CM
+    WHR <- (HWM_14CX / HWM_11CM) * 100
   }
   
   return(WHR)
