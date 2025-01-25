@@ -170,18 +170,13 @@ low_drink_score_fun1 <- function(CLC_SEX, ALCDWKY, ALC_17, ALC_11) {
   ## Categorical score
   if (!is.na(step1)) {
     if (step1 == 0) {
-      if (ALC_17 == 2 && ALC_11 == 2) {
+      if (!is.na(ALC_17) && ALC_17 == 2 && !is.na(ALC_11) && ALC_11 == 2) {
         low_drink_score1 <- 1
-      }
-      else if (ALC_11 == "NA(b)") {
+      } else if (!is.na(ALC_17) && ALC_17 == 1 && !is.na(ALC_11) && ALC_11 == 2) {
+        low_drink_score1 <- 2
+      } else {
         low_drink_score1 <- haven::tagged_na("b")
       }
-      else if (ALC_11 ==  2 && ALC_17 == "NA(b)") {
-        low_drink_score1 <- haven::tagged_na("b")
-      }
-      else {
-        low_drink_score1 <- 2    
-      } 
     } else if (step1 %in% c(1, 2)) {
       low_drink_score1 <- 3
     } else if (step1 %in% 3:9) {
