@@ -277,21 +277,21 @@ bootstrap_function <- function(data, indices, model) {
   predicted_probs <- predict(boot_model, type = "response")
   
   # Calculate Nagelkerke's R²
-  nagelkerke_r2 <- calculate_nagelkerke_r2(boot_model, data)
+  nagelkerke_r2 <- calculate_nagelkerke_r2(boot_model, boot_data)
   
   # Calculate Brier Score
-  brier_score <- calculate_brier_score(boot_model, data)
+  brier_score <- calculate_brier_score(boot_model, boot_data)
   
   # Calculate AUC and its CI using custom function
-  auc_result <- calculate_auc(boot_model, data)
+  auc_result <- calculate_auc(boot_model, boot_data)
   auc_value <- auc_result$AUC
   auc_ci <- auc_result$CI
   
   # Calibration Comparison (Relative Differences and Ratios)
-  calibration_comparison <- compare_probs(data, predicted_probs)
+  calibration_comparison <- compare_probs(boot_data, predicted_probs)
   
   # Calculate Calibration Slope
-  slope_model <- calibration_slope(data, predicted_probs)
+  slope_model <- calibration_slope(boot_data, predicted_probs)
   calibration_slope_value <- slope_model$coefficients[2]  # Extract slope
   
   # Return all performance metrics as a list
