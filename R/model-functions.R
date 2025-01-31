@@ -211,35 +211,15 @@ compare_probs <- function(data, predicted_probs) {
   percentile_90 <- quantile(data$predicted, 0.9)
   percentile_10 <- quantile(data$predicted, 0.1)
   
-  # Observed and predicted probabilities for 90th and 10th percentiles
-  observed_90 <- mean(data$highbp14090_adj[data$predicted >= percentile_90])
-  predicted_90 <- mean(data$predicted[data$predicted >= percentile_90])
-  observed_10 <- mean(data$highbp14090_adj[data$predicted <= percentile_10])
-  predicted_10 <- mean(data$predicted[data$predicted <= percentile_10])
-  
-  # Relative differences for 90th and 10th percentiles
-  relative_diff_90 <- (observed_90 - predicted_90) / observed_90
-  relative_diff_10 <- (observed_10 - predicted_10) / observed_10
-  
-  # Ratio of relative differences for 90th vs 10th percentile
-  ratio_90_10 <- abs(relative_diff_90 / relative_diff_10)
+  # Ratio of 90th vs 10th percentile
+  ratio_90_10 <- percentile_90 / percentile_10
   
   # Calculate 95th and 5th percentiles of predicted probabilities
   percentile_95 <- quantile(data$predicted, 0.95)
   percentile_5 <- quantile(data$predicted, 0.05)
   
-  # Observed and predicted probabilities for 95th and 5th percentiles
-  observed_95 <- mean(data$highbp14090_adj[data$predicted >= percentile_95])
-  predicted_95 <- mean(data$predicted[data$predicted >= percentile_95])
-  observed_5 <- mean(data$highbp14090_adj[data$predicted <= percentile_5])
-  predicted_5 <- mean(data$predicted[data$predicted <= percentile_5])
-  
-  # Relative differences for 95th and 5th percentiles
-  relative_diff_95 <- (observed_95 - predicted_95) / observed_95
-  relative_diff_5 <- (observed_5 - predicted_5) / observed_5
-  
-  # Ratio of relative differences for 95th vs 5th percentile
-  ratio_95_5 <- abs(relative_diff_95 / relative_diff_5)
+  # Ratio of 95th vs 5th percentile
+  ratio_95_5 <- percentile_95 / percentile_5
   
   # Return results
   return(list(
