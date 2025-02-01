@@ -423,9 +423,9 @@ brier_score_male <- sapply(bootstrap_results_male, function(x) x$brier_score)
 auc_male <- sapply(bootstrap_results_male, function(x) x$auc_value)
 auc_male_ci_lower <- sapply(bootstrap_results_male, function(x) x$auc_ci_lower)
 auc_male_ci_upper <- sapply(bootstrap_results_male, function(x) x$auc_ci_upper)
-relative_difference_overall_male <- sapply(bootstrap_results_male, function(x) x$relative_difference_overall)
 ratio_90_10_male <- sapply(bootstrap_results_male, function(x) x$ratio_90_10)
 ratio_95_5_male <- sapply(bootstrap_results_male, function(x) x$ratio_95_5)
+relative_difference_overall_male <- sapply(bootstrap_results_male, function(x) x$relative_difference_overall)
 calibration_slope_male <- sapply(bootstrap_results_male, function(x) x$calibration_slope)
 
 # Aggregate and summarize results for female
@@ -434,24 +434,20 @@ brier_score_female <- sapply(bootstrap_results_female, function(x) x$brier_score
 auc_female <- sapply(bootstrap_results_female, function(x) x$auc_value)
 auc_female_ci_lower <- sapply(bootstrap_results_female, function(x) x$auc_ci_lower)
 auc_female_ci_upper <- sapply(bootstrap_results_female, function(x) x$auc_ci_upper)
-relative_difference_overall_female <- sapply(bootstrap_results_female, function(x) x$relative_difference_overall)
 ratio_90_10_female <- sapply(bootstrap_results_female, function(x) x$ratio_90_10)
 ratio_95_5_female <- sapply(bootstrap_results_female, function(x) x$ratio_95_5)
+relative_difference_overall_female <- sapply(bootstrap_results_female, function(x) x$relative_difference_overall)
 calibration_slope_female <- sapply(bootstrap_results_female, function(x) x$calibration_slope)
 
 # Combine into a data frame
 results_summary <- data.frame(
-  Metric = c("Mean Nagelkerke R²", "Mean Brier Score", "Mean AUC", "Mean AUC 95% CI Lower", 
-            "Mean AUC 95% CI Upper", "Mean Observed v. Predicted (Overall)", "Mean Observed v. Predicted (90:10)",
-             "Mean Observed v. Predicted (95:5)", "Mean Calibration Slope"),
-  Male = c(mean(nagelkerke_r2_male), mean(brier_score_male), mean(auc_male), 
+  Metric = c("Mean Nagelkerke R²", "Mean Brier Score", "Mean AUC", "Mean AUC 95% CI Lower", "Mean AUC 95% CI Upper", "Mean 90:10 Predicted Ratio", "Mean 95:5 Predicted Ratio", "Mean Observed v. Predicted", "Mean Calibration Slope"),
+  Male = c(mean(nagelkerke_r2_male), mean(brier_score_male), mean(auc_male),
            mean(auc_male_ci_lower), mean(auc_male_ci_upper),
-           mean(relative_difference_overall_male), mean(ratio_90_10_male),
-           mean(ratio_95_5_male), mean(calibration_slope_male)),
+           mean(ratio_90_10_male), mean(ratio_95_5_male), mean(relative_difference_overall_male), mean(calibration_slope_male)),
   Female = c(mean(nagelkerke_r2_female), mean(brier_score_female), mean(auc_female),
              mean(auc_female_ci_lower), mean(auc_female_ci_upper),
-             mean(relative_difference_overall_female), mean(ratio_90_10_female),
-             mean(ratio_95_5_female), mean(calibration_slope_female))
+             mean(ratio_90_10_female), mean(ratio_95_5_female), mean(relative_difference_overall_female), mean(calibration_slope_female))
 )
 
 # Print the summary data frame
@@ -483,9 +479,9 @@ brier_score_male <- sapply(bootstrap_results_male, function(x) x$brier_score)
 auc_male <- sapply(bootstrap_results_male, function(x) x$auc_value)
 auc_male_ci_lower <- sapply(bootstrap_results_male, function(x) x$auc_ci_lower)
 auc_male_ci_upper <- sapply(bootstrap_results_male, function(x) x$auc_ci_upper)
-relative_difference_overall_male <- sapply(bootstrap_results_male, function(x) x$relative_difference_overall)
 ratio_90_10_male <- sapply(bootstrap_results_male, function(x) x$ratio_90_10)
 ratio_95_5_male <- sapply(bootstrap_results_male, function(x) x$ratio_95_5)
+relative_difference_overall_male <- sapply(bootstrap_results_male, function(x) x$relative_difference_overall)
 calibration_slope_male <- sapply(bootstrap_results_male, function(x) x$calibration_slope)
 
 # Aggregate and summarize results for female
@@ -494,24 +490,20 @@ brier_score_female <- sapply(bootstrap_results_female, function(x) x$brier_score
 auc_female <- sapply(bootstrap_results_female, function(x) x$auc_value)
 auc_female_ci_lower <- sapply(bootstrap_results_female, function(x) x$auc_ci_lower)
 auc_female_ci_upper <- sapply(bootstrap_results_female, function(x) x$auc_ci_upper)
-relative_difference_overall_female <- sapply(bootstrap_results_female, function(x) x$relative_difference_overall)
 ratio_90_10_female <- sapply(bootstrap_results_female, function(x) x$ratio_90_10)
 ratio_95_5_female <- sapply(bootstrap_results_female, function(x) x$ratio_95_5)
+relative_difference_overall_female <- sapply(bootstrap_results_female, function(x) x$relative_difference_overall)
 calibration_slope_female <- sapply(bootstrap_results_female, function(x) x$calibration_slope)
 
 # Combine into a data frame
 results_summary <- data.frame(
-  Metric = c("Mean Nagelkerke R²", "Mean Brier Score", "Mean AUC", "Mean AUC 95% CI Lower", 
-            "Mean AUC 95% CI Upper", "Mean Observed v. Predicted (Overall)", "Mean Observed v. Predicted (90:10)",
-             "Mean Observed v. Predicted (95:5)", "Mean Calibration Slope"),
-  Male = c(mean(nagelkerke_r2_male), mean(brier_score_male), mean(auc_male), 
+  Metric = c("Mean Nagelkerke R²", "Mean Brier Score", "Mean AUC", "Mean AUC 95% CI Lower", "Mean AUC 95% CI Upper", "Mean 90:10 Predicted Ratio", "Mean 95:5 Predicted Ratio", "Mean Observed v. Predicted", "Mean Calibration Slope"),
+  Male = c(mean(nagelkerke_r2_male), mean(brier_score_male), mean(auc_male),
            mean(auc_male_ci_lower), mean(auc_male_ci_upper),
-           mean(relative_difference_overall_male), mean(ratio_90_10_male),
-           mean(ratio_95_5_male), mean(calibration_slope_male)),
+           mean(ratio_90_10_male), mean(ratio_95_5_male), mean(relative_difference_overall_male), mean(calibration_slope_male)),
   Female = c(mean(nagelkerke_r2_female), mean(brier_score_female), mean(auc_female),
              mean(auc_female_ci_lower), mean(auc_female_ci_upper),
-             mean(relative_difference_overall_female), mean(ratio_90_10_female),
-             mean(ratio_95_5_female), mean(calibration_slope_female))
+             mean(ratio_90_10_female), mean(ratio_95_5_female), mean(relative_difference_overall_female), mean(calibration_slope_female))
 )
 
 # Print the summary data frame
