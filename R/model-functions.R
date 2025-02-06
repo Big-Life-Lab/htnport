@@ -61,7 +61,7 @@ stepdown <- function(full_model, data, threshold = 0.95) {
     r2_drop <- sapply(terms_in_model, function(term) {
       reduced_model <- update(current_model, as.formula(paste(". ~ . -", term)))
       reduced_predictions <- predict(reduced_model, type = "response")
-      calculate_r2(reduced_predictions, full_model_predictions)
+      calculate_r2(reduced_predictions, data$highbp14090_adj)
     })
     
     # Debugging: Display R² drops
