@@ -4,7 +4,7 @@ author: "Rafidul Islam"
 output: pdf_document
 ---
 
-<!-- ## Load packages, functions, and metadeta -->
+<!-- ### Load packages, functions, and metadeta -->
 
 ```{r, include = FALSE, warning = FALSE, message = FALSE}
 # Set working directory at RDC
@@ -44,7 +44,7 @@ my_variables <- read.csv("P:/10619/Dropbox/htnport/worksheets/variables.csv")
 my_variable_details <- read.csv("P:/10619/Dropbox/htnport/worksheets/variable-details.csv")
 ```
 
-<!-- ## Load medication data and recode medication variables -->
+<!-- ### Load medication data and recode medication variables -->
 
 ```{r, include = FALSE, warning = FALSE, message = FALSE}
 # Load medication data
@@ -67,7 +67,7 @@ cycle5_medication_data <- recodeflow::rec_with_table(cycle5_meds, c("clinicid", 
 cycle6_medication_data <- recodeflow::rec_with_table(cycle6_meds, c("clinicid", "meucatc", "npi_25b", "anymed", "diab_drug"), variable_details = my_variable_details)
 ```
 
-<!-- ## Load overall data, flatten/merge medication data to overall data, and recode all variables from each cycle -->
+<!-- ### Load overall data, flatten/merge medication data to overall data, and recode all variables from each cycle -->
 
 ```{r, include = FALSE, warning = FALSE, message = FALSE}
 # Load overall cycle data
@@ -113,7 +113,7 @@ cycle5_data <- recodeflow::rec_with_table(cycle5, recodeflow:::select_vars_by_ro
 cycle6_data <- recodeflow::rec_with_table(cycle6, recodeflow:::select_vars_by_role(c("Recode"), my_variables), variable_details = my_variable_details, log = TRUE)
 ```
 
-<!-- ## Combine cycles to obtain sample, and merge extra exercise data and bootstrap weights to the sample data -->
+<!-- ### Combine cycles to obtain sample, and merge extra exercise data and bootstrap weights to the sample data -->
 
 ```{r, include = FALSE, warning = FALSE, message = FALSE}
 # Combine cycles to obtain sample
@@ -136,7 +136,7 @@ cycles1to6_data <- cycles1to6_data %>%
   dplyr::select(c(clinicid, wgt_full, clc_sex, recodeflow:::select_vars_by_role(c("imputation-predictor", "cali-subgroup"), my_variables)))
 ```
 
-<!-- ## Reobtain imputed data and bootstrap weights, segregrate such data by sex, weight all data, and center variables. -->
+<!-- ### Reobtain imputed data and bootstrap weights, segregrate such data by sex, weight all data, and center variables. -->
 
 ```{r, include = FALSE, warning = FALSE, message = FALSE}
 # Impute data
@@ -154,48 +154,48 @@ imputed_cycles1to6_data <- dplyr::left_join(imputed_cycles1to6_data, cycles1to6_
 
 # Synthetic dataset for test use outside RDC
 # imputed_cycles1to6_data <- data.frame(
-#   highbp14090_adj = sample(1:2, ####, replace = TRUE), # Binary outcome
-#   ccc_51 = sample(1:2, ####, replace = TRUE), # Binary
-#   ckd = sample(1:2, ####, replace = TRUE), # Binary
-#   edudr04 = sample(1:3, ####, replace = TRUE), # 3 categories
-#   fmh_15 = sample(1:2, ####, replace = TRUE), # Binary
-#   gendmhi = sample(1:2, ####, replace = TRUE), # Binary
-#   gen_025 = sample(1:2, ####, replace = TRUE), # Binary
-#   gen_045 = sample(1:2, ####, replace = TRUE), # Binary
-#   low_drink_score1 = sample(1:4, ####, replace = TRUE), # 4 categories
-#   married = sample(1:3, ####, replace = TRUE), # 3 categories
-#   smoke = sample(1:3, ####, replace = TRUE), # 3 categories
-#   working = sample(1:2, ####, replace = TRUE), # Binary
-#   clc_sex = sample(1:2, ####, replace = TRUE), # Binary
-#   wgt_full = runif(####, 0, 1), # Continuous weights
-#   clc_age = runif(####, 18, 90), # Continuous
-#   hwmdbmi = runif(####, 18, 40), # Continuous
-#   minperweek = runif(####, 0, 2000), # Continuous
-#   totalfv = runif(####, 0, 10), # Continuous
-#   whr = runif(####, 0.5, 1.5), # Continuous
-#   slp_11 = runif(####, 4, 12), # Continuous
-#   diabx = sample(1:2, ####, replace = TRUE), # Binary
-#   cycle = sample(1:6, ####, replace = TRUE), # Cycle variable ranging from 1 to 6
-#   anymed2 = sample(0:1, ####, replace = TRUE), # Binary
-#   ccc_32 = sample(1:2, ####, replace = TRUE), # Binary
-#   cardiov = sample(1:2, ####, replace = TRUE), # Binary
-#   adj_hh_inc = runif(####, 20000, 150000), # Numeric income
-#   agegroup4 = sample(c("2039", "4059", "6069", "7079"), ####, replace = TRUE), # Categorical age group
-#   alcdwky = sample(0:84, ####, replace = TRUE), # Integer alcohol consumption per week
-#   bmigroup = sample(1:4, ####, replace = TRUE), # Categorical BMI group
-#   gendhdi = sample(0:4, ####, replace = TRUE), # Categorical health-disease index
-#   gfr = runif(####, 30, 120), # Numeric glomerular filtration rate
-#   hwm_13kg = runif(####, 40, 150), # Numeric weight in kg
-#   hwm_14cx = runif(####, 60, 200), # Numeric chest circumference in cm
-#   img_03 = sample(1:2, ####, replace = TRUE), # Binary image analysis variable
-#   lab_bpb = runif(####, 60, 160), # Numeric blood pressure measurement
-#   lab_hba1 = runif(####, 4, 14), # Numeric HbA1c
-#   mvpa150wk = sample(1:2, ####, replace = TRUE), # Binary moderate-vigorous activity
-#   nonhdltodd = sample(1:2, ####, replace = TRUE), # Binary non-HDL cholesterol
-#   gooddiet = sample(1:2, ####, replace = TRUE), # Binary poor diet indicator
-#   pgdcgt = sample(1:13, ####, replace = TRUE), # Categorical food group codes
-#   bsw1 = runif(####, 0, 1), # Continuous bootstrap weights
-#   bsw2 = runif(####, 0, 1) # Continuous bootstrap weights
+#   highbp14090_adj = sample(1:2, 1000, replace = TRUE), # Binary outcome
+#   ccc_51 = sample(1:2, 1000, replace = TRUE), # Binary
+#   ckd = sample(1:2, 1000, replace = TRUE), # Binary
+#   edudr04 = sample(1:3, 1000, replace = TRUE), # 3 categories
+#   fmh_15 = sample(1:2, 1000, replace = TRUE), # Binary
+#   gendmhi = sample(1:2, 1000, replace = TRUE), # 3 categories
+#   gen_025 = sample(1:2, 1000, replace = TRUE), # Binary
+#   gen_045 = sample(1:2, 1000, replace = TRUE), # Binary
+#   low_drink_score1 = sample(1:4, 1000, replace = TRUE), # 4 categories
+#   married = sample(1:3, 1000, replace = TRUE), # 3 categories
+#   smoke = sample(1:3, 1000, replace = TRUE), # Binary
+#   working = sample(1:2, 1000, replace = TRUE), # Binary
+#   clc_sex = sample(1:2, 1000, replace = TRUE), # Binary
+#   wgt_full = runif(1000, 0, 1), # Continuous weights
+#   clc_age = runif(1000, 18, 90), # Continuous
+#   hwmdbmi = runif(1000, 18, 40), # Continuous
+#   minperweek = runif(1000, 0, 2000), # Continuous
+#   totalfv = runif(1000, 0, 10), # Continuous
+#   whr = runif(1000, 0.5, 1.5), # Continuous
+#   slp_11 = runif(1000, 4, 12), # Continuous
+#   diabx = sample(1:2, 1000, replace = TRUE), # Binary
+#   cycle = sample(1:6, 1000, replace = TRUE), # Cycle variable ranging from 1 to 6
+#   anymed2 = sample(0:1, 1000, replace = TRUE), # Binary
+#   ccc_32 = sample(1:2, 1000, replace = TRUE), # Binary
+#   cardiov = sample(1:2, 1000, replace = TRUE), # Binary
+#   adj_hh_inc = runif(1000, 20000, 150000), # Numeric income
+#   agegroup4 = sample(c("2039", "4059", "6069", "7079"), 9627, replace = TRUE), # Categorical age group
+#   alcdwky = sample(0:84, 1000, replace = TRUE), # Integer alcohol consumption per week
+#   bmigroup = sample(1:4, 1000, replace = TRUE), # Categorical BMI group
+#   gendhdi = sample(0:4, 1000, replace = TRUE), # Categorical health-disease index
+#   gfr = runif(1000, 30, 120), # Numeric glomerular filtration rate
+#   hwm_13kg = runif(1000, 40, 150), # Numeric weight in kg
+#   hwm_14cx = runif(1000, 60, 200), # Numeric chest circumference in cm
+#   img_03 = sample(1:2, 1000, replace = TRUE), # Binary image analysis variable
+#   lab_bpb = runif(1000, 60, 160), # Numeric blood pressure measurement
+#   lab_hba1 = runif(1000, 4, 14), # Numeric HbA1c
+#   mvpa150wk = sample(1:2, 1000, replace = TRUE), # Binary moderate-vigorous activity
+#   nonhdltodd = sample(1:2, 1000, replace = TRUE), # Binary non-HDL cholesterol
+#   gooddiet = sample(1:2, 1000, replace = TRUE), # Binary poor diet indicator
+#   pgdcgt = sample(1:13, 1000, replace = TRUE), # Categorical food group codes]
+#   bsw1 = runif(1000, 0, 1), # Continuous bootstrap weights
+#   bsw2 = runif(1000, 0, 1) # Continuous bootstrap weights
 # )
 
 # Truncate skewed continuous variables if necessary
@@ -222,6 +222,17 @@ imputed_cycles1to6_data <- imputed_cycles1to6_data %>%
 cat_variables <- c("ckd", "diabx", "edudr04", "fmh_15", "gendmhi", "gen_025", "gen_045", "low_drink_score1", "married", "smoke", "working")
 imputed_cycles1to6_data <- imputed_cycles1to6_data %>%
   dplyr::mutate(across(all_of(cat_variables), as.factor))
+
+# Run after loading pood.rda - temporary step to avert recodeflow error
+# imputed_cycles1to6_data <- imputed_cycles1to6_data %>%
+#   dplyr::mutate(
+#     pgdcgt = as.numeric(as.character(pgdcgt)),
+#     pgdcgt = case_when(
+#       pgdcgt >= 2 & pgdcgt <= 13 ~ 2,
+#       TRUE ~ pgdcgt
+#     ),
+#     pgdcgt = as.factor(pgdcgt)
+#   )
 
 # Separate male and female data
 male_data <- dplyr::filter(imputed_cycles1to6_data, clc_sex == 1)
@@ -273,18 +284,9 @@ for (var in cat_variables) {
 for (var in cat_variables) {
   weighted_female$variables[[var]] <- center_cat_variable(var, weighted_female)
 }
-
-# Run after loading pood.rda - temporary step to avert recodeflow error
-# imputed_cycles1to6_data <- imputed_cycles1to6_data %>%
-#   dplyr::mutate(
-#     pgdcgt = case_when(
-#       pgdcgt >= 2 & pgdcgt <= 13 ~ 2,
-#       TRUE ~ pgdcgt
-#     )
-#   )
 ```
 
-## Fit male and female models using weighted male and female data.
+### Fit male and female models using weighted male and female data.
 
 ```{r, warning = FALSE, message = FALSE}
 # Fit male and female models
@@ -293,7 +295,7 @@ male_model <- survey::svyglm(highbp14090_adj ~ rcs(clc_age, 4) + married + edudr
 female_model <- survey::svyglm(highbp14090_adj ~ rcs(clc_age, 4) + married + edudr04 + working + gendmhi + gen_025 + gen_045 + fmh_15 + rcs(hwmdbmi, 3) + rcs(whr, 3) + low_drink_score1 + rcs(minperweek, 3) + smoke + slp_11 + totalfv + diabx + ckd + rcs(clc_age, 4)*gen_045 + rcs(clc_age, 4)*rcs(hwmdbmi, 3) + rcs(clc_age, 4)*rcs(whr, 3) + rcs(clc_age, 4)*rcs(minperweek, 3) + rcs(clc_age, 4)*smoke + rcs(clc_age, 4)*slp_11 + rcs(clc_age, 4)*diabx + rcs(clc_age, 4)*ckd + rcs(hwmdbmi, 3)*rcs(whr, 3), design = weighted_female, family = quasibinomial())
 ```
 
-## Multicollinearity and linearity assessments
+### Multicollinearity and linearity assessments
 
 ```{r, warning = FALSE, message = FALSE}
 # Multicollinearity assessment
@@ -325,7 +327,7 @@ plot(female_data$slp_11, female_model$fitted.values, xlab = "Hours slept per nig
 plot(female_data$totalfv, female_model$fitted.values, xlab = "Times per day produce consumed", ylab = "Female model fitted values")
 ```
 
-## Fit male and female models using unweighted male and female data, and compare to weighted models
+### Fit male and female models using unweighted male and female data, and compare to weighted models
 
 ```{r, warning = FALSE, message = FALSE}
 # Fit unweighted models
@@ -342,7 +344,7 @@ get_or_table(female_model)
 get_or_table(female_model_unweighted)
 ```
 
-## Model specification
+### Model specification
 
 ```{r, warning = FALSE, message = FALSE}
 # Apply stepdown function to male and female models
@@ -366,7 +368,7 @@ lrt_svyglm(male_reduced_model, male_null_model, weighted_male)
 lrt_svyglm(female_reduced_model, female_null_model, weighted_female)
 ```
 
-## Full model assessment for original sample
+### Full model assessment for original sample
 
 ```{r, warning = FALSE, message = FALSE}
 # Generate predicted probabilities for full models
@@ -386,7 +388,7 @@ plot(sort(male_predicted_probabilities), seq_along(male_predicted_probabilities)
 plot(sort(female_predicted_probabilities), seq_along(female_predicted_probabilities), type = "s", col = "red", lwd = 2, xlab = "Predicted probability", ylab = "Cumulative frequency")
 ```
 
-## Reduced model assessment for original sample
+### Reduced model assessment for original sample
 
 ```{r, warning = FALSE, message = FALSE}
 # Generate predicted probabilities for reduced models
@@ -406,7 +408,7 @@ plot(sort(male_predicted_probabilities), seq_along(male_predicted_probabilities)
 plot(sort(female_predicted_probabilities), seq_along(female_predicted_probabilities), type = "s", col = "red", lwd = 2, xlab = "Predicted probability", ylab = "Cumulative frequency")
 ```
 
-## Full model assessment for bootstrap samples - BOOTSTRAP VALIDATION 1/2
+### Full model assessment for bootstrap samples - BOOTSTRAP VALIDATION 1/2
 
 ```{r, warning = FALSE, message = FALSE}
 # Perform bootstrapping for both male and female full models
@@ -461,7 +463,7 @@ results_summary <- data.frame(
 print(results_summary)
 ```
 
-## Reduced model assessment for bootstrap samples - BOOTSTRAP VALIDATION 2/2
+### Reduced model assessment for bootstrap samples - BOOTSTRAP VALIDATION 2/2
 
 ```{r, warning = FALSE, message = FALSE}
 # Perform bootstrapping for both male and female reduced models
@@ -516,10 +518,10 @@ results_summary <- data.frame(
 print(results_summary)
 ```
 
-## Calibration across subgroups for full models
+### Calibration across subgroups for full models
 
 ```{r, warning = FALSE, message = FALSE}
-# Generate predicted probabilities for full model
+# Generate predicted probabilities for full models
 male_predicted_probabilities <- generate_predicted_probabilities(male_model)
 female_predicted_probabilities <- generate_predicted_probabilities(female_model)
 
@@ -569,10 +571,10 @@ for (subgroup in subgroups) {
 female_calibration_results
 ```
 
-## Calibration across subgroups for reduced models
+### Calibration across subgroups for reduced models
 
 ```{r, warning = FALSE, message = FALSE}
-# Generate predicted probabilities for full model
+# Generate predicted probabilities for reduced models
 male_predicted_probabilities <- generate_predicted_probabilities(male_reduced_model)
 female_predicted_probabilities <- generate_predicted_probabilities(female_reduced_model)
 
@@ -622,7 +624,7 @@ for (subgroup in subgroups) {
 female_calibration_results
 ```
 
-<!-- ## Model presentation (ignore for now) -->
+<!-- ### Model presentation (ignore for now) -->
 
 ```{r, include = FALSE, warning = FALSE, message = FALSE}
 # Create the Predictor object with 'response' to get probabilities
