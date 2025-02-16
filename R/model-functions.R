@@ -14,30 +14,6 @@ calculate_simplified_vif <- function(design) {
   return(vif_values)
 }
 
-# Function to calculate ORs and CIs from a model
-get_or_table <- function(model) {
-  # Extract coefficients and standard errors
-  coef_table <- coef(summary(model))
-  estimates <- coef_table[, "Estimate"]
-  std_errors <- coef_table[, "Std. Error"]
-  
-  # Calculate OR and confidence intervals
-  OR <- exp(estimates)
-  lower_CI <- exp(estimates - 1.96 * std_errors)
-  upper_CI <- exp(estimates + 1.96 * std_errors)
-  
-  # Create a data frame
-  or_table <- data.frame(
-    Variable = rownames(coef_table),
-    OR = OR,
-    Lower_CI = lower_CI,
-    Upper_CI = upper_CI,
-    stringsAsFactors = TRUE
-  )
-  
-  return(or_table)
-}
-
 # Function for stepdown procedure by Harrell and Ambler
 stepdown <- function(full_model, data, threshold = 0.95) {
   # Predict full model's predicted values
@@ -286,4 +262,77 @@ bootstrap_function <- function(data, indices, model) {
     ratio_95_5 = calibration_comparison$ratio_95_5,
     calibration_slope = calibration_slope_value
   ))
+}
+
+# Function to obtain beta coefficients from a model
+extract_beta_df <- function(model) {
+  data.frame(
+    Variable = names(coef(model)),  # Extract coefficient names
+    Beta = coef(model),
+    row.names = NULL  # Remove row names
+  )
+}
+
+# Function to calculate Shap-adjusted ORs and CIs
+calculate_shap_or_ci <- function(shap_values_df, predictor) {
+  # Filter SHAP values for the predictor
+  shap_filtered <- shap_values_df %>% filter(feature == predictor)
+  
+  if (nrow(shap_filtered) == 0) {
+    return(list(S_OR = NaN, CI = c(NaN, NaN)))
+  }
+  
+  unique_values <- sort(unique(shap_filtered$feature.value))
+  
+  if (length(unique_values) > 1 && length(unique_values) <= 4) {
+    # Handle categorical variables
+    ref_category <- min(unique_values)  # Set lowest numbered category as reference
+    ref_shap <- shap_filtered %>% filter(feature.value == ref_category)
+    
+    ref_mean <- mean(ref_shap$phi)
+    ref_se <- sqrt(mean(ref_shap$phi.var) / nrow(ref_shap))
+    
+    results <- list()
+    
+    for (cat in unique_values[unique_values != ref_category]) {
+      cat_shap <- shap_filtered %>% filter(feature.value == cat)
+      
+      cat_mean <- mean(cat_shap$phi)
+      cat_se <- sqrt(mean(cat_shap$phi.var) / nrow(cat_shap))
+      
+      # Compute mean difference (non-ref - ref)
+      mean_diff <- cat_mean - ref_mean
+      
+      # Compute standard error of the mean difference
+      se_diff <- sqrt(ref_se^2 + cat_se^2)
+      
+      # Compute S-OR and confidence interval
+      S_OR <- exp(mean_diff)
+      lower_bound_or <- exp(mean_diff - 1.96 * se_diff)
+      upper_bound_or <- exp(mean_diff + 1.96 * se_diff)
+      
+      results[[as.character(cat)]] <- list(S_OR = S_OR, CI = c(lower_bound_or, upper_bound_or))
+    }
+    
+    return(results)
+    
+  } else {
+    # Handle continuous variables
+    mean_shap <- mean(shap_filtered$phi)
+    se_shap <- sqrt(mean(shap_filtered$phi.var) / nrow(shap_filtered))
+    
+    # Compute S-OR
+    S_OR <- exp(mean_shap)
+    
+    # Compute confidence interval
+    lower_bound_or <- exp(mean_shap - 1.96 * se_shap)
+    upper_bound_or <- exp(mean_shap + 1.96 * se_shap)
+    
+    # Explicitly construct a named list
+    result <- list()
+    result[[predictor]] <- list(S_OR = S_OR, CI = c(lower_bound_or, upper_bound_or))
+    
+    return(result)
+
+  }
 }
