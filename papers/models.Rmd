@@ -657,23 +657,23 @@ male_data <- male_data %>%
 # Create observation as a data frame
 observation <- data.frame(
   highbp14090_adj = NA,
-  clc_age = 62,
-  married = 1,
-  edudr04 = 1,
-  working = 1,
-  gendmhi = 1,
-  gen_025 = 1,
-  gen_045 = 1,
-  fmh_15 = 1,
-  hwmdbmi = 20,
-  whr = 0.7,
-  low_drink_score1 = 2,
-  minperweek = 100,
-  smoke = 1,
-  slp_11 = 8,
-  totalfv = 5,
-  diabx = 1,
-  ckd = 0
+  clc_age = 55,         # 55-year old male
+  married = 2,          # Divorced
+  edudr04 = 0,          # Post-secondary graduate
+  working = 1,          # Working
+  gendmhi = 0,          # Good, very good, or excellent mental health
+  gen_025 = 1,          # Not at all to a bit stressed
+  gen_045 = 1,          # Strong sense of belonging
+  fmh_15 = 1,           # Family history of hypertension present
+  hwmdbmi = 24,         # BMI = 24; Healthy but close to overweight 
+  whr = 0.5,            # WHR = 0.5; Borderline of increased risk
+  low_drink_score1 = 2, # Former drinker
+  minperweek = 150,     # Exercises 150 min per week (barely meets criteria)
+  smoke = 0,            # Never smoked  
+  slp_11 = 6,           # Sleeps 6 hours per night
+  totalfv = 4,          # Eats fruits and veggies 4 times per day (does not meet criteria)
+  diabx = 1,            # Diabetes present
+  ckd = 0               # Chronic kidney disease absent  
 )
 
 # Ensure observation has the same structure and var order as male_data
