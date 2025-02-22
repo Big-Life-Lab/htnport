@@ -26,7 +26,7 @@ source("R/calibration.R")
 my_variables <- read.csv("P:/10619/Dropbox/htnport/worksheets/variables.csv")
 ```
 
-### Table 1. Population characteristics of predictors in model.
+### Table 1 - Population characteristics of predictors pre-specified in full model
 
 ```{r, warning = FALSE, message = FALSE}
 # Load recoded cycles 1-6 data
@@ -230,9 +230,9 @@ male_model <- survey::svyglm(highbp14090_adj ~ rcs(clc_age, 4) + married + edudr
 female_model <- survey::svyglm(highbp14090_adj ~ rcs(clc_age, 4) + married + edudr04 + working + gendmhi + gen_025 + gen_045 + fmh_15 + rcs(hwmdbmi, 3) + rcs(whr, 3) + low_drink_score1 + rcs(minperweek, 3) + smoke + slp_11 + totalfv + diabx + ckd + rcs(clc_age, 4)*gen_045 + rcs(clc_age, 4)*rcs(hwmdbmi, 3) + rcs(clc_age, 4)*rcs(whr, 3) + rcs(clc_age, 4)*rcs(minperweek, 3) + rcs(clc_age, 4)*smoke + rcs(clc_age, 4)*slp_11 + rcs(clc_age, 4)*diabx + rcs(clc_age, 4)*ckd + rcs(hwmdbmi, 3)*rcs(whr, 3), design = weighted_female, family = quasibinomial())
 
 # Fit reduced male and female models (from stepdown function which takes too long to run)
-male_reduced_model <- survey::svyglm(highbp14090_adj ~ rcs(clc_age, 4) + fmh_15 + rcs(clc_age, 4)*rcs(whr, 3) + rcs(clc_age, 4)*diabx )
+male_reduced_model <- survey::svyglm(highbp14090_adj ~ rcs(clc_age, 4) + fmh_15 + rcs(clc_age, 4)*rcs(whr, 3) + rcs(clc_age, 4)*diabx)
 
-female_reduced_model <- survey::svyglm(highbp14090_adj ~ rcs(clc_age, 4) + fmh_15 + rcs(clc_age, 4)*rcs(hwmdbmi, 3) + rcs(clc_age, 4)*diabx )
+female_reduced_model <- survey::svyglm(highbp14090_adj ~ rcs(clc_age, 4) + fmh_15 + rcs(clc_age, 4)*rcs(hwmdbmi, 3) + rcs(clc_age, 4)*diabx)
 
 # Perform likelihood ratio tests to determine if reduced models are better fit (ie. p > 0.05)
 lrt_svyglm(male_model, male_reduced_model, weighted_male)
