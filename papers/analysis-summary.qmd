@@ -221,7 +221,7 @@ for (var in cat_variables) {
 }
 ```
 
-### Fit full and reduced male and female models, and compare them.
+### Fit full and reduced male and female models, and compare them
 
 ```{r, warning = FALSE, message = FALSE}
 # Fit full male and female models

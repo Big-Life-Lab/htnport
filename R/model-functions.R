@@ -265,7 +265,7 @@ bootstrap_function <- function(data, indices, model) {
 }
 
 # Function to obtain beta coefficients from a model
-extract_beta_df <- function(model) {
+extract_beta_coefs <- function(model) {
   data.frame(
     Variable = names(coef(model)),  # Extract coefficient names
     Beta = coef(model),
