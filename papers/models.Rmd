@@ -181,7 +181,7 @@ imputed_cycles1to6_data <- dplyr::left_join(imputed_cycles1to6_data, cycles1to6_
 #   ccc_32 = sample(1:2, 1000, replace = TRUE), # Binary
 #   cardiov = sample(1:2, 1000, replace = TRUE), # Binary
 #   adj_hh_inc = runif(1000, 20000, 150000), # Numeric income
-#   agegroup4 = sample(c("2039", "4059", "6069", "7079"), 1000, replace = TRUE), # FIXED ROW COUNT
+#   agegroup4 = sample(c("xx", "xx", "xx", "xx"), 1000, replace = TRUE), # FIXED ROW COUNT
 #   alcdwky = sample(0:84, 1000, replace = TRUE), # Integer alcohol consumption per week
 #   bmigroup = sample(1:4, 1000, replace = TRUE), # Categorical BMI group
 #   gendhdi = sample(0:4, 1000, replace = TRUE), # Categorical health-disease index
@@ -396,7 +396,7 @@ plot(sort(female_predicted_probabilities), seq_along(female_predicted_probabilit
 
 ```{r, warning = FALSE, message = FALSE}
 # Perform bootstrapping for both male and female full models
-n_bootstrap <- 10  # Number of bootstrap resamples
+n_bootstrap <- 1000  # Number of bootstrap resamples
 
 # For male full model
 bootstrap_results_male <- replicate(n_bootstrap, {
@@ -451,7 +451,7 @@ print(results_summary)
 
 ```{r, warning = FALSE, message = FALSE}
 # Perform bootstrapping for both male and female reduced models
-n_bootstrap <- 10  # Number of bootstrap resamples
+n_bootstrap <- 1000  # Number of bootstrap resamples
 
 # For male reduced model
 bootstrap_results_male <- replicate(n_bootstrap, {
@@ -619,9 +619,9 @@ female_dd <- datadist(female_data)
 options(datadist = "female_dd")
 
 # Fit final full models with lrm to make partial effect plots work
-male_final_model <- rms::lrm(highbp14090_adj ~ rcs(clc_age, 4) + married + edudr04 + working + gendmhi + gen_025 + gen_045 + fmh_15 + rcs(hwmdbmi, 3) + rcs(whr, 3) + low_drink_score1 + rcs(minperweek, 3) + smoke + slp_11 + totalfv + diabx + ckd + rcs(clc_age, 4)*gen_045 + rcs(clc_age, 4)*rcs(hwmdbmi, 3) + rcs(clc_age, 4)*rcs(whr, 3) + rcs(clc_age, 4)*rcs(minperweek, 3) + rcs(clc_age, 4)*smoke + rcs(clc_age, 4)*slp_11 + rcs(clc_age, 4)*diabx + rcs(clc_age, 4)*ckd + rcs(hwmdbmi, 3)*rcs(whr, 3), data = male_data, weights = wgt_full)
+male_final_model <- rms::lrm(highbp14090_adj ~ rcs(clc_age, 4) + married + edudr04 + working + gendmhi + gen_025 + gen_045 + fmh_15 + rcs(hwmdbmi, 3) + rcs(whr, 3) + low_drink_score1 + rcs(minperweek, 3) + smoke + slp_11 + totalfv + diabx + ckd + rcs(clc_age, 4)*gen_045 + rcs(clc_age, 4)*rcs(hwmdbmi, 3) + rcs(clc_age, 4)*rcs(whr, 3) + rcs(clc_age, 4)*rcs(minperweek, 3) + rcs(clc_age, 4)*smoke + rcs(clc_age, 4)*slp_11 + rcs(clc_age, 4)*diabx + rcs(clc_age, 4)*ckd + rcs(hwmdbmi, 3)*rcs(whr, 3), data = male_data, weights = wgt_full, tol = 1e-13)
 
-female_final_model <- rms::lrm(highbp14090_adj ~ rcs(clc_age, 4) + married + edudr04 + working + gendmhi + gen_025 + gen_045 + fmh_15 + rcs(hwmdbmi, 3) + rcs(whr, 3) + low_drink_score1 + rcs(minperweek, 3) + smoke + slp_11 + totalfv + diabx + ckd + rcs(clc_age, 4)*gen_045 + rcs(clc_age, 4)*rcs(hwmdbmi, 3) + rcs(clc_age, 4)*rcs(whr, 3) + rcs(clc_age, 4)*rcs(minperweek, 3) + rcs(clc_age, 4)*smoke + rcs(clc_age, 4)*slp_11 + rcs(clc_age, 4)*diabx + rcs(clc_age, 4)*ckd + rcs(hwmdbmi, 3)*rcs(whr, 3), data = female_data, weights = wgt_full)
+female_final_model <- rms::lrm(highbp14090_adj ~ rcs(clc_age, 4) + married + edudr04 + working + gendmhi + gen_025 + gen_045 + fmh_15 + rcs(hwmdbmi, 3) + rcs(whr, 3) + low_drink_score1 + rcs(minperweek, 3) + smoke + slp_11 + totalfv + diabx + ckd + rcs(clc_age, 4)*gen_045 + rcs(clc_age, 4)*rcs(hwmdbmi, 3) + rcs(clc_age, 4)*rcs(whr, 3) + rcs(clc_age, 4)*rcs(minperweek, 3) + rcs(clc_age, 4)*smoke + rcs(clc_age, 4)*slp_11 + rcs(clc_age, 4)*diabx + rcs(clc_age, 4)*ckd + rcs(hwmdbmi, 3)*rcs(whr, 3), data = female_data, weights = wgt_full, tol = 1e-13)
 
 # Partial effect plots
 ggplot(Predict(male_final_model))
@@ -640,8 +640,8 @@ male_final_betas <- extract_beta_coefs(male_final_model)
 female_final_betas <- extract_beta_coefs(female_final_model)
 
 # Export beta coefficient tables as csv files
-write.csv(male_final_betas, file = "P:/10619/Dropbox/htnport/vignettes/male-final-betas.csv")
-write.csv(female_final_betas, file = "P:/10619/Dropbox/htnport/vignettes/female-final-betas.csv")
+write.csv(male_final_betas, file = "P:/10619/Dropbox/htnport/vignettes/Model Presentation Output/Male Final Model Betas.csv")
+write.csv(female_final_betas, file = "P:/10619/Dropbox/htnport/vignettes/Model Presentation Output/Female Final Model Betas.csv")
 ```
 
 ### Model presentation - contribution of predictors for observation with Shap
@@ -651,15 +651,14 @@ write.csv(female_final_betas, file = "P:/10619/Dropbox/htnport/vignettes/female-
 male_data <- dplyr::filter(imputed_cycles1to6_data, clc_sex == 1)
 
 # Fit final full male model with glm to avoid errors
-male_final_model <- glm(highbp14090_adj ~ rcs(clc_age, 4) + married + edudr04 + working + gendmhi + gen_025 + gen_045 + fmh_15 + rcs(hwmdbmi, 3) + rcs(whr, 3) + low_drink_score1 + rcs(minperweek, 3) + smoke + slp_11 + totalfv + diabx + ckd + rcs(clc_age, 4)*gen_045 + rcs(clc_age, 4)*rcs(hwmdbmi, 3) + rcs(clc_age, 4)*rcs(whr, 3) + rcs(clc_age, 4)*rcs(minperweek, 3) + rcs(clc_age, 4)*smoke + rcs(clc_age, 4)*slp_11 + rcs(clc_age, 4)*diabx + rcs(clc_age, 4)*ckd + rcs(hwmdbmi, 3)*rcs(whr, 3), data = male_data, family = binomial(), weights = wgt_full)
+male_final_model <- glm(highbp14090_adj ~ rcs(clc_age, 4) + married + edudr04 + working + gendmhi + gen_025 + gen_045 + fmh_15 + rcs(hwmdbmi, 3) + rcs(whr, 3) + low_drink_score1 + rcs(minperweek, 3) + smoke + slp_11 + totalfv + diabx + ckd + rcs(clc_age, 4)*gen_045 + rcs(clc_age, 4)*rcs(hwmdbmi, 3) + rcs(clc_age, 4)*rcs(whr, 3) + rcs(clc_age, 4)*rcs(minperweek, 3) + rcs(clc_age, 4)*smoke + rcs(clc_age, 4)*slp_11 + rcs(clc_age, 4)*diabx + rcs(clc_age, 4)*ckd + rcs(hwmdbmi, 3)*rcs(whr, 3), family = quasibinomial(), data = male_data, weights = wgt_full)
 
 # Predictors and outcome only
 male_data <- male_data %>% 
-  dplyr::select(c(highbp14090_adj, recodeflow:::select_vars_by_role(c("Predictor"), my_variables)))
+  dplyr::select(recodeflow:::select_vars_by_role(c("Predictor"), my_variables))
 
 # Create observation as a data frame
 observation <- data.frame(
-  highbp14090_adj = NA,
   clc_age = 55,         # 55-year old male
   married = 2,          # Divorced
   edudr04 = 0,          # Post-secondary graduate
@@ -702,7 +701,6 @@ male_explainer <- iml::Predictor$new(
 
 # Obtain and plot Shap values for contribution of predictors to observation's predicted outcome
 male_shap_values <- iml::Shapley$new(male_explainer, x.interest = observation)
-male_shap_values$results <- male_shap_values$results[male_shap_values$results$feature != "highbp14090_adj", ]
 
 plot(male_shap_values)
 ```
@@ -736,7 +734,7 @@ male_explainer <- iml::Predictor$new(
 male_shap_list <- list()
 
 # Generate Shap values for each row in male_data
-for (i in 1:10) {
+for (i in 1:nrow(male_data)) {
     # Ensure observation remains a data frame
     observation <- male_data[i, , drop = FALSE]  
     
@@ -774,7 +772,7 @@ female_explainer <- iml::Predictor$new(
 female_shap_list <- list()
 
 # Generate Shap values for each row in female_data
-for (i in 1:10) {
+for (i in 1:nrow(female_data)) {
     # Ensure observation remains a data frame
     observation <- female_data[i, , drop = FALSE]  
     
