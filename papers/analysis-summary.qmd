@@ -350,7 +350,7 @@ print(results_summary)
 
 ```{r, warning = FALSE, message = FALSE}
 # Perform bootstrapping for both male and female reduced models
-n_bootstrap <- 10  # Number of bootstrap resamples
+n_bootstrap <- 1000  # Number of bootstrap resamples
 
 # For male reduced model
 bootstrap_results_male <- replicate(n_bootstrap, {
