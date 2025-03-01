@@ -628,23 +628,119 @@ ggplot(Predict(male_final_model))
 ggplot(Predict(female_final_model))
 ```
 
-### Model presentation - final beta coefficients
+### Model presentation - parameters
 
 ```{r, warning = FALSE, message = FALSE}
-# Set originally svyglm-fit full models as final models
-male_final_model <- male_model
-female_final_model <- female_model
+# Get beta coefficients for final models
+male_full_betas <- extract_beta_coefs(male_final_model)
+female_full_betas <- extract_beta_coefs(female_final_model)
 
 # Get beta coefficients for final models
-male_final_betas <- extract_beta_coefs(male_final_model)
-female_final_betas <- extract_beta_coefs(female_final_model)
+male_reduced_betas <- extract_beta_coefs(male_reduced_model)
+female_reduced_betas <- extract_beta_coefs(female_reduced_model)
 
 # Export beta coefficient tables as csv files
-write.csv(male_final_betas, file = "P:/10619/Dropbox/htnport/vignettes/Model Presentation Output/Male Final Model Betas.csv")
-write.csv(female_final_betas, file = "P:/10619/Dropbox/htnport/vignettes/Model Presentation Output/Female Final Model Betas.csv")
+write.csv(male_full_betas, file = "P:/10619/Dropbox/htnport/vignettes/Model Presentation Output/Male Full Model Betas.csv")
+write.csv(female_full_betas, file = "P:/10619/Dropbox/htnport/vignettes/Model Presentation Output/Female Full Model Betas.csv")
+
+write.csv(male_reduced_betas, file = "P:/10619/Dropbox/htnport/vignettes/Model Presentation Output/Male Reduced Model Betas.csv")
+write.csv(female_reduced_betas, file = "P:/10619/Dropbox/htnport/vignettes/Model Presentation Output/Female Reduced Model Betas.csv")
+
+# Re-apply survey weights to male and female data
+male_replicate_weights <- male_data %>%
+  dplyr::select(dplyr::starts_with("bsw")) %>%
+  names()
+
+weighted_male <- male_data %>%
+  srvyr::as_survey_rep(
+    weights = wgt_full,
+    repweights = all_of(male_replicate_weights),
+    type = "bootstrap"
+  )
+
+weighted_male$degf <- 68
+
+female_replicate_weights <- female_data %>%
+  dplyr::select(dplyr::starts_with("bsw")) %>%
+  names()
+
+weighted_female <- female_data %>%
+  srvyr::as_survey_rep(
+    weights = wgt_full,
+    repweights = all_of(female_replicate_weights),
+    type = "bootstrap"
+  )
+
+weighted_female$degf <- 68
+
+# Print weighted means for each continuous variable
+for (var in cont_variables) {
+  mean_value <- survey::svymean(as.formula(paste("~", var)), design = weighted_male)
+  cat(var, ":", mean_value, "\n")
+}
+for (var in cont_variables) {
+  mean_value <- survey::svymean(as.formula(paste("~", var)), design = weighted_female)
+  cat(var, ":", mean_value, "\n")
+}
+
+# Print weighted means for each categorical variable level
+for (var in cat_variables) {
+  var_data <- weighted_male$variables[[var]]  # Extract the variable
+  
+  # Calculate weighted frequencies
+  freq_table <- survey::svytable(as.formula(paste0("~", var)), design = weighted_male)
+  
+  # Weighted mean (proportion for each category)
+  weighted_mean <- freq_table / sum(freq_table)
+  
+  # Get all category names and exclude the lowest-numbered one
+  categories <- names(weighted_mean)
+  reference_category <- min(as.numeric(categories))  # Find the lowest category
+  filtered_categories <- setdiff(categories, reference_category)  # Exclude it
+  
+  cat("\nVariable:", var, "\n")  # Print the variable name
+  
+  # Loop through remaining categories and print their proportions
+  for (category in filtered_categories) {
+    cat("  Category:", category, " - Weighted Mean:", round(weighted_mean[category], 4), "\n")
+  }
+}
+
+for (var in cat_variables) {
+  var_data <- weighted_female$variables[[var]]  # Extract the variable
+  
+  # Calculate weighted frequencies
+  freq_table <- survey::svytable(as.formula(paste0("~", var)), design = weighted_female)
+  
+  # Weighted mean (proportion for each category)
+  weighted_mean <- freq_table / sum(freq_table)
+  
+  # Get all category names and exclude the lowest-numbered one
+  categories <- names(weighted_mean)
+  reference_category <- min(as.numeric(categories))  # Find the lowest category
+  filtered_categories <- setdiff(categories, reference_category)  # Exclude it
+  
+  cat("\nVariable:", var, "\n")  # Print the variable name
+  
+  # Loop through remaining categories and print their proportions
+  for (category in filtered_categories) {
+    cat("  Category:", category, " - Weighted Mean:", round(weighted_mean[category], 4), "\n")
+  }
+}
+
+# Print knot locations of transformed continuous variables
+get_weighted_quantiles("clc_age", weighted_male, c(0.05, 0.35, 0.65, 0.95))
+get_weighted_quantiles("minperweek", weighted_male, c(0.10, 0.50, 0.90))
+get_weighted_quantiles("hwmdbmi", weighted_male, c(0.10, 0.50, 0.90))
+get_weighted_quantiles("whr", weighted_male, c(0.10, 0.50, 0.90))
+
+get_weighted_quantiles("clc_age", weighted_female, c(0.05, 0.35, 0.65, 0.95))
+get_weighted_quantiles("minperweek", weighted_female, c(0.10, 0.50, 0.90))
+get_weighted_quantiles("hwmdbmi", weighted_female, c(0.10, 0.50, 0.90))
+get_weighted_quantiles("whr", weighted_female, c(0.10, 0.50, 0.90))
 ```
 
-### Model presentation - contribution of predictors for observation with Shap
+### Model presentation - Shap plot (full model)
 
 ```{r, warning = FALSE, message = FALSE}
 # Reset male data
@@ -705,7 +801,55 @@ male_shap_values <- iml::Shapley$new(male_explainer, x.interest = observation)
 plot(male_shap_values)
 ```
 
-### Model presentation - Shap-adjusted ORs and CIs
+### Model presentation - Shap plot (reduced model)
+
+```{r}
+# Reset male data
+male_data <- dplyr::filter(imputed_cycles1to6_data, clc_sex == 1)
+
+# Fit final full male model with glm to avoid errors
+male_reduced_model <- glm(highbp14090_adj ~ rcs(clc_age, 4) + fmh_15 + rcs(clc_age, 4)*rcs(whr, 3) + rcs(clc_age, 4)*diabx, family = quasibinomial(), data = male_data, weights = wgt_full)
+
+# Predictors and outcome only
+male_data <- male_data %>% 
+  dplyr::select(clc_age, fmh_15, diabx, whr)
+
+# Create observation as a data frame
+observation <- data.frame(
+  clc_age = 55,         # 55-year old male
+  fmh_15 = 1,           # Family history of hypertension present
+  whr = 0.5,            # WHR = 0.5; Borderline of increased risk
+  diabx = 1             # Diabetes present
+)
+
+# Ensure observation has the same structure and var order as male_data
+observation <- observation[, names(male_data), drop = FALSE]
+
+for (var in names(male_data)) {
+  if (is.factor(male_data[[var]])) {
+    # Convert to factor and ensure levels match male_data
+    observation[[var]] <- factor(observation[[var]], levels = levels(male_data[[var]]))
+  } else {
+    # Convert to numeric for consistency
+    observation[[var]] <- as.numeric(observation[[var]])
+  }
+}
+
+# Create explainer object for model
+male_explainer <- iml::Predictor$new(
+   model = male_reduced_model,                                     # Pass the model
+   data = male_data,                                               # Pass the data
+   y = male_data[["highbp14090_adj"]],                             # Indicate outcome
+   type = "response"                                               # Return predicted probabilities )
+)
+
+# Obtain and plot Shap values for contribution of predictors to observation's predicted outcome
+male_shap_values <- iml::Shapley$new(male_explainer, x.interest = observation)
+
+plot(male_shap_values)
+```
+
+### Model presentation - Shap-adjusted ORs and CIs (full models only)
 
 ```{r, warning = FALSE, message = FALSE}
 # Reset male and female data

@@ -266,9 +266,12 @@ bootstrap_function <- function(data, indices, model) {
 
 # Function to obtain beta coefficients from a model
 extract_beta_coefs <- function(model) {
+  coef_summary <- summary(model)$coefficients  # Extract coefficients and SEs
+  
   data.frame(
-    Variable = names(coef(model)),  # Extract coefficient names
-    Beta = coef(model),
+    Variable = rownames(coef_summary),  # Extract coefficient names
+    Beta = coef_summary[, "Estimate"],  # Extract beta coefficients
+    SE = coef_summary[, "Std. Error"],  # Extract standard errors
     row.names = NULL  # Remove row names
   )
 }
