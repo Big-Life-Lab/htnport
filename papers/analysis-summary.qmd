@@ -524,3 +524,235 @@ for (subgroup in subgroups) {
 # Inspect the results for each subgroup
 female_calibration_results
 ```
+
+### Partial effect plots
+
+```{r, warning = FALSE, message = FALSE}
+# Set data distributions
+male_dd <- datadist(male_data)
+options(datadist = "male_dd")
+
+female_dd <- datadist(female_data)
+options(datadist = "female_dd")
+
+# Fit final full models with lrm to make partial effect plots work
+male_final_model <- rms::lrm(highbp14090_adj ~ rcs(clc_age, 4) + married + edudr04 + working + gendmhi + gen_025 + gen_045 + fmh_15 + rcs(hwmdbmi, 3) + rcs(whr, 3) + low_drink_score1 + rcs(minperweek, 3) + smoke + slp_11 + totalfv + diabx + ckd + rcs(clc_age, 4)*gen_045 + rcs(clc_age, 4)*rcs(hwmdbmi, 3) + rcs(clc_age, 4)*rcs(whr, 3) + rcs(clc_age, 4)*rcs(minperweek, 3) + rcs(clc_age, 4)*smoke + rcs(clc_age, 4)*slp_11 + rcs(clc_age, 4)*diabx + rcs(clc_age, 4)*ckd + rcs(hwmdbmi, 3)*rcs(whr, 3), data = male_data, weights = wgt_full, tol = 1e-13)
+
+female_final_model <- rms::lrm(highbp14090_adj ~ rcs(clc_age, 4) + married + edudr04 + working + gendmhi + gen_025 + gen_045 + fmh_15 + rcs(hwmdbmi, 3) + rcs(whr, 3) + low_drink_score1 + rcs(minperweek, 3) + smoke + slp_11 + totalfv + diabx + ckd + rcs(clc_age, 4)*gen_045 + rcs(clc_age, 4)*rcs(hwmdbmi, 3) + rcs(clc_age, 4)*rcs(whr, 3) + rcs(clc_age, 4)*rcs(minperweek, 3) + rcs(clc_age, 4)*smoke + rcs(clc_age, 4)*slp_11 + rcs(clc_age, 4)*diabx + rcs(clc_age, 4)*ckd + rcs(hwmdbmi, 3)*rcs(whr, 3), data = female_data, weights = wgt_full, tol = 1e-13)
+
+# Generate partial effect plots
+ggplot(Predict(male_final_model))
+ggplot(Predict(female_final_model))
+```
+
+### Beta coefficients for full and reduced models
+
+```{r}
+# Get beta coefficients and their standard errors for full models
+male_full_betas <- extract_beta_coefs(male_final_model)
+female_full_betas <- extract_beta_coefs(female_final_model)
+
+# Get beta coefficients and their standard errors for reduced models
+male_reduced_betas <- extract_beta_coefs(male_reduced_model)
+female_reduced_betas <- extract_beta_coefs(female_reduced_model)
+```
+
+### Shap plot (male full model)
+
+```{r, warning = FALSE, message = FALSE}
+# Reset male data
+male_data <- dplyr::filter(imputed_cycles1to6_data, clc_sex == 1)
+
+# Fit final full male model with glm to avoid errors
+male_final_model <- glm(highbp14090_adj ~ rcs(clc_age, 4) + married + edudr04 + working + gendmhi + gen_025 + gen_045 + fmh_15 + rcs(hwmdbmi, 3) + rcs(whr, 3) + low_drink_score1 + rcs(minperweek, 3) + smoke + slp_11 + totalfv + diabx + ckd + rcs(clc_age, 4)*gen_045 + rcs(clc_age, 4)*rcs(hwmdbmi, 3) + rcs(clc_age, 4)*rcs(whr, 3) + rcs(clc_age, 4)*rcs(minperweek, 3) + rcs(clc_age, 4)*smoke + rcs(clc_age, 4)*slp_11 + rcs(clc_age, 4)*diabx + rcs(clc_age, 4)*ckd + rcs(hwmdbmi, 3)*rcs(whr, 3), family = quasibinomial(), data = male_data, weights = wgt_full)
+
+# Predictors and outcome only
+male_data <- male_data %>% 
+  dplyr::select(recodeflow:::select_vars_by_role(c("Predictor"), my_variables))
+
+# Create observation as a data frame
+observation <- data.frame(
+  clc_age = 55,         # 55-year old male
+  married = 2,          # Divorced
+  edudr04 = 0,          # Post-secondary graduate
+  working = 1,          # Working
+  gendmhi = 0,          # Good, very good, or excellent mental health
+  gen_025 = 1,          # Not at all to a bit stressed
+  gen_045 = 1,          # Strong sense of belonging
+  fmh_15 = 1,           # Family history of hypertension present
+  hwmdbmi = 24,         # BMI = 24; Healthy but close to overweight 
+  whr = 0.5,            # WHR = 0.5; Borderline of increased risk
+  low_drink_score1 = 2, # Former drinker
+  minperweek = 150,     # Exercises 150 min per week (barely meets criteria)
+  smoke = 0,            # Never smoked  
+  slp_11 = 6,           # Sleeps 6 hours per night
+  totalfv = 4,          # Eats fruits and veggies 4 times per day (does not meet criteria)
+  diabx = 1,            # Diabetes present
+  ckd = 0               # Chronic kidney disease absent  
+)
+
+# Ensure observation has the same structure and var order as male_data
+observation <- observation[, names(male_data), drop = FALSE]
+
+for (var in names(male_data)) {
+  if (is.factor(male_data[[var]])) {
+    # Convert to factor and ensure levels match male_data
+    observation[[var]] <- factor(observation[[var]], levels = levels(male_data[[var]]))
+  } else {
+    # Convert to numeric for consistency
+    observation[[var]] <- as.numeric(observation[[var]])
+  }
+}
+
+# Create explainer object for model
+male_explainer <- iml::Predictor$new(
+   model = male_final_model,                                       # Pass the model
+   data = male_data,                                               # Pass the data
+   y = male_data[["highbp14090_adj"]],                             # Indicate outcome
+   type = "response"                                               # Return predicted probabilities )
+)
+
+# Obtain and plot Shap values for contribution of predictors to observation's predicted outcome
+set.seed(123)
+male_shap_values <- iml::Shapley$new(male_explainer, x.interest = observation)
+
+plot(male_shap_values)
+```
+
+### Shap plot (male reduced model)
+
+```{r}
+# Reset male data
+male_data <- dplyr::filter(imputed_cycles1to6_data, clc_sex == 1)
+
+# Fit final full male model with glm to avoid errors
+male_reduced_model <- glm(highbp14090_adj ~ rcs(clc_age, 4) + fmh_15 + rcs(clc_age, 4)*rcs(whr, 3) + rcs(clc_age, 4)*diabx, family = quasibinomial(), data = male_data, weights = wgt_full)
+
+# Predictors and outcome only
+male_data <- male_data %>% 
+  dplyr::select(clc_age, fmh_15, diabx, whr)
+
+# Create observation as a data frame
+observation <- data.frame(
+  clc_age = 55,         # 55-year old male
+  fmh_15 = 1,           # Family history of hypertension present
+  whr = 0.5,            # WHR = 0.5; Borderline of increased risk
+  diabx = 1             # Diabetes present
+)
+
+# Ensure observation has the same structure and var order as male_data
+observation <- observation[, names(male_data), drop = FALSE]
+
+for (var in names(male_data)) {
+  if (is.factor(male_data[[var]])) {
+    # Convert to factor and ensure levels match male_data
+    observation[[var]] <- factor(observation[[var]], levels = levels(male_data[[var]]))
+  } else {
+    # Convert to numeric for consistency
+    observation[[var]] <- as.numeric(observation[[var]])
+  }
+}
+
+# Create explainer object for model
+male_explainer <- iml::Predictor$new(
+   model = male_reduced_model,                                     # Pass the model
+   data = male_data,                                               # Pass the data
+   y = male_data[["highbp14090_adj"]],                             # Indicate outcome
+   type = "response"                                               # Return predicted probabilities )
+)
+
+# Obtain and plot Shap values for contribution of predictors to observation's predicted outcome
+set.seed(123)
+male_shap_values <- iml::Shapley$new(male_explainer, x.interest = observation)
+
+plot(male_shap_values)
+```
+
+### Shap-adjusted ORs and CIs (full models only)
+
+```{r, warning = FALSE, message = FALSE}
+# Reset male and female data
+male_data <- dplyr::filter(imputed_cycles1to6_data, clc_sex == 1)
+female_data <- dplyr::filter(imputed_cycles1to6_data, clc_sex == 2)
+
+# Fit final full models with glm to avoid errors
+male_final_model <- glm(highbp14090_adj ~ rcs(clc_age, 4) + married + edudr04 + working + gendmhi + gen_025 + gen_045 + fmh_15 + rcs(hwmdbmi, 3) + rcs(whr, 3) + low_drink_score1 + rcs(minperweek, 3) + smoke + slp_11 + totalfv + diabx + ckd + rcs(clc_age, 4)*gen_045 + rcs(clc_age, 4)*rcs(hwmdbmi, 3) + rcs(clc_age, 4)*rcs(whr, 3) + rcs(clc_age, 4)*rcs(minperweek, 3) + rcs(clc_age, 4)*smoke + rcs(clc_age, 4)*slp_11 + rcs(clc_age, 4)*diabx + rcs(clc_age, 4)*ckd + rcs(hwmdbmi, 3)*rcs(whr, 3), data = male_data, family = binomial(), weights = wgt_full)
+
+female_final_model <- glm(highbp14090_adj ~ rcs(clc_age, 4) + married + edudr04 + working + gendmhi + gen_025 + gen_045 + fmh_15 + rcs(hwmdbmi, 3) + rcs(whr, 3) + low_drink_score1 + rcs(minperweek, 3) + smoke + slp_11 + totalfv + diabx + ckd + rcs(clc_age, 4)*gen_045 + rcs(clc_age, 4)*rcs(hwmdbmi, 3) + rcs(clc_age, 4)*rcs(whr, 3) + rcs(clc_age, 4)*rcs(minperweek, 3) + rcs(clc_age, 4)*smoke + rcs(clc_age, 4)*slp_11 + rcs(clc_age, 4)*diabx + rcs(clc_age, 4)*ckd + rcs(hwmdbmi, 3)*rcs(whr, 3), data = female_data, family = binomial(), weights = wgt_full)
+
+# Male model
+# Predictors and outcome only
+male_data <- male_data %>% 
+  dplyr::select(c(highbp14090_adj, recodeflow:::select_vars_by_role(c("Predictor"), my_variables)))
+
+# Create explainer object for model
+male_explainer <- iml::Predictor$new(
+   model = male_final_model,                                       # Pass the model
+   data = male_data,                                               # Pass the data
+   y = male_data[["highbp14090_adj"]],                             # Indicate outcome
+   type = "response"                                               # Return predicted probabilities )
+)
+
+# Initialize a list to store SHAP values
+male_shap_list <- list()
+
+# Generate Shap values for each row in male_data
+for (i in 1:nrow(male_data)) {
+    # Ensure observation remains a data frame
+    observation <- male_data[i, , drop = FALSE]  
+    
+    # Generate SHAP values
+    male_shap_values <- iml::Shapley$new(male_explainer, x.interest = observation)
+    
+    # Store results in the list
+    male_shap_list[[i]] <- male_shap_values$results
+}
+
+# Convert list into a data frame for easier manipulation
+all_male_shap_values <- do.call(rbind, male_shap_list)
+
+# Loop through all predictors and print their S-OR and CI
+predictors <- recodeflow:::select_vars_by_role(c("Predictor"), my_variables)
+
+for (pred in predictors) {
+  print(calculate_shap_or_ci(all_male_shap_values, pred))
+}
+
+# Female model
+# Predictors and outcome only
+female_data <- female_data %>% 
+  dplyr::select(c(highbp14090_adj, recodeflow:::select_vars_by_role(c("Predictor"), my_variables)))
+
+# Create explainer object for model
+female_explainer <- iml::Predictor$new(
+   model = female_final_model,                                       # Pass the model
+   data = female_data,                                               # Pass the data
+   y = female_data[["highbp14090_adj"]],                             # Indicate outcome
+   type = "response"                                               # Return predicted probabilities )
+)
+
+# Initialize a list to store SHAP values
+female_shap_list <- list()
+
+# Generate Shap values for each row in female_data
+for (i in 1:nrow(female_data)) {
+    # Ensure observation remains a data frame
+    observation <- female_data[i, , drop = FALSE]  
+    
+    # Generate SHAP values
+    female_shap_values <- iml::Shapley$new(female_explainer, x.interest = observation)
+    
+    # Store results in the list
+    female_shap_list[[i]] <- female_shap_values$results
+}
+
+# Convert list into a data frame for easier manipulation
+all_female_shap_values <- do.call(rbind, female_shap_list)
+
+# Loop through all predictors and print their S-OR and CI
+predictors <- recodeflow:::select_vars_by_role(c("Predictor"), my_variables)
+
+for (pred in predictors) {
+  print(calculate_shap_or_ci(all_female_shap_values, pred))
+}
+```

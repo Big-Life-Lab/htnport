@@ -321,11 +321,32 @@ calculate_simplified_vif(design = simple_weighted_female)
 # female_model <- survey::svyglm(highbp14090_adj ~ rcs(clc_age, 4) + married + edudr04 + working + gendmhi + gen_025 + gen_045 + fmh_15 +  rcs(hwmdbmi, 3) + low_drink_score1 + rcs(minperweek, 3) + smoke + slp_11 + totalfv + diabx + ckd + rcs(clc_age, 4)*gen_045 + rcs(clc_age, 4)*rcs(hwmdbmi, 3) + rcs(clc_age, 4)*rcs(minperweek, 3) + rcs(clc_age, 4)*smoke + rcs(clc_age, 4)*slp_11 + rcs(clc_age, 4)*diabx + rcs(clc_age, 4)*ckd, design = weighted_female, family = quasibinomial())
 
 # Linearity assessment for slp_11 and totalfv
-plot(male_data$slp_11, male_model$fitted.values, xlab = "Hours slept per night", ylab = "Male model fitted values") 
-plot(male_data$totalfv, male_model$fitted.values, xlab = "Times per day produce consumed", ylab = "Male model fitted values") 
+male_logit <- log(male_model$fitted.values / (1 - male_model$fitted.values))
+female_logit <- log(female_model$fitted.values / (1 - female_model$fitted.values))
 
-plot(female_data$slp_11, female_model$fitted.values, xlab = "Hours slept per night", ylab = "Female model fitted values") 
-plot(female_data$totalfv, female_model$fitted.values, xlab = "Times per day produce consumed", ylab = "Female model fitted values")
+plot(male_data$slp_11, male_logit, 
+     xlab = "Hours slept per night", 
+     ylab = "Male model log-odds", 
+     pch = 16, cex = 0.5)
+lines(lowess(male_data$slp_11, male_logit), col = "blue", lwd = 2)
+
+plot(male_data$totalfv, male_logit, 
+     xlab = "Times per day produce consumed", 
+     ylab = "Male model log-odds", 
+     pch = 16, cex = 0.5)
+lines(lowess(male_data$totalfv, male_logit), col = "blue", lwd = 2)
+
+plot(female_data$slp_11, female_logit, 
+     xlab = "Hours slept per night", 
+     ylab = "Female model log-odds", 
+     pch = 16, cex = 0.5)
+lines(lowess(female_data$slp_11, female_logit), col = "blue", lwd = 2)
+
+plot(female_data$totalfv, female_logit, 
+     xlab = "Times per day produce consumed", 
+     ylab = "Female model log-odds", 
+     pch = 16, cex = 0.5)
+lines(lowess(female_data$totalfv, female_logit), col = "blue", lwd = 2)
 ```
 
 ### Model specification
@@ -608,7 +629,7 @@ for (subgroup in subgroups) {
 female_calibration_results
 ```
 
-### Model presentation - partial effect plots
+### Partial effect plots
 
 ```{r, warning = FALSE, message = FALSE}
 # Set data distributions
@@ -623,19 +644,19 @@ male_final_model <- rms::lrm(highbp14090_adj ~ rcs(clc_age, 4) + married + edudr
 
 female_final_model <- rms::lrm(highbp14090_adj ~ rcs(clc_age, 4) + married + edudr04 + working + gendmhi + gen_025 + gen_045 + fmh_15 + rcs(hwmdbmi, 3) + rcs(whr, 3) + low_drink_score1 + rcs(minperweek, 3) + smoke + slp_11 + totalfv + diabx + ckd + rcs(clc_age, 4)*gen_045 + rcs(clc_age, 4)*rcs(hwmdbmi, 3) + rcs(clc_age, 4)*rcs(whr, 3) + rcs(clc_age, 4)*rcs(minperweek, 3) + rcs(clc_age, 4)*smoke + rcs(clc_age, 4)*slp_11 + rcs(clc_age, 4)*diabx + rcs(clc_age, 4)*ckd + rcs(hwmdbmi, 3)*rcs(whr, 3), data = female_data, weights = wgt_full, tol = 1e-13)
 
-# Partial effect plots
+# Generate partial effect plots
 ggplot(Predict(male_final_model))
 ggplot(Predict(female_final_model))
 ```
 
-### Model presentation - parameters
+### Model parameters
 
 ```{r, warning = FALSE, message = FALSE}
-# Get beta coefficients for final models
+# Get beta coefficients and their standard errors for full models
 male_full_betas <- extract_beta_coefs(male_final_model)
 female_full_betas <- extract_beta_coefs(female_final_model)
 
-# Get beta coefficients for final models
+# Get beta coefficients and their standard errors for reduced models
 male_reduced_betas <- extract_beta_coefs(male_reduced_model)
 female_reduced_betas <- extract_beta_coefs(female_reduced_model)
 
@@ -740,7 +761,7 @@ get_weighted_quantiles("hwmdbmi", weighted_female, c(0.10, 0.50, 0.90))
 get_weighted_quantiles("whr", weighted_female, c(0.10, 0.50, 0.90))
 ```
 
-### Model presentation - Shap plot (full model)
+### Shap plot (male full model)
 
 ```{r, warning = FALSE, message = FALSE}
 # Reset male data
@@ -796,12 +817,13 @@ male_explainer <- iml::Predictor$new(
 )
 
 # Obtain and plot Shap values for contribution of predictors to observation's predicted outcome
+set.seed(123)
 male_shap_values <- iml::Shapley$new(male_explainer, x.interest = observation)
 
 plot(male_shap_values)
 ```
 
-### Model presentation - Shap plot (reduced model)
+### Shap plot (male reduced model)
 
 ```{r}
 # Reset male data
@@ -844,12 +866,13 @@ male_explainer <- iml::Predictor$new(
 )
 
 # Obtain and plot Shap values for contribution of predictors to observation's predicted outcome
+set.seed(123)
 male_shap_values <- iml::Shapley$new(male_explainer, x.interest = observation)
 
 plot(male_shap_values)
 ```
 
-### Model presentation - Shap-adjusted ORs and CIs (full models only)
+### Shap-adjusted ORs and CIs (full models only)
 
 ```{r, warning = FALSE, message = FALSE}
 # Reset male and female data
