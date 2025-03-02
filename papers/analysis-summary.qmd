@@ -190,7 +190,7 @@ weighted_male <- male_data %>%
 
 weighted_male$degf <- 68
 
-# female_data <- male_data %>%
+# female_data <- female_data %>%
 #   dplyr::mutate(wgt_full = wgt_full / sum(wgt_full))
 
 female_replicate_weights <- female_data %>%
@@ -687,7 +687,7 @@ female_data <- dplyr::filter(imputed_cycles1to6_data, clc_sex == 2)
 
 # male_data <- male_data %>%
 #   dplyr::mutate(wgt_full = wgt_full / sum(wgt_full))
-# female_data <- male_data %>%
+# female_data <- female_data %>%
 #   dplyr::mutate(wgt_full = wgt_full / sum(wgt_full))
 
 # Fit final full models with glm to avoid errors
