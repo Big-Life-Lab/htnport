@@ -182,7 +182,7 @@ imputed_cycles1to6_data <- dplyr::left_join(imputed_cycles1to6_data, cycles1to6_
 #   ccc_32 = sample(1:2, 1000, replace = TRUE), # Binary
 #   cardiov = sample(1:2, 1000, replace = TRUE), # Binary
 #   adj_hh_inc = runif(1000, 20000, 150000), # Numeric income
-#   agegroup4 = sample(c("xx", "xx", "xx", "xx"), 1000, replace = TRUE), # FIXED ROW COUNT
+#   agegroup4 = sample(1:4, 1000, replace = TRUE), # Age group
 #   alcdwky = sample(0:84, 1000, replace = TRUE), # Integer alcohol consumption per week
 #   bmigroup = sample(1:4, 1000, replace = TRUE), # Categorical BMI group
 #   gendhdi = sample(0:4, 1000, replace = TRUE), # Categorical health-disease index
@@ -241,8 +241,8 @@ male_data <- dplyr::filter(imputed_cycles1to6_data, clc_sex == 1)
 female_data <- dplyr::filter(imputed_cycles1to6_data, clc_sex == 2)
 
 # Apply survey weights to male and female data
-# male_data <- male_data %>%
-#   dplyr::mutate(wgt_full = wgt_full / sum(wgt_full))
+male_data <- male_data %>%
+  dplyr::mutate(wgt_full = wgt_full / mean(wgt_full))
 
 male_replicate_weights <- male_data %>%
   dplyr::select(dplyr::starts_with("bsw")) %>%
@@ -257,8 +257,8 @@ weighted_male <- male_data %>%
 
 weighted_male$degf <- 68
 
-# female_data <- female_data %>%
-#   dplyr::mutate(wgt_full = wgt_full / sum(wgt_full))
+female_data <- female_data %>%
+  dplyr::mutate(wgt_full = wgt_full / mean(wgt_full))
 
 female_replicate_weights <- female_data %>%
   dplyr::select(dplyr::starts_with("bsw")) %>%
@@ -322,8 +322,8 @@ simple_weighted_female <- survey::svydesign(
 calculate_simplified_vif(design = simple_weighted_male)
 calculate_simplified_vif(design = simple_weighted_female)
 
-# Refit male and female models without whr if high collinearity detected
-# male_model <- survey::svyglm(highbp14090_adj ~ rcs(clc_age, 4) + married + edudr04 + working + gendmhi + gen_025 + gen_045 + fmh_15 +  rcs(hwmdbmi, 3) + low_drink_score1 + rcs(minperweek, 3) + smoke + slp_11 + totalfv + diabx + ckd + rcs(clc_age, 4)*gen_045 + rcs(clc_age, 4)*rcs(hwmdbmi, 3) + rcs(clc_age, 4)*rcs(minperweek, 3) + rcs(clc_age, 4)*smoke + rcs(clc_age, 4)*slp_11 + rcs(clc_age, 4)*diabx + rcs(clc_age, 4)*ckd, design = weighted_male, family = quasibinomial())
+# Refit male and female models without BMI and WHR, respectively, if high collinearity detected
+# male_model <- survey::svyglm(highbp14090_adj ~ rcs(clc_age, 4) + married + edudr04 + working + gendmhi + gen_025 + gen_045 + fmh_15 +  rcs(whr, 3) + low_drink_score1 + rcs(minperweek, 3) + smoke + slp_11 + totalfv + diabx + ckd + rcs(clc_age, 4)*gen_045 + rcs(clc_age, 4)*rcs(whr, 3) + rcs(clc_age, 4)*rcs(minperweek, 3) + rcs(clc_age, 4)*smoke + rcs(clc_age, 4)*slp_11 + rcs(clc_age, 4)*diabx + rcs(clc_age, 4)*ckd, design = weighted_male, family = quasibinomial())
 # 
 # female_model <- survey::svyglm(highbp14090_adj ~ rcs(clc_age, 4) + married + edudr04 + working + gendmhi + gen_025 + gen_045 + fmh_15 +  rcs(hwmdbmi, 3) + low_drink_score1 + rcs(minperweek, 3) + smoke + slp_11 + totalfv + diabx + ckd + rcs(clc_age, 4)*gen_045 + rcs(clc_age, 4)*rcs(hwmdbmi, 3) + rcs(clc_age, 4)*rcs(minperweek, 3) + rcs(clc_age, 4)*smoke + rcs(clc_age, 4)*slp_11 + rcs(clc_age, 4)*diabx + rcs(clc_age, 4)*ckd, design = weighted_female, family = quasibinomial())
 
@@ -660,8 +660,8 @@ ggplot(Predict(female_final_model))
 
 ```{r, warning = FALSE, message = FALSE}
 # Get beta coefficients and their standard errors for full models
-male_full_betas <- extract_beta_coefs(male_final_model)
-female_full_betas <- extract_beta_coefs(female_final_model)
+male_full_betas <- extract_beta_coefs(male_model)
+female_full_betas <- extract_beta_coefs(female_model)
 
 # Get beta coefficients and their standard errors for reduced models
 male_reduced_betas <- extract_beta_coefs(male_reduced_model)
@@ -773,8 +773,8 @@ get_weighted_quantiles("whr", weighted_female, c(0.10, 0.50, 0.90))
 ```{r, warning = FALSE, message = FALSE}
 # Reset male data
 male_data <- dplyr::filter(imputed_cycles1to6_data, clc_sex == 1)
-# male_data <- male_data %>%
-#   dplyr::mutate(wgt_full = wgt_full / sum(wgt_full))
+male_data <- male_data %>%
+  dplyr::mutate(wgt_full = wgt_full / mean(wgt_full))
 
 # Fit final full male model with glm to avoid errors
 male_final_model <- glm(highbp14090_adj ~ rcs(clc_age, 4) + married + edudr04 + working + gendmhi + gen_025 + gen_045 + fmh_15 + rcs(hwmdbmi, 3) + rcs(whr, 3) + low_drink_score1 + rcs(minperweek, 3) + smoke + slp_11 + totalfv + diabx + ckd + rcs(clc_age, 4)*gen_045 + rcs(clc_age, 4)*rcs(hwmdbmi, 3) + rcs(clc_age, 4)*rcs(whr, 3) + rcs(clc_age, 4)*rcs(minperweek, 3) + rcs(clc_age, 4)*smoke + rcs(clc_age, 4)*slp_11 + rcs(clc_age, 4)*diabx + rcs(clc_age, 4)*ckd + rcs(hwmdbmi, 3)*rcs(whr, 3), family = quasibinomial(), data = male_data, weights = wgt_full)
@@ -785,22 +785,22 @@ male_data <- male_data %>%
 
 # Create observation as a data frame
 observation <- data.frame(
-  clc_age = 55,         # 55-year old male
-  married = 2,          # Divorced
+  clc_age = 24,         # 24-year old male
+  married = 3,          # Single
   edudr04 = 0,          # Post-secondary graduate
-  working = 1,          # Working
+  working = 2,          # Not working
   gendmhi = 0,          # Good, very good, or excellent mental health
   gen_025 = 1,          # Not at all to a bit stressed
   gen_045 = 1,          # Strong sense of belonging
   fmh_15 = 1,           # Family history of hypertension present
-  hwmdbmi = 24,         # BMI = 24; Healthy but close to overweight 
-  whr = 0.5,            # WHR = 0.5; Borderline of increased risk
-  low_drink_score1 = 2, # Former drinker
-  minperweek = 150,     # Exercises 150 min per week (barely meets criteria)
+  hwmdbmi = 19.6,       # BMI = 19.6; Healthy
+  whr = 0.47,           # WHR = 0.47; Healthy
+  low_drink_score1 = 1, # Never drinker
+  minperweek = 30,      # Exercises 30 min per week; does not meet criteria
   smoke = 0,            # Never smoked  
-  slp_11 = 6,           # Sleeps 6 hours per night
-  totalfv = 4,          # Eats fruits and veggies 4 times per day (does not meet criteria)
-  diabx = 1,            # Diabetes present
+  slp_11 = 7,           # Sleeps 7 hours per night
+  totalfv = 5,          # Eats fruits and veggies 5 times per day; meets criteria
+  diabx = 0,            # Diabetes absent
   ckd = 0               # Chronic kidney disease absent  
 )
 
@@ -826,7 +826,6 @@ male_explainer <- iml::Predictor$new(
 )
 
 # Obtain and plot Shap values for contribution of predictors to observation's predicted outcome
-set.seed(123)
 male_shap_values <- iml::Shapley$new(male_explainer, x.interest = observation)
 
 plot(male_shap_values)
@@ -837,11 +836,11 @@ plot(male_shap_values)
 ```{r}
 # Reset male data
 male_data <- dplyr::filter(imputed_cycles1to6_data, clc_sex == 1)
-# male_data <- male_data %>%
-#   dplyr::mutate(wgt_full = wgt_full / sum(wgt_full))
+male_data <- male_data %>%
+  dplyr::mutate(wgt_full = wgt_full / mean(wgt_full))
 
-# Fit final full male model with glm to avoid errors
-male_reduced_model <- glm(highbp14090_adj ~ rcs(clc_age, 4) + fmh_15 + rcs(clc_age, 4)*rcs(whr, 3) + rcs(clc_age, 4)*diabx, family = quasibinomial(), data = male_data, weights = wgt_full)
+# Fit final reduced male model with glm to avoid errors
+male_final_reduced_model <- glm(highbp14090_adj ~ rcs(clc_age, 4) + fmh_15 + rcs(clc_age, 4)*rcs(whr, 3) + rcs(clc_age, 4)*diabx, family = quasibinomial(), data = male_data, weights = wgt_full)
 
 # Predictors and outcome only
 male_data <- male_data %>% 
@@ -849,10 +848,10 @@ male_data <- male_data %>%
 
 # Create observation as a data frame
 observation <- data.frame(
-  clc_age = 55,         # 55-year old male
+  clc_age = 24,         # 24-year old male
   fmh_15 = 1,           # Family history of hypertension present
-  whr = 0.5,            # WHR = 0.5; Borderline of increased risk
-  diabx = 1             # Diabetes present
+  whr = 0.47,           # WHR = 0.47; Healthy
+  diabx = 0             # Diabetes absent
 )
 
 # Ensure observation has the same structure and var order as male_data
@@ -870,7 +869,7 @@ for (var in names(male_data)) {
 
 # Create explainer object for model
 male_explainer <- iml::Predictor$new(
-   model = male_reduced_model,                                     # Pass the model
+   model = male_final_reduced_model,                               # Pass the model
    data = male_data,                                               # Pass the data
    y = male_data[["highbp14090_adj"]],                             # Indicate outcome
    type = "response"                                               # Return predicted probabilities )
@@ -890,10 +889,10 @@ plot(male_shap_values)
 male_data <- dplyr::filter(imputed_cycles1to6_data, clc_sex == 1)
 female_data <- dplyr::filter(imputed_cycles1to6_data, clc_sex == 2)
 
-# male_data <- male_data %>%
-#   dplyr::mutate(wgt_full = wgt_full / sum(wgt_full))
-# female_data <- female_data %>%
-#   dplyr::mutate(wgt_full = wgt_full / sum(wgt_full))
+male_data <- male_data %>%
+  dplyr::mutate(wgt_full = wgt_full / mean(wgt_full))
+female_data <- female_data %>%
+  dplyr::mutate(wgt_full = wgt_full / mean(wgt_full))
 
 # Fit final full models with glm to avoid errors
 male_final_model <- glm(highbp14090_adj ~ rcs(clc_age, 4) + married + edudr04 + working + gendmhi + gen_025 + gen_045 + fmh_15 + rcs(hwmdbmi, 3) + rcs(whr, 3) + low_drink_score1 + rcs(minperweek, 3) + smoke + slp_11 + totalfv + diabx + ckd + rcs(clc_age, 4)*gen_045 + rcs(clc_age, 4)*rcs(hwmdbmi, 3) + rcs(clc_age, 4)*rcs(whr, 3) + rcs(clc_age, 4)*rcs(minperweek, 3) + rcs(clc_age, 4)*smoke + rcs(clc_age, 4)*slp_11 + rcs(clc_age, 4)*diabx + rcs(clc_age, 4)*ckd + rcs(hwmdbmi, 3)*rcs(whr, 3), data = male_data, family = binomial(), weights = wgt_full)
