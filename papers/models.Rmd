@@ -779,7 +779,7 @@ male_data <- male_data %>%
 # Fit final full male model with glm to avoid errors
 male_final_model <- glm(highbp14090_adj ~ rcs(clc_age, 4) + married + edudr04 + working + gendmhi + gen_025 + gen_045 + fmh_15 + rcs(hwmdbmi, 3) + rcs(whr, 3) + low_drink_score1 + rcs(minperweek, 3) + smoke + slp_11 + totalfv + diabx + ckd + rcs(clc_age, 4)*gen_045 + rcs(clc_age, 4)*rcs(hwmdbmi, 3) + rcs(clc_age, 4)*rcs(whr, 3) + rcs(clc_age, 4)*rcs(minperweek, 3) + rcs(clc_age, 4)*smoke + rcs(clc_age, 4)*slp_11 + rcs(clc_age, 4)*diabx + rcs(clc_age, 4)*ckd + rcs(hwmdbmi, 3)*rcs(whr, 3), family = quasibinomial(), data = male_data, weights = wgt_full)
 
-# Predictors and outcome only
+# Predictors only
 male_data <- male_data %>% 
   dplyr::select(recodeflow:::select_vars_by_role(c("Predictor"), my_variables))
 
@@ -842,7 +842,7 @@ male_data <- male_data %>%
 # Fit final reduced male model with glm to avoid errors
 male_final_reduced_model <- glm(highbp14090_adj ~ rcs(clc_age, 4) + fmh_15 + rcs(clc_age, 4)*rcs(whr, 3) + rcs(clc_age, 4)*diabx, family = quasibinomial(), data = male_data, weights = wgt_full)
 
-# Predictors and outcome only
+# Predictors only
 male_data <- male_data %>% 
   dplyr::select(clc_age, fmh_15, diabx, whr)
 
@@ -900,9 +900,9 @@ male_final_model <- glm(highbp14090_adj ~ rcs(clc_age, 4) + married + edudr04 + 
 female_final_model <- glm(highbp14090_adj ~ rcs(clc_age, 4) + married + edudr04 + working + gendmhi + gen_025 + gen_045 + fmh_15 + rcs(hwmdbmi, 3) + rcs(whr, 3) + low_drink_score1 + rcs(minperweek, 3) + smoke + slp_11 + totalfv + diabx + ckd + rcs(clc_age, 4)*gen_045 + rcs(clc_age, 4)*rcs(hwmdbmi, 3) + rcs(clc_age, 4)*rcs(whr, 3) + rcs(clc_age, 4)*rcs(minperweek, 3) + rcs(clc_age, 4)*smoke + rcs(clc_age, 4)*slp_11 + rcs(clc_age, 4)*diabx + rcs(clc_age, 4)*ckd + rcs(hwmdbmi, 3)*rcs(whr, 3), data = female_data, family = binomial(), weights = wgt_full)
 
 # Male model
-# Predictors and outcome only
+# Predictors only
 male_data <- male_data %>% 
-  dplyr::select(c(highbp14090_adj, recodeflow:::select_vars_by_role(c("Predictor"), my_variables)))
+  dplyr::select(recodeflow:::select_vars_by_role(c("Predictor"), my_variables))
 
 # Create explainer object for model
 male_explainer <- iml::Predictor$new(
@@ -938,9 +938,9 @@ for (pred in predictors) {
 }
 
 # Female model
-# Predictors and outcome only
+# Predictors only
 female_data <- female_data %>% 
-  dplyr::select(c(highbp14090_adj, recodeflow:::select_vars_by_role(c("Predictor"), my_variables)))
+  dplyr::select(recodeflow:::select_vars_by_role(c("Predictor"), my_variables))
 
 # Create explainer object for model
 female_explainer <- iml::Predictor$new(
