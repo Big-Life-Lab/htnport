@@ -589,7 +589,7 @@ observation <- data.frame(
   gen_045 = 1,          # Strong sense of belonging
   fmh_15 = 1,           # Family history of hypertension present
   hwmdbmi = 19.6,       # BMI = 19.6; Healthy
-  whr = 0.47,           # WHR = 0.47; Healthy
+  whr = 47,             # WHR = 47%; Healthy
   low_drink_score1 = 1, # Never drinker
   minperweek = 30,      # Exercises 30 min per week; does not meet criteria
   smoke = 0,            # Never smoked  
@@ -620,9 +620,13 @@ male_explainer <- iml::Predictor$new(
    type = "response"                                               # Return predicted probabilities )
 )
 
-# Obtain and plot Shap values for contribution of predictors to observation's predicted outcome
+# Compute and plot SHAP values
 set.seed(123)
 male_shap_values <- iml::Shapley$new(male_explainer, x.interest = observation)
+
+as.data.frame(male_shap_values$results) %>%
+  arrange(desc(phi)) %>%
+  select(phi, feature.value)
 
 plot(male_shap_values)
 ```
@@ -646,7 +650,7 @@ male_data <- male_data %>%
 observation <- data.frame(
   clc_age = 24,         # 24-year old male
   fmh_15 = 1,           # Family history of hypertension present
-  whr = 0.47,           # WHR = 0.47; Healthy
+  whr = 47,             # WHR = 47%; Healthy
   diabx = 0             # Diabetes absent
 )
 
@@ -671,9 +675,13 @@ male_explainer <- iml::Predictor$new(
    type = "response"                                               # Return predicted probabilities )
 )
 
-# Obtain and plot Shap values for contribution of predictors to observation's predicted outcome
+# Compute and plot SHAP values
 set.seed(123)
 male_shap_values <- iml::Shapley$new(male_explainer, x.interest = observation)
+
+as.data.frame(male_shap_values$results) %>%
+  arrange(desc(phi)) %>%
+  select(phi, feature.value)
 
 plot(male_shap_values)
 ```

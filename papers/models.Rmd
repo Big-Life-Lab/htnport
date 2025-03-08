@@ -174,7 +174,7 @@ imputed_cycles1to6_data <- dplyr::left_join(imputed_cycles1to6_data, cycles1to6_
 #   hwmdbmi = runif(1000, 18, 40), # Continuous
 #   minperweek = runif(1000, 0, 2000), # Continuous
 #   totalfv = runif(1000, 0, 10), # Continuous
-#   whr = runif(1000, 0.5, 1.5), # Continuous
+#   whr = runif(1000, 25, 100), # Continuous
 #   slp_11 = runif(1000, 4, 12), # Continuous
 #   diabx = sample(1:2, 1000, replace = TRUE), # Binary
 #   cycle = sample(1:6, 1000, replace = TRUE), # Cycle variable ranging from 1 to 6
@@ -794,7 +794,7 @@ observation <- data.frame(
   gen_045 = 1,          # Strong sense of belonging
   fmh_15 = 1,           # Family history of hypertension present
   hwmdbmi = 19.6,       # BMI = 19.6; Healthy
-  whr = 0.47,           # WHR = 0.47; Healthy
+  whr = 47,             # WHR = 47%; Healthy
   low_drink_score1 = 1, # Never drinker
   minperweek = 30,      # Exercises 30 min per week; does not meet criteria
   smoke = 0,            # Never smoked  
@@ -825,8 +825,13 @@ male_explainer <- iml::Predictor$new(
    type = "response"                                               # Return predicted probabilities )
 )
 
-# Obtain and plot Shap values for contribution of predictors to observation's predicted outcome
+# Compute and plot SHAP values
+set.seed(123)
 male_shap_values <- iml::Shapley$new(male_explainer, x.interest = observation)
+
+as.data.frame(male_shap_values$results) %>%
+  arrange(desc(phi)) %>%
+  select(phi, feature.value)
 
 plot(male_shap_values)
 ```
@@ -850,7 +855,7 @@ male_data <- male_data %>%
 observation <- data.frame(
   clc_age = 24,         # 24-year old male
   fmh_15 = 1,           # Family history of hypertension present
-  whr = 0.47,           # WHR = 0.47; Healthy
+  whr = 47,             # WHR = 47%; Healthy
   diabx = 0             # Diabetes absent
 )
 
@@ -875,9 +880,13 @@ male_explainer <- iml::Predictor$new(
    type = "response"                                               # Return predicted probabilities )
 )
 
-# Obtain and plot Shap values for contribution of predictors to observation's predicted outcome
+# Compute and plot SHAP values
 set.seed(123)
 male_shap_values <- iml::Shapley$new(male_explainer, x.interest = observation)
+
+as.data.frame(male_shap_values$results) %>%
+  arrange(desc(phi)) %>%
+  select(phi, feature.value)
 
 plot(male_shap_values)
 ```
