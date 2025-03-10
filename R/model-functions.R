@@ -293,7 +293,7 @@ calculate_shap_or_ci <- function(shap_values_df, predictor) {
     ref_shap <- shap_filtered %>% filter(feature.value == ref_category)
     
     ref_mean <- mean(ref_shap$phi)
-    ref_se <- sqrt(mean(ref_shap$phi.var) / nrow(ref_shap))
+    ref_se <- sd(ref_shap$phi) / sqrt(nrow(ref_shap))
     
     results <- list()
     
@@ -301,7 +301,7 @@ calculate_shap_or_ci <- function(shap_values_df, predictor) {
       cat_shap <- shap_filtered %>% filter(feature.value == cat)
       
       cat_mean <- mean(cat_shap$phi)
-      cat_se <- sqrt(mean(cat_shap$phi.var) / nrow(cat_shap))
+      cat_se <- sd(cat_shap$phi) / sqrt(nrow(cat_shap))
       
       # Compute mean difference (non-ref - ref)
       mean_diff <- cat_mean - ref_mean
@@ -322,7 +322,7 @@ calculate_shap_or_ci <- function(shap_values_df, predictor) {
   } else {
     # Handle continuous variables
     mean_shap <- mean(shap_filtered$phi)
-    se_shap <- sqrt(mean(shap_filtered$phi.var) / nrow(shap_filtered))
+    se_shap <- sd(shap_filtered$phi) / sqrt(nrow(shap_filtered))
     
     # Compute S-OR
     S_OR <- exp(mean_shap)
@@ -336,6 +336,6 @@ calculate_shap_or_ci <- function(shap_values_df, predictor) {
     result[[predictor]] <- list(S_OR = S_OR, CI = c(lower_bound_or, upper_bound_or))
     
     return(result)
-
+    
   }
 }

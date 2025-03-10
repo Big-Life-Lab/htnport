@@ -917,11 +917,11 @@ male_data <- male_data %>%
 male_explainer <- iml::Predictor$new(
    model = male_final_model,                                       # Pass the model
    data = male_data,                                               # Pass the data
-   y = male_data[["highbp14090_adj"]],                             # Indicate outcome
-   type = "response"                                               # Return predicted probabilities )
+   y = male_data[["highbp14090_adj"]]                              # Indicate outcome
 )
 
 # Initialize a list to store SHAP values
+set.seed(123)
 male_shap_list <- list()
 
 # Generate Shap values for each row in male_data
@@ -953,13 +953,14 @@ female_data <- female_data %>%
 
 # Create explainer object for model
 female_explainer <- iml::Predictor$new(
-   model = female_final_model,                                       # Pass the model
-   data = female_data,                                               # Pass the data
-   y = female_data[["highbp14090_adj"]],                             # Indicate outcome
-   type = "response"                                               # Return predicted probabilities )
+   model = female_final_model,                                      # Pass the model
+   data = female_data,                                              # Pass the data
+   y = female_data[["highbp14090_adj"]]                             # Indicate outcome
+  
 )
 
 # Initialize a list to store SHAP values
+set.seed(123)
 female_shap_list <- list()
 
 # Generate Shap values for each row in female_data
