@@ -278,6 +278,16 @@ extract_beta_coefs <- function(model) {
 
 # Function to calculate Shap-adjusted ORs and CIs
 calculate_shap_or_ci <- function(shap_values_df, predictor) {
+  # Define custom cutoffs for continuous variables
+  cutoffs <- list(
+    clc_age = c(-Inf, 40, 60, 70, Inf),  # 20-39, 40-59, 60-69, 70-79
+    hwmdbmi = c(-Inf, 18.5, 25, 30, Inf),  # <18.5, 18.5-<25, 25-<30, >=30
+    whr = c(-Inf, 0.5, 0.6, Inf),  # <0.5, 0.5-<0.6, >=0.6
+    minperweek = c(-Inf, 150, Inf),  # <150, >=150
+    totalfv = c(-Inf, 5, Inf),  # <5, >=5
+    slp_11 = c(-Inf, 7, Inf)  # <7, >=7
+  )
+  
   # Filter SHAP values for the predictor
   shap_filtered <- shap_values_df %>% filter(feature == predictor)
   
@@ -287,7 +297,51 @@ calculate_shap_or_ci <- function(shap_values_df, predictor) {
   
   unique_values <- sort(unique(shap_filtered$feature.value))
   
-  if (length(unique_values) > 1 && length(unique_values) <= 4) {
+  # Check if the variable has predefined cutoffs
+  if (predictor %in% names(cutoffs)) {
+    # Categorize the continuous variable using its specified cutoffs
+    shap_filtered <- shap_filtered %>%
+      mutate(shap_category = cut(as.numeric(as.character(sub(".*=", "", feature.value))), 
+                                 breaks = cutoffs[[predictor]], 
+                                 labels = FALSE, include.lowest = TRUE, right = FALSE))
+    
+    # Set reference category
+    if (predictor %in% c("hwmdbmi", "minperweek", "totalfv", "slp_11")) {
+      ref_category <- 2  # Set second category as reference
+    } else {
+      ref_category <- min(shap_filtered$shap_category)  # Default: lowest category
+    }
+    
+    ref_shap <- shap_filtered %>% filter(shap_category == ref_category)
+    
+    ref_mean <- mean(ref_shap$phi)
+    ref_se <- sd(ref_shap$phi) / sqrt(nrow(ref_shap))
+    
+    results <- list()
+    
+    for (cat in sort(unique(shap_filtered$shap_category)[unique(shap_filtered$shap_category) != ref_category])) {
+      cat_shap <- shap_filtered %>% filter(shap_category == cat)
+      
+      cat_mean <- mean(cat_shap$phi)
+      cat_se <- sd(cat_shap$phi) / sqrt(nrow(cat_shap))
+      
+      # Compute mean difference (non-ref - ref)
+      mean_diff <- cat_mean - ref_mean
+      
+      # Compute standard error of the mean difference
+      se_diff <- sqrt(ref_se^2 + cat_se^2)
+      
+      # Compute S-OR and confidence interval
+      S_OR <- exp(mean_diff)
+      lower_bound_or <- exp(mean_diff - 1.96 * se_diff)
+      upper_bound_or <- exp(mean_diff + 1.96 * se_diff)
+      
+      # Use "predictor=category" as the key
+      results[[paste0(predictor, "=", cat)]] <- list(S_OR = S_OR, CI = c(lower_bound_or, upper_bound_or))
+    }
+    
+    return(results)
+  } else if (length(unique_values) > 1 && length(unique_values) <= 4) {
     # Handle categorical variables
     ref_category <- min(unique_values)  # Set lowest numbered category as reference
     ref_shap <- shap_filtered %>% filter(feature.value == ref_category)
@@ -318,9 +372,8 @@ calculate_shap_or_ci <- function(shap_values_df, predictor) {
     }
     
     return(results)
-    
   } else {
-    # Handle continuous variables
+    # Default to treating continuous variables as a whole (if not specified in cutoffs)
     mean_shap <- mean(shap_filtered$phi)
     se_shap <- sd(shap_filtered$phi) / sqrt(nrow(shap_filtered))
     
@@ -336,6 +389,5 @@ calculate_shap_or_ci <- function(shap_values_df, predictor) {
     result[[predictor]] <- list(S_OR = S_OR, CI = c(lower_bound_or, upper_bound_or))
     
     return(result)
-    
   }
 }

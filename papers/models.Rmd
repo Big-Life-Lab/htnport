@@ -956,7 +956,6 @@ female_explainer <- iml::Predictor$new(
    model = female_final_model,                                      # Pass the model
    data = female_data,                                              # Pass the data
    y = female_data[["highbp14090_adj"]]                             # Indicate outcome
-  
 )
 
 # Initialize a list to store SHAP values
