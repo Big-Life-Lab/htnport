@@ -282,7 +282,7 @@ calculate_shap_or_ci <- function(shap_values_df, predictor) {
   cutoffs <- list(
     clc_age = c(-Inf, 40, 60, 70, Inf),  # 20-39, 40-59, 60-69, 70-79
     hwmdbmi = c(-Inf, 18.5, 25, 30, Inf),  # <18.5, 18.5-<25, 25-<30, >=30
-    whr = c(-Inf, 0.5, 0.6, Inf),  # <0.5, 0.5-<0.6, >=0.6
+    whr = c(-Inf, 50, 60, Inf),  # <50, 50-<60, >=60
     minperweek = c(-Inf, 150, Inf),  # <150, >=150
     totalfv = c(-Inf, 5, Inf),  # <5, >=5
     slp_11 = c(-Inf, 7, Inf)  # <7, >=7
