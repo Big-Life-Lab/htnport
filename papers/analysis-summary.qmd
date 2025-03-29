@@ -153,15 +153,25 @@ gtsummary::tbl_svysummary(
 # Load recoded, imputed cycles 1-6 data
 load("P:/10619/Dropbox/htnport/data/pood.rda")
 
-# Recode ethnicity manually due to recodeflow error 
+# Recode ethnicity and self-rated health manually due to recodeflow error 
 imputed_cycles1to6_data <- imputed_cycles1to6_data %>%
   dplyr::mutate(
+    # Recode pgdcgt
     pgdcgt = as.numeric(as.character(pgdcgt)),
     pgdcgt = case_when(
       pgdcgt >= 2 & pgdcgt <= 13 ~ 2,
       TRUE ~ pgdcgt
     ),
-    pgdcgt = as.factor(pgdcgt)
+    pgdcgt = as.factor(pgdcgt),
+    
+    # Recode gendhdi: 0-1 → 1, 2-4 → 2
+    gendhdi = as.numeric(as.character(gendhdi)),
+    gendhdi = case_when(
+      gendhdi >= 0 & gendhdi <= 1 ~ 1,
+      gendhdi >= 2 & gendhdi <= 4 ~ 2,
+      TRUE ~ gendhdi
+    ),
+    gendhdi = as.factor(gendhdi)
   )
 
 # Factor categorical predictors
@@ -419,22 +429,116 @@ male_predicted_probabilities <- generate_predicted_probabilities(male_model)
 
 # Obtain calibration subgroups
 subgroups <- recodeflow:::select_vars_by_role(c("Predictor", "cali-subgroup"), my_variables)
+subgroups <- subgroups[subgroups != "clc_age"]
 
 # Initialize an empty list to store calibration results
 male_calibration_results <- list()
 
-# Loop through each subgroup
+# Define x-axis labels
+subgroup_labels <- list(
+  "adj_hh_inc" = "Adjusted household income ($)",
+  "agegroup4" = "Age group",
+  "alcdwky" = "Weekly alcohol consumption (drinks/week)",
+  "ckd" = "Chronic kidney disease",
+  "diabx" = "Diabetes",
+  "edudr04" = "Highest education level",
+  "fmh_15" = "Hypertension family history",
+  "gendhdi" = "Self-rated health",
+  "gendmhi" = "Self-rated mental health",
+  "gen_025" = "Self-perceived stress",
+  "gen_045" = "Sense of belonging",
+  "gfr" = "Glomerular filtration rate (mL/min/1.73 m²)",
+  "gooddiet" = "Healthy diet",
+  "hwm_13kg" = "Weight (kg)",
+  "hwm_14cx" = "Waist circumference (cm)",
+  "hwmdbmi" = "Body mass index (kg/m²)",
+  "img_03" = "Immigrant",
+  "lab_bpb" = "Blood lead (µmol/L)",
+  "lab_hba1" = "HbA1c",
+  "low_drink_score1" = "Alcohol consumption level",
+  "married" = "Marital status",
+  "minperweek" = "Physical activity minutes (min/week)",
+  "mvpa150wk" = "Healthy physical activity",
+  "nonhdltodd" = "High cholesterol",
+  "pgdcgt" = "Ethnicity",
+  "slp_11" = "Sleep duration (hrs/night)",
+  "smoke" = "Smoking status",
+  "totalfv" = "Daily fruit and vegetable consumption (times/day)",
+  "whr" = "Waist-to-height ratio (%)",
+  "working" = "Working status"
+)
+
+# Define level labels for categorical variables
+level_labels <- list(
+  "agegroup4" = c("1" = "20-39 years", "2" = "40-59 years", "3" = "60-69 years", "4" = "70-79 years"),
+  "married" = c("1" = "Married or common-law", "2" = "Widowed, separated, or divorced", "3" = "Single and never married"),
+  "edudr04" = c("0" = "Post-secondary school graduation", "1" = "Secondary school graduation", "2" = "Less than secondary school graduation"),
+  "pgdcgt" = c("1" = "White", "2" = "Not white"),
+  "img_03" = c("1" = "Yes", "2" = "No"),
+  "working" = c("1" = "Has a job", "2" = "Does not have a job"),
+  "gendhdi" = c("1" = "Poor or fair", "2" = "Good, very good, or excellent"),
+  "gendmhi" = c("1" = "Poor or fair", "0" = "Good, very good, or excellent"),
+  "gen_025" = c("1" = "Not at all to a bit", "2" = "Quite a bit or extremely"),
+  "gen_045" = c("1" = "Strong", "2" = "Weak"),
+  "fmh_15" = c("1" = "Yes", "0" = "No"),
+  "diabx" = c("1" = "Yes", "0" = "No"),
+  "ckd" = c("1" = "Yes", "0" = "No"),
+  "low_drink_score1" = c("1" = "Never drinker", "2" = "Former drinker", "3" = "Light drinker", "4" = "Moderate to heavy drinker"),
+  "smoke" = c("0" = "Never smoker", "1" = "Former smoker", "2" = "Current smoker"),
+  "mvpa150wk" = c("1" = "Physically active", "2" = "Physically inactive"),
+  "gooddiet" = c("1" = "Eats fruits/veg ≥5 times per day", "2" = "Eats fruits/veg <5 times per day"),
+  "nonhdltodd" = c("1" = "Yes", "2" = "No")
+)
+
 for (subgroup in subgroups) {
-  # Ensure the group variable is not missing or invalid
   if (all(!is.na(male_data[[subgroup]]))) {
-    # Perform calibration and store the result
     male_calibration_results[[subgroup]] <- calibration(
       male_predicted_probabilities,
       male_data$highbp14090_adj,
       group = male_data[[subgroup]]
     )
+
+    cal_result <- male_calibration_results[[subgroup]]
+    cal_result <- as.data.frame(cal_result[["stats"]])
+    
+    if (!is.null(cal_result) && "n" %in% names(cal_result) && "Pavg" %in% names(cal_result) && "Obs" %in% names(cal_result)) {
+      cal_df <- data.frame(
+        Subgroup = factor(rownames(cal_result), levels = rownames(cal_result)),
+        n = cal_result$n,
+        Pavg = cal_result$Pavg,
+        Obs = cal_result$Obs
+      )
+      cal_df <- cal_df[1:(nrow(cal_df) - 1), ]
+
+      # Set x-axis label dynamically
+      x_label <- ifelse(subgroup %in% names(subgroup_labels), subgroup_labels[[subgroup]], subgroup)
+
+      # Assign level labels for bars if available
+      if (subgroup %in% names(level_labels)) {
+        cal_df$Subgroup <- factor(cal_df$Subgroup, levels = names(level_labels[[subgroup]]), labels = level_labels[[subgroup]])
+      }
+
+      # Identify symbols for bars
+      cal_df$asterisk <- ifelse(abs(cal_df$Obs - cal_df$Pavg) / cal_df$Obs > 0.20, "*", "")
+      cal_df$X_mark <- ifelse(cal_df$Obs < 0.05, "X", "")
+
+      # Merge symbols if both conditions are met
+      cal_df$symbol <- paste0(cal_df$asterisk, cal_df$X_mark)
+
+      # Plot with symbols for significant differences and low observations
+      print(ggplot(cal_df, aes(x = Subgroup)) +
+        geom_bar(aes(y = Obs, fill = "Observed"), stat = "identity", width = 0.6, alpha = 0.7) +
+        geom_point(aes(y = Pavg, color = "Predicted"), size = 4) +
+        geom_text(aes(y = Obs + 0.05, label = symbol), color = "black", size = 6, vjust = -0.5) + # Add symbols
+        scale_fill_manual(name = "", values = c("Observed" = "steelblue")) +
+        scale_color_manual(name = "", values = c("Predicted" = "red")) +
+        labs(y = "Estimate", x = x_label) +
+        theme_minimal())
+    } else {
+      warning(paste("Skipping subgroup:", subgroup, "due to missing required columns in calibration output."))
+    }
   } else {
-    warning(paste("Skipping subgroup:", subgroup, "due to missing values."))
+    warning(paste("Skipping subgroup:", subgroup, "due to missing values in data."))
   }
 }
 
@@ -450,22 +554,61 @@ female_predicted_probabilities <- generate_predicted_probabilities(female_model)
 
 # Obtain calibration subgroups
 subgroups <- recodeflow:::select_vars_by_role(c("Predictor", "cali-subgroup"), my_variables)
+subgroups <- subgroups[subgroups != "clc_age"]
 
 # Initialize an empty list to store calibration results
 female_calibration_results <- list()
 
 # Loop through each subgroup in the female dataset
 for (subgroup in subgroups) {
-  # Ensure the group variable is not missing or invalid
   if (all(!is.na(female_data[[subgroup]]))) {
-    # Perform calibration and store the result
     female_calibration_results[[subgroup]] <- calibration(
       female_predicted_probabilities,
       female_data$highbp14090_adj,
       group = female_data[[subgroup]]
     )
+
+    cal_result <- female_calibration_results[[subgroup]]
+    cal_result <- as.data.frame(cal_result[["stats"]])
+    
+    if (!is.null(cal_result) && "n" %in% names(cal_result) && "Pavg" %in% names(cal_result) && "Obs" %in% names(cal_result)) {
+      cal_df <- data.frame(
+        Subgroup = factor(rownames(cal_result), levels = rownames(cal_result)),
+        n = cal_result$n,
+        Pavg = cal_result$Pavg,
+        Obs = cal_result$Obs
+      )
+      cal_df <- cal_df[1:(nrow(cal_df) - 1), ]
+
+      # Set x-axis label dynamically
+      x_label <- ifelse(subgroup %in% names(subgroup_labels), subgroup_labels[[subgroup]], subgroup)
+
+      # Assign level labels for bars if available
+      if (subgroup %in% names(level_labels)) {
+        cal_df$Subgroup <- factor(cal_df$Subgroup, levels = names(level_labels[[subgroup]]), labels = level_labels[[subgroup]])
+      }
+
+      # Identify symbols for bars
+      cal_df$asterisk <- ifelse(abs(cal_df$Obs - cal_df$Pavg) / cal_df$Obs > 0.20, "*", "")
+      cal_df$X_mark <- ifelse(cal_df$Obs < 0.05, "X", "")
+
+      # Merge symbols if both conditions are met
+      cal_df$symbol <- paste0(cal_df$asterisk, cal_df$X_mark)
+
+      # Plot with symbols for significant differences and low observations
+      print(ggplot(cal_df, aes(x = Subgroup)) +
+        geom_bar(aes(y = Obs, fill = "Observed"), stat = "identity", width = 0.6, alpha = 0.7) +
+        geom_point(aes(y = Pavg, color = "Predicted"), size = 4) +
+        geom_text(aes(y = Obs + 0.05, label = symbol), color = "black", size = 6, vjust = -0.5) + # Add symbols
+        scale_fill_manual(name = "", values = c("Observed" = "steelblue")) +
+        scale_color_manual(name = "", values = c("Predicted" = "red")) +
+        labs(y = "Estimate", x = x_label) +
+        theme_minimal())
+    } else {
+      warning(paste("Skipping subgroup:", subgroup, "due to missing required columns in calibration output."))
+    }
   } else {
-    warning(paste("Skipping subgroup:", subgroup, "due to missing values."))
+    warning(paste("Skipping subgroup:", subgroup, "due to missing values in data."))
   }
 }
 
@@ -481,22 +624,61 @@ male_predicted_probabilities <- generate_predicted_probabilities(male_reduced_mo
 
 # Obtain calibration subgroups
 subgroups <- recodeflow:::select_vars_by_role(c("Predictor", "cali-subgroup"), my_variables)
+subgroups <- subgroups[subgroups != "clc_age"]
 
 # Initialize an empty list to store calibration results
 male_calibration_results <- list()
 
 # Loop through each subgroup
 for (subgroup in subgroups) {
-  # Ensure the group variable is not missing or invalid
   if (all(!is.na(male_data[[subgroup]]))) {
-    # Perform calibration and store the result
     male_calibration_results[[subgroup]] <- calibration(
       male_predicted_probabilities,
       male_data$highbp14090_adj,
       group = male_data[[subgroup]]
     )
+
+    cal_result <- male_calibration_results[[subgroup]]
+    cal_result <- as.data.frame(cal_result[["stats"]])
+    
+    if (!is.null(cal_result) && "n" %in% names(cal_result) && "Pavg" %in% names(cal_result) && "Obs" %in% names(cal_result)) {
+      cal_df <- data.frame(
+        Subgroup = factor(rownames(cal_result), levels = rownames(cal_result)),
+        n = cal_result$n,
+        Pavg = cal_result$Pavg,
+        Obs = cal_result$Obs
+      )
+      cal_df <- cal_df[1:(nrow(cal_df) - 1), ]
+
+      # Set x-axis label dynamically
+      x_label <- ifelse(subgroup %in% names(subgroup_labels), subgroup_labels[[subgroup]], subgroup)
+
+      # Assign level labels for bars if available
+      if (subgroup %in% names(level_labels)) {
+        cal_df$Subgroup <- factor(cal_df$Subgroup, levels = names(level_labels[[subgroup]]), labels = level_labels[[subgroup]])
+      }
+
+      # Identify symbols for bars
+      cal_df$asterisk <- ifelse(abs(cal_df$Obs - cal_df$Pavg) / cal_df$Obs > 0.20, "*", "")
+      cal_df$X_mark <- ifelse(cal_df$Obs < 0.05, "X", "")
+
+      # Merge symbols if both conditions are met
+      cal_df$symbol <- paste0(cal_df$asterisk, cal_df$X_mark)
+
+      # Plot with symbols for significant differences and low observations
+      print(ggplot(cal_df, aes(x = Subgroup)) +
+        geom_bar(aes(y = Obs, fill = "Observed"), stat = "identity", width = 0.6, alpha = 0.7) +
+        geom_point(aes(y = Pavg, color = "Predicted"), size = 4) +
+        geom_text(aes(y = Obs + 0.05, label = symbol), color = "black", size = 6, vjust = -0.5) + # Add symbols
+        scale_fill_manual(name = "", values = c("Observed" = "steelblue")) +
+        scale_color_manual(name = "", values = c("Predicted" = "red")) +
+        labs(y = "Estimate", x = x_label) +
+        theme_minimal())
+    } else {
+      warning(paste("Skipping subgroup:", subgroup, "due to missing required columns in calibration output."))
+    }
   } else {
-    warning(paste("Skipping subgroup:", subgroup, "due to missing values."))
+    warning(paste("Skipping subgroup:", subgroup, "due to missing values in data."))
   }
 }
 
@@ -512,22 +694,61 @@ female_predicted_probabilities <- generate_predicted_probabilities(female_reduce
 
 # Obtain calibration subgroups
 subgroups <- recodeflow:::select_vars_by_role(c("Predictor", "cali-subgroup"), my_variables)
+subgroups <- subgroups[subgroups != "clc_age"]
 
 # Initialize an empty list to store calibration results
 female_calibration_results <- list()
 
 # Loop through each subgroup in the female dataset
 for (subgroup in subgroups) {
-  # Ensure the group variable is not missing or invalid
   if (all(!is.na(female_data[[subgroup]]))) {
-    # Perform calibration and store the result
     female_calibration_results[[subgroup]] <- calibration(
       female_predicted_probabilities,
       female_data$highbp14090_adj,
       group = female_data[[subgroup]]
     )
+
+    cal_result <- female_calibration_results[[subgroup]]
+    cal_result <- as.data.frame(cal_result[["stats"]])
+    
+    if (!is.null(cal_result) && "n" %in% names(cal_result) && "Pavg" %in% names(cal_result) && "Obs" %in% names(cal_result)) {
+      cal_df <- data.frame(
+        Subgroup = factor(rownames(cal_result), levels = rownames(cal_result)),
+        n = cal_result$n,
+        Pavg = cal_result$Pavg,
+        Obs = cal_result$Obs
+      )
+      cal_df <- cal_df[1:(nrow(cal_df) - 1), ]
+
+      # Set x-axis label dynamically
+      x_label <- ifelse(subgroup %in% names(subgroup_labels), subgroup_labels[[subgroup]], subgroup)
+
+      # Assign level labels for bars if available
+      if (subgroup %in% names(level_labels)) {
+        cal_df$Subgroup <- factor(cal_df$Subgroup, levels = names(level_labels[[subgroup]]), labels = level_labels[[subgroup]])
+      }
+
+      # Identify symbols for bars
+      cal_df$asterisk <- ifelse(abs(cal_df$Obs - cal_df$Pavg) / cal_df$Obs > 0.20, "*", "")
+      cal_df$X_mark <- ifelse(cal_df$Obs < 0.05, "X", "")
+
+      # Merge symbols if both conditions are met
+      cal_df$symbol <- paste0(cal_df$asterisk, cal_df$X_mark)
+
+      # Plot with symbols for significant differences and low observations
+      print(ggplot(cal_df, aes(x = Subgroup)) +
+        geom_bar(aes(y = Obs, fill = "Observed"), stat = "identity", width = 0.6, alpha = 0.7) +
+        geom_point(aes(y = Pavg, color = "Predicted"), size = 4) +
+        geom_text(aes(y = Obs + 0.05, label = symbol), color = "black", size = 6, vjust = -0.5) + # Add symbols
+        scale_fill_manual(name = "", values = c("Observed" = "steelblue")) +
+        scale_color_manual(name = "", values = c("Predicted" = "red")) +
+        labs(y = "Estimate", x = x_label) +
+        theme_minimal())
+    } else {
+      warning(paste("Skipping subgroup:", subgroup, "due to missing required columns in calibration output."))
+    }
   } else {
-    warning(paste("Skipping subgroup:", subgroup, "due to missing values."))
+    warning(paste("Skipping subgroup:", subgroup, "due to missing values in data."))
   }
 }
 

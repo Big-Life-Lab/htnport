@@ -507,17 +507,17 @@ create_weighted_density_plots(
   plot_titles = c(
     "Age Distribution",
     "Exercise Distribution",
-    "Fruit and Vegetable Consumption",
-    "BMI Distribution",
-    "Waist-to-Height Ratio",
-    "Sleep Distribution"
+    "Fruit and Vegetable Consumption Distribution",
+    "Body Mass Index Distribution",
+    "Waist-to-Height Ratio Distribution",
+    "Sleep Duration Distribution"
   ),
   x_labels = c(
     "Age (years)",
     "Average minutes of exercise per week",
     "Times per day produce consumed",
-    "BMI",
-    "Waist-to-height ratio",
+    "Body mass index (kg/m2)",
+    "Waist-to-height ratio (%)",
     "Hours slept per night"
   )
 )
@@ -531,19 +531,19 @@ create_weighted_density_plots(
   group_labels = c("Male", "Female"), 
   group_colors = c("blue", "red"), 
   plot_titles = c(
-    "Age Distribution", 
-    "Exercise Distribution", 
-    "Fruit and Vegetable Consumption", 
-    "BMI Distribution", 
-    "Waist-to-Height Ratio", 
-    "Sleep Distribution"
-  ), 
+    "Age Distribution",
+    "Exercise Distribution",
+    "Fruit and Vegetable Consumption Distribution",
+    "Body Mass Index Distribution",
+    "Waist-to-Height Ratio Distribution",
+    "Sleep Duration Distribution"
+  ),
   x_labels = c(
-    "Age (years)", 
-    "Average minutes of exercise per week", 
-    "Times per day produce consumed", 
-    "BMI", 
-    "Waist-to-height ratio", 
+    "Age (years)",
+    "Average minutes of exercise per week",
+    "Times per day produce consumed",
+    "Body mass index (kg/m2)",
+    "Waist-to-height ratio (%)",
     "Hours slept per night"
   )
 )

@@ -281,7 +281,7 @@ calculate_shap_or_ci <- function(shap_values_df, predictor) {
   # Define custom cutoffs for continuous variables
   cutoffs <- list(
     clc_age = c(-Inf, 40, 60, 70, Inf),  # 20-39, 40-59, 60-69, 70-79
-    hwmdbmi = c(-Inf, 18.5, 25, 30, Inf),  # <18.5, 18.5-<25, 25-<30, >=30
+    hwmdbmi = c(-Inf, 25, 30, Inf),  # <25, 25-<30, >=30
     whr = c(-Inf, 50, 60, Inf),  # <50, 50-<60, >=60
     minperweek = c(-Inf, 150, Inf),  # <150, >=150
     totalfv = c(-Inf, 5, Inf),  # <5, >=5
@@ -306,7 +306,7 @@ calculate_shap_or_ci <- function(shap_values_df, predictor) {
                                  labels = FALSE, include.lowest = TRUE, right = FALSE))
     
     # Set reference category
-    if (predictor %in% c("hwmdbmi", "minperweek", "totalfv", "slp_11")) {
+    if (predictor %in% c("minperweek", "totalfv", "slp_11")) {
       ref_category <- 2  # Set second category as reference
     } else {
       ref_category <- min(shap_filtered$shap_category)  # Default: lowest category
