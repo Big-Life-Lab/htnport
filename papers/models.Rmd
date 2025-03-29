@@ -20,7 +20,7 @@ library(srvyr)
 library(e1071)
 library(rms)
 library(iml)
-library(stringr)
+library(ggeffects)
 
 source("R/alcohol.R")
 source("R/blood-pressure.R")
@@ -597,7 +597,7 @@ subgroup_labels <- list(
 level_labels <- list(
   "agegroup4" = c("1" = "20-39 years", "2" = "40-59 years", "3" = "60-69 years", "4" = "70-79 years"),
   "married" = c("1" = "Married or common-law", "2" = "Widowed, separated, or divorced", "3" = "Single and never married"),
-  "edudr04" = c("0" = "Post-secondary school graduation", "1" = "Secondary school graduation", "2" = "Less than secondary school graduation"),
+  "edudr04" = c("0" = "Post-secondary school", "1" = "Secondary school", "2" = "Less than secondary school"),
   "pgdcgt" = c("1" = "White", "2" = "Not white"),
   "img_03" = c("1" = "Yes", "2" = "No"),
   "working" = c("1" = "Has a job", "2" = "Does not have a job"),
@@ -1204,4 +1204,85 @@ predictors <- recodeflow:::select_vars_by_role(c("Predictor"), my_variables)
 for (pred in predictors) {
   print(calculate_shap_or_ci(all_female_shap_values, pred))
 }
+```
+
+# Predicted probability plots for non-linear predictors and interactions (full models only)
+
+```{r, warning = FALSE, message = FALSE}
+# Define x-axis labels for RCS variable plots
+var_labels <- list(
+  "clc_age" = "Age (years)",
+  "hwmdbmi" = "Body mass index (kg/m²)",
+  "minperweek" = "Physical activity minutes (min/week)",
+  "whr" = "Waist-to-height ratio (%)"
+)
+
+# Define legend title labels for age interaction plots
+legend_labels <- list(
+  "ckd" = "Chronic kidney disease",
+  "diabx" = "Diabetes",
+  "gen_045" = "Sense of belonging",
+  "hwmdbmi" = "Body mass index (kg/m²)",
+  "minperweek" = "Physical activity minutes (min/week)",
+  "slp_11" = "Sleep duration (hrs/night)",
+  "smoke" = "Smoking status",
+  "whr" = "Waist-to-height ratio (%)"
+)
+
+# Define legend level labels for age x categorical variable plots
+level_labels <- list(
+  "ckd" = c("1" = "Yes", "0" = "No"),
+  "diabx" = c("1" = "Yes", "0" = "No"),
+  "gen_045" = c("1" = "Strong", "2" = "Weak"),
+  "smoke" = c("0" = "Never smoker", "1" = "Former smoker", "2" = "Current smoker")
+)
+
+# RCS variable plots
+rcs_variables <- c("clc_age", "hwmdbmi", "whr", "minperweek")
+
+for (var in rcs_variables) {
+  
+  x_label <- ifelse(var %in% names(var_labels), var_labels[[var]], var)
+  
+  print(plot(predict_response(male_final_model, terms = var, ci_level = NULL)) +
+    labs(title = NULL, x = x_label, y = "Predicted probability of hypertension"))
+  
+  print(plot(predict_response(female_final_model, terms = var, ci_level = NULL)) +
+    labs(title = NULL, x = x_label, y = "Predicted probability of hypertension"))
+}
+
+# Age x categorical variable plots
+age_cat_int_variables <- c("gen_045", "smoke", "diabx", "ckd")
+
+for (var in age_cat_int_variables) {
+  
+  legend_label <- ifelse(var %in% names(legend_labels), legend_labels[[var]], var)
+  
+  print(plot(predict_response(male_final_model, terms = c("clc_age", var), ci_level = NULL)) + labs(title = NULL, x = "Age (years)", y = "Predicted probability of hypertension",
+         colour = legend_label) +
+    scale_color_discrete(name = legend_label, labels = level_labels[[var]]))
+  
+  print(plot(predict_response(female_final_model, terms = c("clc_age", var), ci_level = NULL)) + labs(title = NULL, x = "Age (years)", y = "Predicted probability of hypertension",
+         colour = legend_label) +
+    scale_color_discrete(name = legend_label, labels = level_labels[[var]]))
+}
+
+# Age x continuous variable plots
+age_cont_int_variables <- c("hwmdbmi", "whr", "minperweek", "slp_11")
+
+for (var in age_cont_int_variables) {
+  
+  legend_label <- ifelse(var %in% names(legend_labels), legend_labels[[var]], var)
+  
+  print(plot(predict_response(male_final_model, terms = c("clc_age", var), ci_level = NULL)) + labs(title = NULL, x = "Age (years)", y = "Predicted probability of hypertension",
+         colour = legend_label))
+  
+  print(plot(predict_response(female_final_model, terms = c("clc_age", var), ci_level = NULL)) + labs(title = NULL, x = "Age (years)", y = "Predicted probability of hypertension",
+         colour = legend_label))
+}
+
+# BMI x WHR plots
+print(plot(predict_response(male_final_model, terms = c("hwmdbmi", "whr"), ci_level = NULL)) + labs(title = NULL, x = "Body mass index (kg/m²)", y = "Predicted probability of hypertension", colour = "Waist-to-height ratio (%)"))
+  
+print(plot(predict_response(female_final_model, terms = c("hwmdbmi", "whr"), ci_level = NULL)) + labs(title = NULL, x = "Body mass index (kg/m²)", y = "Predicted probability of hypertension", colour = "Waist-to-height ratio (%)"))
 ```
