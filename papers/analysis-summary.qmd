@@ -17,6 +17,7 @@ library(srvyr)
 library(gtsummary)
 library(e1071)
 library(rms)
+library(ggplot2)
 library(iml)
 library(ggeffects)
 library(scales)
@@ -450,7 +451,7 @@ subgroup_labels <- list(
   "gen_025" = "Self-perceived stress",
   "gen_045" = "Sense of belonging",
   "gfr" = "Glomerular filtration rate (mL/min/1.73 m²)",
-  "gooddiet" = "Healthy diet",
+  "gooddiet" = "Diet level",
   "hwm_13kg" = "Weight (kg)",
   "hwm_14cx" = "Waist circumference (cm)",
   "hwmdbmi" = "Body mass index (kg/m²)",
@@ -460,7 +461,7 @@ subgroup_labels <- list(
   "low_drink_score1" = "Alcohol consumption level",
   "married" = "Marital status",
   "minperweek" = "Physical activity minutes (min/week)",
-  "mvpa150wk" = "Healthy physical activity",
+  "mvpa150wk" = "Physical activity level",
   "nonhdltodd" = "High cholesterol",
   "pgdcgt" = "Ethnicity",
   "slp_11" = "Sleep duration (hrs/night)",
@@ -1097,31 +1098,51 @@ for (var in age_cat_int_variables) {
 age_cont_int_variables <- c("hwmdbmi", "whr", "minperweek", "slp_11")
 
 for (var in age_cont_int_variables) {
-  
+
   title_label <- ifelse(var %in% names(title_labels), title_labels[[var]], var)
   legend_label <- ifelse(var %in% names(legend_labels), legend_labels[[var]], var)
   
-  print(plot(predict_response(male_final_model, terms = c("clc_age", var), ci_level = NULL)) + 
-    labs(title = paste0("Hypertension across age for ", title_label, " in men"), 
-         x = "Age (years)", y = "Predicted probability of hypertension", 
-         colour = legend_label) +
+  quartiles_male <- svyquantile(as.formula(paste0("~", var)),
+                                design = weighted_male,
+                                quantiles = c(0.25, 0.50, 0.75),
+                                na.rm = TRUE)
+  qvals_male <- round(as.vector(coef(quartiles_male)), 2)
+  terms_string_male <- paste0(var, " [", paste(qvals_male, collapse = ", "), "]")
+  
+  quartiles_female <- svyquantile(as.formula(paste0("~", var)),
+                                  design = weighted_female,
+                                  quantiles = c(0.25, 0.50, 0.75),
+                                  na.rm = TRUE)
+  qvals_female <- round(as.vector(coef(quartiles_female)), 2)
+  terms_string_female <- paste0(var, " [", paste(qvals_female, collapse = ", "), "]")
+  
+  print(plot(predict_response(male_final_model, terms = c("clc_age", terms_string_male), ci_level = NULL)) +
+    labs(title = paste0("Hypertension across age for ", title_label, " in men"),
+         x = "Age (years)", y = "Predicted probability of hypertension", colour = legend_label) +
     scale_y_continuous(labels = percent_format(), limits = c(0, 1)))
   
-  print(plot(predict_response(female_final_model, terms = c("clc_age", var), ci_level = NULL)) + 
-    labs(title = paste0("Hypertension across age for ", title_label, " in women"), 
-         x = "Age (years)", y = "Predicted probability of hypertension", 
-         colour = legend_label) +
+  print(plot(predict_response(female_final_model, terms = c("clc_age", terms_string_female), ci_level = NULL)) +
+    labs(title = paste0("Hypertension across age for ", title_label, " in women"),
+         x = "Age (years)", y = "Predicted probability of hypertension", colour = legend_label) +
     scale_y_continuous(labels = percent_format(), limits = c(0, 1)))
 }
 
-# BMI x WHR plots
-print(plot(predict_response(male_final_model, terms = c("hwmdbmi", "whr"), ci_level = NULL)) + 
+# BMI X WHR plots
+whr_quartiles_male <- svyquantile(~whr, design = weighted_male, quantiles = c(0.25, 0.50, 0.75), na.rm = TRUE)
+quartile_values_male <- round(as.vector(coef(whr_quartiles_male)), 2)
+terms_string_whr_male <- paste0("whr [", paste(quartile_values_male, collapse = ", "), "]")
+
+whr_quartiles_female <- svyquantile(~whr, design = weighted_female, quantiles = c(0.25, 0.50, 0.75), na.rm = TRUE)
+quartile_values_female <- round(as.vector(coef(whr_quartiles_female)), 2)
+terms_string_whr_female <- paste0("whr [", paste(quartile_values_female, collapse = ", "), "]")
+
+print(plot(predict_response(male_final_model, terms = c("hwmdbmi", terms_string_whr_male), ci_level = NULL)) +
   labs(title = "Hypertension across body mass index for waist-to-height ratio in men", 
        x = "Body mass index (kg/m²)", y = "Predicted probability of hypertension", 
        colour = "Waist-to-height ratio (%)") +
   scale_y_continuous(labels = percent_format(), limits = c(0, 1)))
-  
-print(plot(predict_response(female_final_model, terms = c("hwmdbmi", "whr"), ci_level = NULL)) + 
+
+print(plot(predict_response(female_final_model, terms = c("hwmdbmi", terms_string_whr_female), ci_level = NULL)) +
   labs(title = "Hypertension across body mass index for waist-to-height ratio in women", 
        x = "Body mass index (kg/m²)", y = "Predicted probability of hypertension", 
        colour = "Waist-to-height ratio (%)") +
