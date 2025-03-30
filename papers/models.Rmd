@@ -21,6 +21,7 @@ library(e1071)
 library(rms)
 library(iml)
 library(ggeffects)
+library(scales)
 
 source("R/alcohol.R")
 source("R/blood-pressure.R")
@@ -657,7 +658,7 @@ for (subgroup in subgroups) {
         geom_text(aes(y = Obs + 0.05, label = symbol), color = "black", size = 6, vjust = -0.5) + # Add symbols
         scale_fill_manual(name = "", values = c("Observed" = "steelblue")) +
         scale_color_manual(name = "", values = c("Predicted" = "red")) +
-        labs(y = "Estimate", x = x_label) +
+        labs(y = "Estimate", x = x_label) + ylim(0,1) +
         theme_minimal())
     } else {
       warning(paste("Skipping subgroup:", subgroup, "due to missing required columns in calibration output."))
@@ -715,7 +716,7 @@ for (subgroup in subgroups) {
         geom_text(aes(y = Obs + 0.05, label = symbol), color = "black", size = 6, vjust = -0.5) + # Add symbols
         scale_fill_manual(name = "", values = c("Observed" = "steelblue")) +
         scale_color_manual(name = "", values = c("Predicted" = "red")) +
-        labs(y = "Estimate", x = x_label) +
+        labs(y = "Estimate", x = x_label) + ylim(0,1) +
         theme_minimal())
     } else {
       warning(paste("Skipping subgroup:", subgroup, "due to missing required columns in calibration output."))
@@ -785,7 +786,7 @@ for (subgroup in subgroups) {
         geom_text(aes(y = Obs + 0.05, label = symbol), color = "black", size = 6, vjust = -0.5) + # Add symbols
         scale_fill_manual(name = "", values = c("Observed" = "steelblue")) +
         scale_color_manual(name = "", values = c("Predicted" = "red")) +
-        labs(y = "Estimate", x = x_label) +
+        labs(y = "Estimate", x = x_label) + ylim(0,1) +
         theme_minimal())
     } else {
       warning(paste("Skipping subgroup:", subgroup, "due to missing required columns in calibration output."))
@@ -843,7 +844,7 @@ for (subgroup in subgroups) {
         geom_text(aes(y = Obs + 0.05, label = symbol), color = "black", size = 6, vjust = -0.5) + # Add symbols
         scale_fill_manual(name = "", values = c("Observed" = "steelblue")) +
         scale_color_manual(name = "", values = c("Predicted" = "red")) +
-        labs(y = "Estimate", x = x_label) +
+        labs(y = "Estimate", x = x_label) + ylim(0,1) +
         theme_minimal())
     } else {
       warning(paste("Skipping subgroup:", subgroup, "due to missing required columns in calibration output."))
@@ -1206,9 +1207,22 @@ for (pred in predictors) {
 }
 ```
 
-# Predicted probability plots for non-linear predictors and interactions (full models only)
+### Predicted probability plots for non-linear predictors and interactions (full models only)
 
 ```{r, warning = FALSE, message = FALSE}
+# Define title labels for all plots
+title_labels <- list(
+  "ckd" = "chronic kidney disease",
+  "clc_age" = "age",
+  "diabx" = "diabetes",
+  "gen_045" = "sense of belonging",
+  "hwmdbmi" = "body mass index",
+  "minperweek" = "physical activity minutes",
+  "slp_11" = "sleep duration",
+  "smoke" = "smoking status",
+  "whr" = "waist-to-height ratio"
+)
+
 # Define x-axis labels for RCS variable plots
 var_labels <- list(
   "clc_age" = "Age (years)",
@@ -1242,13 +1256,18 @@ rcs_variables <- c("clc_age", "hwmdbmi", "whr", "minperweek")
 
 for (var in rcs_variables) {
   
+  title_label <- ifelse(var %in% names(title_labels), title_labels[[var]], var)
   x_label <- ifelse(var %in% names(var_labels), var_labels[[var]], var)
   
   print(plot(predict_response(male_final_model, terms = var, ci_level = NULL)) +
-    labs(title = NULL, x = x_label, y = "Predicted probability of hypertension"))
+    labs(title = paste0("Hypertension across ", title_label, " in men"), 
+         x = x_label, y = "Predicted probability of hypertension") +
+    scale_y_continuous(labels = percent_format(), limits = c(0, 1)))  # Standardize y-axis
   
   print(plot(predict_response(female_final_model, terms = var, ci_level = NULL)) +
-    labs(title = NULL, x = x_label, y = "Predicted probability of hypertension"))
+    labs(title = paste0("Hypertension across ", title_label, " in women"), 
+         x = x_label, y = "Predicted probability of hypertension") +
+    scale_y_continuous(labels = percent_format(), limits = c(0, 1)))
 }
 
 # Age x categorical variable plots
@@ -1256,14 +1275,21 @@ age_cat_int_variables <- c("gen_045", "smoke", "diabx", "ckd")
 
 for (var in age_cat_int_variables) {
   
+  title_label <- ifelse(var %in% names(title_labels), title_labels[[var]], var)
   legend_label <- ifelse(var %in% names(legend_labels), legend_labels[[var]], var)
   
-  print(plot(predict_response(male_final_model, terms = c("clc_age", var), ci_level = NULL)) + labs(title = NULL, x = "Age (years)", y = "Predicted probability of hypertension",
+  print(plot(predict_response(male_final_model, terms = c("clc_age", var), ci_level = NULL)) + 
+    labs(title = paste0("Hypertension across age for ", title_label, " in men"), 
+         x = "Age (years)", y = "Predicted probability of hypertension", 
          colour = legend_label) +
+    scale_y_continuous(labels = percent_format(), limits = c(0, 1)) + 
     scale_color_discrete(name = legend_label, labels = level_labels[[var]]))
   
-  print(plot(predict_response(female_final_model, terms = c("clc_age", var), ci_level = NULL)) + labs(title = NULL, x = "Age (years)", y = "Predicted probability of hypertension",
+  print(plot(predict_response(female_final_model, terms = c("clc_age", var), ci_level = NULL)) + 
+    labs(title = paste0("Hypertension across age for ", title_label, " in women"), 
+         x = "Age (years)", y = "Predicted probability of hypertension", 
          colour = legend_label) +
+    scale_y_continuous(labels = percent_format(), limits = c(0, 1)) +
     scale_color_discrete(name = legend_label, labels = level_labels[[var]]))
 }
 
@@ -1272,17 +1298,32 @@ age_cont_int_variables <- c("hwmdbmi", "whr", "minperweek", "slp_11")
 
 for (var in age_cont_int_variables) {
   
+  title_label <- ifelse(var %in% names(title_labels), title_labels[[var]], var)
   legend_label <- ifelse(var %in% names(legend_labels), legend_labels[[var]], var)
   
-  print(plot(predict_response(male_final_model, terms = c("clc_age", var), ci_level = NULL)) + labs(title = NULL, x = "Age (years)", y = "Predicted probability of hypertension",
-         colour = legend_label))
+  print(plot(predict_response(male_final_model, terms = c("clc_age", var), ci_level = NULL)) + 
+    labs(title = paste0("Hypertension across age for ", title_label, " in men"), 
+         x = "Age (years)", y = "Predicted probability of hypertension", 
+         colour = legend_label) +
+    scale_y_continuous(labels = percent_format(), limits = c(0, 1)))
   
-  print(plot(predict_response(female_final_model, terms = c("clc_age", var), ci_level = NULL)) + labs(title = NULL, x = "Age (years)", y = "Predicted probability of hypertension",
-         colour = legend_label))
+  print(plot(predict_response(female_final_model, terms = c("clc_age", var), ci_level = NULL)) + 
+    labs(title = paste0("Hypertension across age for ", title_label, " in women"), 
+         x = "Age (years)", y = "Predicted probability of hypertension", 
+         colour = legend_label) +
+    scale_y_continuous(labels = percent_format(), limits = c(0, 1)))
 }
 
 # BMI x WHR plots
-print(plot(predict_response(male_final_model, terms = c("hwmdbmi", "whr"), ci_level = NULL)) + labs(title = NULL, x = "Body mass index (kg/m²)", y = "Predicted probability of hypertension", colour = "Waist-to-height ratio (%)"))
+print(plot(predict_response(male_final_model, terms = c("hwmdbmi", "whr"), ci_level = NULL)) + 
+  labs(title = "Hypertension across body mass index for waist-to-height ratio in men", 
+       x = "Body mass index (kg/m²)", y = "Predicted probability of hypertension", 
+       colour = "Waist-to-height ratio (%)") +
+  scale_y_continuous(labels = percent_format(), limits = c(0, 1)))
   
-print(plot(predict_response(female_final_model, terms = c("hwmdbmi", "whr"), ci_level = NULL)) + labs(title = NULL, x = "Body mass index (kg/m²)", y = "Predicted probability of hypertension", colour = "Waist-to-height ratio (%)"))
+print(plot(predict_response(female_final_model, terms = c("hwmdbmi", "whr"), ci_level = NULL)) + 
+  labs(title = "Hypertension across body mass index for waist-to-height ratio in women", 
+       x = "Body mass index (kg/m²)", y = "Predicted probability of hypertension", 
+       colour = "Waist-to-height ratio (%)") +
+  scale_y_continuous(labels = percent_format(), limits = c(0, 1)))
 ```
