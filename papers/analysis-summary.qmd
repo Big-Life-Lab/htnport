@@ -4,6 +4,8 @@ format: html
 editor: visual
 ---
 
+<!-- ### Load packages, functions, and metadeta -->
+
 ```{r, include = FALSE, warning = FALSE, message = FALSE}
 # Set working directory at RDC
 setwd("P:/10619/Dropbox/htnport")
@@ -167,11 +169,11 @@ imputed_cycles1to6_data <- imputed_cycles1to6_data %>%
     ),
     pgdcgt = as.factor(pgdcgt),
     
-    # Recode gendhdi: 0-1 → 1, 2-4 → 2
+    # Recode gendhdi: 1-2 → 1, 3-5 → 2
     gendhdi = as.numeric(as.character(gendhdi)),
     gendhdi = case_when(
-      gendhdi >= 0 & gendhdi <= 1 ~ 1,
-      gendhdi >= 2 & gendhdi <= 4 ~ 2,
+      gendhdi >= 1 & gendhdi <= 2 ~ 1,
+      gendhdi >= 3 & gendhdi <= 5 ~ 2,
       TRUE ~ gendhdi
     ),
     gendhdi = as.factor(gendhdi)
@@ -759,6 +761,49 @@ for (subgroup in subgroups) {
 female_calibration_results
 ```
 
+### Sensitivity analyses
+
+```{r}
+# Fit full male and female models without family history and see effect
+weighted_male$degf <- 68
+male_model_nofmh <- survey::svyglm(highbp14090_adj ~ rcs(clc_age, 4) + married + edudr04 + working + gendmhi + gen_025 + gen_045 + rcs(hwmdbmi, 3) + rcs(whr, 3) + low_drink_score1 + rcs(minperweek, 3) + smoke + slp_11 + totalfv + diabx + ckd + rcs(clc_age, 4)*gen_045 + rcs(clc_age, 4)*rcs(hwmdbmi, 3) + rcs(clc_age, 4)*rcs(whr, 3) + rcs(clc_age, 4)*rcs(minperweek, 3) + rcs(clc_age, 4)*smoke + rcs(clc_age, 4)*slp_11 + rcs(clc_age, 4)*diabx + rcs(clc_age, 4)*ckd + rcs(hwmdbmi, 3)*rcs(whr, 3), design = weighted_male, family = quasibinomial())
+
+weighted_female$degf <- 68
+female_model_nofmh <- survey::svyglm(highbp14090_adj ~ rcs(clc_age, 4) + married + edudr04 + working + gendmhi + gen_025 + gen_045 + rcs(hwmdbmi, 3) + rcs(whr, 3) + low_drink_score1 + rcs(minperweek, 3) + smoke + slp_11 + totalfv + diabx + ckd + rcs(clc_age, 4)*gen_045 + rcs(clc_age, 4)*rcs(hwmdbmi, 3) + rcs(clc_age, 4)*rcs(whr, 3) + rcs(clc_age, 4)*rcs(minperweek, 3) + rcs(clc_age, 4)*smoke + rcs(clc_age, 4)*slp_11 + rcs(clc_age, 4)*diabx + rcs(clc_age, 4)*ckd + rcs(hwmdbmi, 3)*rcs(whr, 3), design = weighted_female, family = quasibinomial())
+
+male_predicted_probabilities <- generate_predicted_probabilities(male_model_nofmh)
+female_predicted_probabilities <- generate_predicted_probabilities(female_model_nofmh)
+
+calibration(male_predicted_probabilities, male_data$highbp14090_adj)
+calibration(female_predicted_probabilities, female_data$highbp14090_adj)
+
+# Fit reduced male and female models without family history and see effect
+weighted_male$degf <- 68
+male_reduced_model_nofmh <- survey::svyglm(highbp14090_adj ~ rcs(clc_age, 4) + rcs(clc_age, 4)*rcs(whr, 3) + rcs(clc_age, 4)*diabx, design = weighted_male, family = quasibinomial())
+
+weighted_female$degf <- 68
+female_reduced_model_nofmh <- survey::svyglm(highbp14090_adj ~ rcs(clc_age, 4) + rcs(clc_age, 4)*rcs(hwmdbmi, 3) + rcs(clc_age, 4)*diabx, design = weighted_female, family = quasibinomial())
+
+male_predicted_probabilities <- generate_predicted_probabilities(male_reduced_model_nofmh)
+female_predicted_probabilities <- generate_predicted_probabilities(female_reduced_model_nofmh)
+
+calibration(male_predicted_probabilities, male_data$highbp14090_adj)
+calibration(female_predicted_probabilities, female_data$highbp14090_adj)
+
+# Fit full male and female models without sleep and see effect
+weighted_male$degf <- 68
+male_model_nosleep <- survey::svyglm(highbp14090_adj ~ rcs(clc_age, 4) + married + edudr04 + working + gendmhi + gen_025 + gen_045 + fmh_15 + rcs(hwmdbmi, 3) + rcs(whr, 3) + low_drink_score1 + rcs(minperweek, 3) + smoke + totalfv + diabx + ckd + rcs(clc_age, 4)*gen_045 + rcs(clc_age, 4)*rcs(hwmdbmi, 3) + rcs(clc_age, 4)*rcs(whr, 3) + rcs(clc_age, 4)*rcs(minperweek, 3) + rcs(clc_age, 4)*smoke + rcs(clc_age, 4)*diabx + rcs(clc_age, 4)*ckd + rcs(hwmdbmi, 3)*rcs(whr, 3), design = weighted_male, family = quasibinomial())
+
+weighted_female$degf <- 68
+female_model_nosleep <- survey::svyglm(highbp14090_adj ~ rcs(clc_age, 4) + married + edudr04 + working + gendmhi + gen_025 + gen_045 + fmh_15 + rcs(hwmdbmi, 3) + rcs(whr, 3) + low_drink_score1 + rcs(minperweek, 3) + smoke + totalfv + diabx + ckd + rcs(clc_age, 4)*gen_045 + rcs(clc_age, 4)*rcs(hwmdbmi, 3) + rcs(clc_age, 4)*rcs(whr, 3) + rcs(clc_age, 4)*rcs(minperweek, 3) + rcs(clc_age, 4)*smoke + rcs(clc_age, 4)*diabx + rcs(clc_age, 4)*ckd + rcs(hwmdbmi, 3)*rcs(whr, 3), design = weighted_female, family = quasibinomial())
+
+male_predicted_probabilities <- generate_predicted_probabilities(male_model_nosleep)
+female_predicted_probabilities <- generate_predicted_probabilities(female_model_nosleep)
+
+calibration(male_predicted_probabilities, male_data$highbp14090_adj)
+calibration(female_predicted_probabilities, female_data$highbp14090_adj)
+```
+
 ### Partial effect plots
 
 ```{r, warning = FALSE, message = FALSE}
@@ -806,6 +851,7 @@ male_final_model <- glm(highbp14090_adj ~ rcs(clc_age, 4) + married + edudr04 + 
 male_data <- male_data %>% 
   dplyr::select(recodeflow:::select_vars_by_role(c("Predictor"), my_variables))
 
+# Create observation as a data frame
 # Create observation as a data frame
 observation <- data.frame(
   clc_age = 24,         # 24-year old male
@@ -1063,12 +1109,12 @@ for (var in rcs_variables) {
   print(plot(predict_response(male_final_model, terms = var, ci_level = NULL)) +
     labs(title = paste0("Hypertension across ", title_label, " in men"), 
          x = x_label, y = "Predicted probability of hypertension") +
-    scale_y_continuous(labels = percent_format(), limits = c(0, 1)))  # Standardize y-axis
+    scale_y_continuous(labels = percent_format(), limits = c(0, 0.75)))  # Standardize y-axis
   
   print(plot(predict_response(female_final_model, terms = var, ci_level = NULL)) +
     labs(title = paste0("Hypertension across ", title_label, " in women"), 
          x = x_label, y = "Predicted probability of hypertension") +
-    scale_y_continuous(labels = percent_format(), limits = c(0, 1)))
+    scale_y_continuous(labels = percent_format(), limits = c(0, 0.75)))
 }
 
 # Age x categorical variable plots
@@ -1083,14 +1129,14 @@ for (var in age_cat_int_variables) {
     labs(title = paste0("Hypertension across age for ", title_label, " in men"), 
          x = "Age (years)", y = "Predicted probability of hypertension", 
          colour = legend_label) +
-    scale_y_continuous(labels = percent_format(), limits = c(0, 1)) + 
+    scale_y_continuous(labels = percent_format(), limits = c(0, 0.7)) + 
     scale_color_discrete(name = legend_label, labels = level_labels[[var]]))
   
   print(plot(predict_response(female_final_model, terms = c("clc_age", var), ci_level = NULL)) + 
     labs(title = paste0("Hypertension across age for ", title_label, " in women"), 
          x = "Age (years)", y = "Predicted probability of hypertension", 
          colour = legend_label) +
-    scale_y_continuous(labels = percent_format(), limits = c(0, 1)) +
+    scale_y_continuous(labels = percent_format(), limits = c(0, 0.7)) +
     scale_color_discrete(name = legend_label, labels = level_labels[[var]]))
 }
 
@@ -1119,12 +1165,12 @@ for (var in age_cont_int_variables) {
   print(plot(predict_response(male_final_model, terms = c("clc_age", terms_string_male), ci_level = NULL)) +
     labs(title = paste0("Hypertension across age for ", title_label, " in men"),
          x = "Age (years)", y = "Predicted probability of hypertension", colour = legend_label) +
-    scale_y_continuous(labels = percent_format(), limits = c(0, 1)))
+    scale_y_continuous(labels = percent_format(), limits = c(0, 0.65)))
   
   print(plot(predict_response(female_final_model, terms = c("clc_age", terms_string_female), ci_level = NULL)) +
     labs(title = paste0("Hypertension across age for ", title_label, " in women"),
          x = "Age (years)", y = "Predicted probability of hypertension", colour = legend_label) +
-    scale_y_continuous(labels = percent_format(), limits = c(0, 1)))
+    scale_y_continuous(labels = percent_format(), limits = c(0, 0.65)))
 }
 
 # BMI X WHR plots
@@ -1140,11 +1186,11 @@ print(plot(predict_response(male_final_model, terms = c("hwmdbmi", terms_string_
   labs(title = "Hypertension across body mass index for waist-to-height ratio in men", 
        x = "Body mass index (kg/m²)", y = "Predicted probability of hypertension", 
        colour = "Waist-to-height ratio (%)") +
-  scale_y_continuous(labels = percent_format(), limits = c(0, 1)))
+  scale_y_continuous(labels = percent_format(), limits = c(0, 0.75)))
 
 print(plot(predict_response(female_final_model, terms = c("hwmdbmi", terms_string_whr_female), ci_level = NULL)) +
   labs(title = "Hypertension across body mass index for waist-to-height ratio in women", 
        x = "Body mass index (kg/m²)", y = "Predicted probability of hypertension", 
        colour = "Waist-to-height ratio (%)") +
-  scale_y_continuous(labels = percent_format(), limits = c(0, 1)))
+  scale_y_continuous(labels = percent_format(), limits = c(0, 0.75)))
 ```
