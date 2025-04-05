@@ -4,7 +4,7 @@ author: "Rafidul Islam"
 output: pdf_document
 ---
 
-<!-- ### Load packages, functions, and metadata -->
+### Load packages, functions, and metadata
 
 ```{r, include = FALSE, warning = FALSE, message = FALSE}
 # Set working directory at RDC
@@ -44,7 +44,7 @@ my_variables <- read.csv("P:/10619/Dropbox/htnport/worksheets/variables.csv")
 my_variable_details <- read.csv("P:/10619/Dropbox/htnport/worksheets/variable-details.csv")
 ```
 
-<!-- ### Load medication data and recode medication variables -->
+### Load medication data and recode medication variables
 
 ```{r, include = FALSE, warning = FALSE, message = FALSE}
 # Load medication data
@@ -67,7 +67,7 @@ cycle5_medication_data <- recodeflow::rec_with_table(cycle5_meds, c("clinicid", 
 cycle6_medication_data <- recodeflow::rec_with_table(cycle6_meds, c("clinicid", "meucatc", "npi_25b", "anymed", "diab_drug"), variable_details = my_variable_details)
 ```
 
-<!-- ### Load overall data, flatten/merge medication data to overall data, and recode all variables from each cycle -->
+### Load overall data, flatten/merge medication data to overall data, and recode all variables from each cycle
 
 ```{r, include = FALSE, warning = FALSE, message = FALSE}
 # Load overall cycle data

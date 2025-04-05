@@ -4,7 +4,7 @@ format: html
 editor: visual
 ---
 
-<!-- ### Load packages, functions, and metadeta -->
+### Load packages, functions, and metadeta
 
 ```{r, include = FALSE, warning = FALSE, message = FALSE}
 # Set working directory at RDC
@@ -152,7 +152,7 @@ gtsummary::tbl_svysummary(
   )
 ```
 
-<!--### Prepare imputed dataset for modelling-->
+### Prepare imputed dataset for modelling
 
 ```{r, include = FALSE, warning = FALSE, message = FALSE}
 # Load recoded, imputed cycles 1-6 data
@@ -764,12 +764,42 @@ female_calibration_results
 ### Sensitivity analyses
 
 ```{r}
-# Fit full male and female models without family history and see effect
-weighted_male$degf <- 68
-male_model_nofmh <- survey::svyglm(highbp14090_adj ~ rcs(clc_age, 4) + married + edudr04 + working + gendmhi + gen_025 + gen_045 + rcs(hwmdbmi, 3) + rcs(whr, 3) + low_drink_score1 + rcs(minperweek, 3) + smoke + slp_11 + totalfv + diabx + ckd + rcs(clc_age, 4)*gen_045 + rcs(clc_age, 4)*rcs(hwmdbmi, 3) + rcs(clc_age, 4)*rcs(whr, 3) + rcs(clc_age, 4)*rcs(minperweek, 3) + rcs(clc_age, 4)*smoke + rcs(clc_age, 4)*slp_11 + rcs(clc_age, 4)*diabx + rcs(clc_age, 4)*ckd + rcs(hwmdbmi, 3)*rcs(whr, 3), design = weighted_male, family = quasibinomial())
+# Impute data, except family history
+predictors <- recodeflow:::select_vars_by_role("Predictor", my_variables)
+predictors <- predictors[predictors != "fmh_15"]
 
-weighted_female$degf <- 68
-female_model_nofmh <- survey::svyglm(highbp14090_adj ~ rcs(clc_age, 4) + married + edudr04 + working + gendmhi + gen_025 + gen_045 + rcs(hwmdbmi, 3) + rcs(whr, 3) + low_drink_score1 + rcs(minperweek, 3) + smoke + slp_11 + totalfv + diabx + ckd + rcs(clc_age, 4)*gen_045 + rcs(clc_age, 4)*rcs(hwmdbmi, 3) + rcs(clc_age, 4)*rcs(whr, 3) + rcs(clc_age, 4)*rcs(minperweek, 3) + rcs(clc_age, 4)*smoke + rcs(clc_age, 4)*slp_11 + rcs(clc_age, 4)*diabx + rcs(clc_age, 4)*ckd + rcs(hwmdbmi, 3)*rcs(whr, 3), design = weighted_female, family = quasibinomial())
+imputation_predictors <- recodeflow:::select_vars_by_role("imputation-predictor", my_variables)
+imputation_predictors <- imputation_predictors[imputation_predictors != "fmh_15"]
+
+imputed_cycles1to6_data_nofmh <- impute_variables(dplyr::select(cycles1to6_data, -clinicid), outcomes = predictors, predictors = imputation_predictors)
+imputed_cycles1to6_data_nofmh$clinicid <- cycles1to6_data$clinicid
+
+# Merge bootstrap weights to imputed sample data, which is then segregated and weighted
+imputed_cycles1to6_data_nofmh <- dplyr::left_join(imputed_cycles1to6_data_nofmh, cycles1to6_bsw, by = c("clinicid"))
+
+male_data_nofmh <- dplyr::filter(imputed_cycles1to6_data_nofmh, clc_sex == 1)
+female_data_nofmh <- dplyr::filter(imputed_cycles1to6_data_nofmh, clc_sex == 2)
+
+weighted_male_nofmh <- male_data_nofmh %>%
+  srvyr::as_survey_rep(
+    weights = wgt_full,
+    repweights = all_of(male_replicate_weights),
+    type = "bootstrap"
+  )
+
+weighted_female_nofmh <- female_data_nofmh %>%
+  srvyr::as_survey_rep(
+    weights = wgt_full,
+    repweights = all_of(female_replicate_weights),
+    type = "bootstrap"
+  )
+
+# Fit full male and female models with unimputed family history and see effect
+weighted_male_nofmh$degf <- 68
+male_model_nofmh <- survey::svyglm(highbp14090_adj ~ rcs(clc_age, 4) + married + edudr04 + working + gendmhi + gen_025 + gen_045 + fmh_15 + rcs(hwmdbmi, 3) + rcs(whr, 3) + low_drink_score1 + rcs(minperweek, 3) + smoke + slp_11 + totalfv + diabx + ckd + rcs(clc_age, 4)*gen_045 + rcs(clc_age, 4)*rcs(hwmdbmi, 3) + rcs(clc_age, 4)*rcs(whr, 3) + rcs(clc_age, 4)*rcs(minperweek, 3) + rcs(clc_age, 4)*smoke + rcs(clc_age, 4)*slp_11 + rcs(clc_age, 4)*diabx + rcs(clc_age, 4)*ckd + rcs(hwmdbmi, 3)*rcs(whr, 3), design = weighted_male_nofmh, family = quasibinomial())
+
+weighted_female_nofmh$degf <- 68
+female_model_nofmh <- survey::svyglm(highbp14090_adj ~ rcs(clc_age, 4) + married + edudr04 + working + gendmhi + gen_025 + gen_045 + fmh_15 + rcs(hwmdbmi, 3) + rcs(whr, 3) + low_drink_score1 + rcs(minperweek, 3) + smoke + slp_11 + totalfv + diabx + ckd + rcs(clc_age, 4)*gen_045 + rcs(clc_age, 4)*rcs(hwmdbmi, 3) + rcs(clc_age, 4)*rcs(whr, 3) + rcs(clc_age, 4)*rcs(minperweek, 3) + rcs(clc_age, 4)*smoke + rcs(clc_age, 4)*slp_11 + rcs(clc_age, 4)*diabx + rcs(clc_age, 4)*ckd + rcs(hwmdbmi, 3)*rcs(whr, 3), design = weighted_female_nofmh, family = quasibinomial())
 
 male_predicted_probabilities <- generate_predicted_probabilities(male_model_nofmh)
 female_predicted_probabilities <- generate_predicted_probabilities(female_model_nofmh)
@@ -777,12 +807,12 @@ female_predicted_probabilities <- generate_predicted_probabilities(female_model_
 calibration(male_predicted_probabilities, male_data$highbp14090_adj)
 calibration(female_predicted_probabilities, female_data$highbp14090_adj)
 
-# Fit reduced male and female models without family history and see effect
-weighted_male$degf <- 68
-male_reduced_model_nofmh <- survey::svyglm(highbp14090_adj ~ rcs(clc_age, 4) + rcs(clc_age, 4)*rcs(whr, 3) + rcs(clc_age, 4)*diabx, design = weighted_male, family = quasibinomial())
+# Fit reduced male and female models with unimputed family history and see effect
+weighted_male_nofmh$degf <- 68
+male_reduced_model_nomfh <- survey::svyglm(highbp14090_adj ~ rcs(clc_age, 4) + rcs(clc_age, 4)*rcs(whr, 3) + rcs(clc_age, 4)*diabx, design = weighted_male_nofmh, family = quasibinomial())
 
-weighted_female$degf <- 68
-female_reduced_model_nofmh <- survey::svyglm(highbp14090_adj ~ rcs(clc_age, 4) + rcs(clc_age, 4)*rcs(hwmdbmi, 3) + rcs(clc_age, 4)*diabx, design = weighted_female, family = quasibinomial())
+weighted_female_nofmh$degf <- 68
+female_reduced_model_nomfh <- survey::svyglm(highbp14090_adj ~ rcs(clc_age, 4) + rcs(clc_age, 4)*rcs(hwmdbmi, 3) + rcs(clc_age, 4)*diabx, design = weighted_female_nofmh, family = quasibinomial())
 
 male_predicted_probabilities <- generate_predicted_probabilities(male_reduced_model_nofmh)
 female_predicted_probabilities <- generate_predicted_probabilities(female_reduced_model_nofmh)
@@ -790,15 +820,48 @@ female_predicted_probabilities <- generate_predicted_probabilities(female_reduce
 calibration(male_predicted_probabilities, male_data$highbp14090_adj)
 calibration(female_predicted_probabilities, female_data$highbp14090_adj)
 
-# Fit full male and female models without sleep and see effect
-weighted_male$degf <- 68
-male_model_nosleep <- survey::svyglm(highbp14090_adj ~ rcs(clc_age, 4) + married + edudr04 + working + gendmhi + gen_025 + gen_045 + fmh_15 + rcs(hwmdbmi, 3) + rcs(whr, 3) + low_drink_score1 + rcs(minperweek, 3) + smoke + totalfv + diabx + ckd + rcs(clc_age, 4)*gen_045 + rcs(clc_age, 4)*rcs(hwmdbmi, 3) + rcs(clc_age, 4)*rcs(whr, 3) + rcs(clc_age, 4)*rcs(minperweek, 3) + rcs(clc_age, 4)*smoke + rcs(clc_age, 4)*diabx + rcs(clc_age, 4)*ckd + rcs(hwmdbmi, 3)*rcs(whr, 3), design = weighted_male, family = quasibinomial())
+# Merge bootstrap weights to unimputed sample data, which is then segregated and weighted
+unimputed_cycles1to6_data <- dplyr::left_join(cycles1to6_data, cycles1to6_bsw, by = c("clinicid"))
 
-weighted_female$degf <- 68
-female_model_nosleep <- survey::svyglm(highbp14090_adj ~ rcs(clc_age, 4) + married + edudr04 + working + gendmhi + gen_025 + gen_045 + fmh_15 + rcs(hwmdbmi, 3) + rcs(whr, 3) + low_drink_score1 + rcs(minperweek, 3) + smoke + totalfv + diabx + ckd + rcs(clc_age, 4)*gen_045 + rcs(clc_age, 4)*rcs(hwmdbmi, 3) + rcs(clc_age, 4)*rcs(whr, 3) + rcs(clc_age, 4)*rcs(minperweek, 3) + rcs(clc_age, 4)*smoke + rcs(clc_age, 4)*diabx + rcs(clc_age, 4)*ckd + rcs(hwmdbmi, 3)*rcs(whr, 3), design = weighted_female, family = quasibinomial())
+unimputed_male_data <- dplyr::filter(unimputed_cycles1to6_data, clc_sex == 1)
+unimputed_female_data <- dplyr::filter(unimputed_cycles1to6_data, clc_sex == 2)
 
-male_predicted_probabilities <- generate_predicted_probabilities(male_model_nosleep)
-female_predicted_probabilities <- generate_predicted_probabilities(female_model_nosleep)
+unimputed_weighted_male <- unimputed_male_data %>%
+  srvyr::as_survey_rep(
+    weights = wgt_full,
+    repweights = all_of(male_replicate_weights),
+    type = "bootstrap"
+  )
+
+unimputed_weighted_female <- unimputed_female_data %>%
+  srvyr::as_survey_rep(
+    weights = wgt_full,
+    repweights = all_of(female_replicate_weights),
+    type = "bootstrap"
+  )
+
+# Fit full male and female models with unimputed data and see effect
+unimputed_weighted_male$degf <- 68
+unimputed_male_model <- survey::svyglm(highbp14090_adj ~ rcs(clc_age, 4) + married + edudr04 + working + gendmhi + gen_025 + gen_045 + fmh_15 + rcs(hwmdbmi, 3) + rcs(whr, 3) + low_drink_score1 + rcs(minperweek, 3) + smoke + slp_11 + totalfv + diabx + ckd + rcs(clc_age, 4)*gen_045 + rcs(clc_age, 4)*rcs(hwmdbmi, 3) + rcs(clc_age, 4)*rcs(whr, 3) + rcs(clc_age, 4)*rcs(minperweek, 3) + rcs(clc_age, 4)*smoke + rcs(clc_age, 4)*slp_11 + rcs(clc_age, 4)*diabx + rcs(clc_age, 4)*ckd + rcs(hwmdbmi, 3)*rcs(whr, 3), design = unimputed_weighted_male, family = quasibinomial())
+
+unimputed_weighted_female$degf <- 68
+unimputed_female_model <- survey::svyglm(highbp14090_adj ~ rcs(clc_age, 4) + married + edudr04 + working + gendmhi + gen_025 + gen_045 + fmh_15 + rcs(hwmdbmi, 3) + rcs(whr, 3) + low_drink_score1 + rcs(minperweek, 3) + smoke + slp_11 + totalfv + diabx + ckd + rcs(clc_age, 4)*gen_045 + rcs(clc_age, 4)*rcs(hwmdbmi, 3) + rcs(clc_age, 4)*rcs(whr, 3) + rcs(clc_age, 4)*rcs(minperweek, 3) + rcs(clc_age, 4)*smoke + rcs(clc_age, 4)*slp_11 + rcs(clc_age, 4)*diabx + rcs(clc_age, 4)*ckd + rcs(hwmdbmi, 3)*rcs(whr, 3), design = unimputed_weighted_female, family = quasibinomial())
+
+male_predicted_probabilities <- generate_predicted_probabilities(unimputed_male_model)
+female_predicted_probabilities <- generate_predicted_probabilities(unimputed_female_model)
+
+calibration(male_predicted_probabilities, male_data$highbp14090_adj)
+calibration(female_predicted_probabilities, female_data$highbp14090_adj)
+
+# Fit reduced male and female models with unimputed data and see effect
+unimputed_weighted_male$degf <- 68
+unimputed_male_reduced_model <- survey::svyglm(highbp14090_adj ~ rcs(clc_age, 4) + rcs(clc_age, 4)*rcs(whr, 3) + rcs(clc_age, 4)*diabx, design = unimputed_weighted_male, family = quasibinomial())
+
+unimputed_weighted_female$degf <- 68
+unimputed_female_reduced_model <- survey::svyglm(highbp14090_adj ~ rcs(clc_age, 4) + rcs(clc_age, 4)*rcs(hwmdbmi, 3) + rcs(clc_age, 4)*diabx, design = unimputed_weighted_female, family = quasibinomial())
+
+male_predicted_probabilities <- generate_predicted_probabilities(unimputed_male_reduced_model)
+female_predicted_probabilities <- generate_predicted_probabilities(unimputed_female_reduced_model)
 
 calibration(male_predicted_probabilities, male_data$highbp14090_adj)
 calibration(female_predicted_probabilities, female_data$highbp14090_adj)

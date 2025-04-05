@@ -84,20 +84,22 @@ low_drink_score_fun <- function(CLC_SEX, ALC_11, ALCDWKY) {
   return(low_drink_score)
 }
 
-#' @title Calculate the Low Drink Score for a Respondent Based on Alcohol Consumption (Including Former and Never Categories)
+#' @title Calculate the Low Drink Score for a Respondent Based on Alcohol Consumption 
+#'        (Including Former and Never Categories)
 #'
 #' @description 
 #' This function calculates a low drink score using Canada's Low-Risk Alcohol Drinking Guideline 
 #' (step 1 only) while also differentiating between never drinkers and former drinkers. The score 
 #' is based on the respondent's weekly alcohol consumption, whether they drank in the past year, 
-#' and their lifetime drinking history.
+#' their lifetime drinking history, and whether they regularly drank more than 12 drinks a week.
 #'
 #' @param CLC_SEX An integer indicating the respondent's sex (1 for male, 2 for female).
 #' @param ALC_11 An integer indicating whether the respondent drank alcohol in the past year (1 for "Yes", 2 for "No").
 #' @param ALCDWKY An integer representing the number of standard drinks consumed in a week.
 #' @param ALC_17 An integer indicating whether the respondent ever drank alcohol in their lifetime 
-#'              (1 for "Yes", 2 for "No"). Note: if this value is missing (NA) for respondents who 
-#'              drank in the past year, the function defaults to treating them as former drinkers.
+#'              (1 for "Yes", 2 for "No").
+#' @param ALC_18 An integer indicating whether the respondent regularly drank more than 12 drinks a week 
+#'              (1 for "Yes", 2 for "No").
 #'
 #' @return An integer representing the low drink score, defined as follows:
 #'   - 1: Never drank (0 points)
@@ -126,11 +128,14 @@ low_drink_score_fun <- function(CLC_SEX, ALC_11, ALCDWKY) {
 #'
 #' **Step 2: Deriving the Final Categorical Score**
 #' - For respondents with 0 points in Step 1:
-#'   - If they never drank in their lifetime (ALC_17 == 2) and did not drink in the past year, the score is 1.
+#'   - If they never drank in their lifetime (ALC_17 == 2) and did not drink in the past year (ALC_11 == 2), 
+#'     the score is 1.
 #'   - If they have a history of drinking (ALC_17 == 1) or if ALC_17 is missing for respondents who drank in the past year, 
-#'     the score is 2.
-#' - For respondents with 1 or 2 points in Step 1, the final score is 3 (marginal risk).
-#' - For respondents with 3 or more points in Step 1 (specifically, between 3 and 9), the final score is 4 (moderate-to-heavy risk).
+#'     then:
+#'       - If they did not regularly drink more than 12 drinks a week (ALC_18 == 2), the score is 1.
+#'       - Otherwise, the score is 2.
+#' - For respondents with 1 or 2 points from Step 1, the final score is 3.
+#' - For respondents with 3 or more points from Step 1 (i.e., between 3 and 9), the final score is 4.
 #'
 #' @note 
 #' This function is based only on Step 1 of the guideline since additional drinking habit questions (Step 2) 
@@ -138,11 +143,12 @@ low_drink_score_fun <- function(CLC_SEX, ALC_11, ALCDWKY) {
 #'
 #' @examples
 #' # Example: A male respondent who consumed 3 standard drinks per week, drank in the past year, 
-#' low_drink_score_fun1(CLC_SEX = 1, ALC_11 = 1, ALCDWKY = 3, ALC_17 = NA)
-#' # Expected output: 2
+#' # and did not regularly drink more than 12 drinks a week.
+#' low_drink_score_fun1(CLC_SEX = 1, ALC_11 = 1, ALCDWKY = 3, ALC_17 = NA, ALC_18 = 2)
+#' # Expected output: 1
 #'
 #' @export
-low_drink_score_fun1 <- function(CLC_SEX, ALC_11, ALCDWKY, ALC_17) {
+low_drink_score_fun1 <- function(CLC_SEX, ALC_11, ALCDWKY, ALC_17, ALC_18) {
   
   ## Step 1: How many standard drinks did you have in a week?
   if (CLC_SEX %in% c(1, 2) && !is.na(ALC_11) && ALC_11 == 1) {
@@ -179,9 +185,19 @@ low_drink_score_fun1 <- function(CLC_SEX, ALC_11, ALCDWKY, ALC_17) {
       if (!is.na(ALC_17) && ALC_17 == 2 && !is.na(ALC_11) && ALC_11 == 2) {
         low_drink_score1 <- 1
       } else if (!is.na(ALC_17) && ALC_17 == 1 && !is.na(ALC_11) && ALC_11 == 2) {
-        low_drink_score1 <- 2
+        if (!is.na(ALC_18) && ALC_18 == 2) {
+          low_drink_score1 <- 1
+        }
+        else {
+          low_drink_score1 <- 2
+        }
       } else if (is.na(ALC_17) && !is.na(ALC_11) && ALC_11 == 1) {
-        low_drink_score1 <- 2
+        if (!is.na(ALC_18) && ALC_18 == 2) {
+          low_drink_score1 <- 1
+        }
+        else {
+          low_drink_score1 <- 2
+        }
       } else {
         low_drink_score1 <- haven::tagged_na("b")
       }
@@ -197,4 +213,5 @@ low_drink_score_fun1 <- function(CLC_SEX, ALC_11, ALCDWKY, ALC_17) {
   }
   
   return(low_drink_score1)
+  
 }
