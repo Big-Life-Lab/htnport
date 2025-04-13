@@ -153,7 +153,6 @@ cycles1to6_data <- cycles1to6_data %>%
     `Minutes of exercise per week` = minperweek,
     `Daily fruit and vegetable consumption` = totalfv,
     `Body mass index` = hwmdbmi,
-    `Waist-to-height ratio` = whr,
     `Chronic kidney disease` = ckd,
     'Diabetes' = diabx,
     `Alcohol consumption level` = low_drink_score1,
@@ -184,7 +183,6 @@ gtsummary::tbl_svysummary(
     `Minutes of exercise per week`,
     `Daily fruit and vegetable consumption`,
     `Body mass index`,
-    `Waist-to-height ratio`,
     `Chronic kidney disease`,
     'Diabetes',
     `Alcohol consumption level`,
@@ -231,10 +229,10 @@ gtsummary::tbl_svysummary(
           variable == "Chronic kidney disease" & label == "2" ~ "No",
           variable == "Diabetes" & label == "1" ~ "Yes",
           variable == "Diabetes" & label == "2" ~ "No",
-          variable == "Alcohol consumption level" & label == "1" ~ "Never drinker",
-          variable == "Alcohol consumption level" & label == "2" ~ "Former drinker",
-          variable == "Alcohol consumption level" & label == "3" ~ "Light drinker",
-          variable == "Alcohol consumption level" & label == "4" ~ "Moderate to heavy drinker",
+          variable == "Alcohol consumption level" & label == "1" ~ "Never drank",
+          variable == "Alcohol consumption level" & label == "2" ~ "Former or light drinker",
+          variable == "Alcohol consumption level" & label == "3" ~ "Moderate drinker",
+          variable == "Alcohol consumption level" & label == "4" ~ "Heavy drinker",
           variable == "Smoking status" & label == "1" ~ "Current smoker",
           variable == "Smoking status" & label == "2" ~ "Former smoker",
           variable == "Smoking status" & label == "3" ~ "Never smoker",
@@ -248,6 +246,29 @@ gtsummary::tbl_svysummary(
         )
       )
   )
+
+# Revert the names in the data frame
+original_names <- c(
+  "Hypertension" = "highbp14090_adj",
+  "Age" = "clc_age",
+  "Marital status" = "married",
+  "Highest education level" = "edudr04",
+  "Working status" = "working",
+  "Hypertension family history" = "fmh_15",
+  "Minutes of exercise per week" = "minperweek",
+  "Daily fruit and vegetable consumption" = "totalfv",
+  "Body mass index" = "hwmdbmi",
+  "Chronic kidney disease" = "ckd",
+  "Diabetes" = "diabx",
+  "Alcohol consumption level" = "low_drink_score1",
+  "Smoking status" = "smoke",
+  "Hours of sleep per day" = "slp_11",
+  "Self-rated mental health" = "gendmhi",
+  "Stress" = "gen_025",
+  "Sense of belonging" = "gen_045"
+)
+
+names(cycles1to6_data) <- dplyr::recode(names(cycles1to6_data), !!!original_names)
 ```
 
 ### Table 1b - Weighted imputed data
@@ -296,7 +317,6 @@ imputed_cycles1to6_data <- imputed_cycles1to6_data %>%
     `Minutes of exercise per week` = minperweek,
     `Daily fruit and vegetable consumption` = totalfv,
     `Body mass index` = hwmdbmi,
-    `Waist-to-height ratio` = whr,
     `Chronic kidney disease` = ckd,
     'Diabetes' = diabx,
     `Alcohol consumption level` = low_drink_score1,
@@ -327,7 +347,6 @@ gtsummary::tbl_svysummary(
     `Minutes of exercise per week`,
     `Daily fruit and vegetable consumption`,
     `Body mass index`,
-    `Waist-to-height ratio`,
     `Chronic kidney disease`,
     'Diabetes',
     `Alcohol consumption level`,
@@ -371,10 +390,10 @@ gtsummary::tbl_svysummary(
           variable == "Chronic kidney disease" & label == "2" ~ "No",
           variable == "Diabetes" & label == "1" ~ "Yes",
           variable == "Diabetes" & label == "2" ~ "No",
-          variable == "Alcohol consumption level" & label == "1" ~ "Never drinker",
-          variable == "Alcohol consumption level" & label == "2" ~ "Former drinker",
-          variable == "Alcohol consumption level" & label == "3" ~ "Light drinker",
-          variable == "Alcohol consumption level" & label == "4" ~ "Moderate to heavy drinker",
+          variable == "Alcohol consumption level" & label == "1" ~ "Never drank",
+          variable == "Alcohol consumption level" & label == "2" ~ "Former or light drinker",
+          variable == "Alcohol consumption level" & label == "3" ~ "Moderate drinker",
+          variable == "Alcohol consumption level" & label == "4" ~ "Heavy drinker",
           variable == "Smoking status" & label == "1" ~ "Current smoker",
           variable == "Smoking status" & label == "2" ~ "Former smoker",
           variable == "Smoking status" & label == "3" ~ "Never smoker",
@@ -480,7 +499,6 @@ original_names <- c(
   "Minutes of exercise per week" = "minperweek",
   "Daily fruit and vegetable consumption" = "totalfv",
   "Body mass index" = "hwmdbmi",
-  "Waist-to-height ratio" = "whr",
   "Chronic kidney disease" = "ckd",
   "Diabetes" = "diabx",
   "Alcohol consumption level" = "low_drink_score1",
@@ -502,7 +520,7 @@ create_weighted_density_plots(
   data = cycles1to6_data,
   grouping_var = "clc_sex",
   weight_var = "wgt_full",
-  vars_to_plot = c("clc_age", "minperweek", "totalfv", "hwmdbmi", "whr", "slp_11"),
+  vars_to_plot = c("clc_age", "minperweek", "totalfv", "hwmdbmi", "slp_11"),
   group_labels = c("Male", "Female"),
   group_colors = c("blue", "red"),
   plot_titles = c(
@@ -510,7 +528,6 @@ create_weighted_density_plots(
     "Exercise Distribution",
     "Fruit and Vegetable Consumption Distribution",
     "Body Mass Index Distribution",
-    "Waist-to-Height Ratio Distribution",
     "Sleep Duration Distribution"
   ),
   x_labels = c(
@@ -518,7 +535,6 @@ create_weighted_density_plots(
     "Average minutes of exercise per week",
     "Times per day produce consumed",
     "Body mass index (kg/m2)",
-    "Waist-to-height ratio (%)",
     "Hours slept per night"
   )
 )
@@ -528,7 +544,7 @@ create_weighted_density_plots(
   data = imputed_cycles1to6_data, 
   grouping_var = "clc_sex", 
   weight_var = "wgt_full", 
-  vars_to_plot = c("clc_age", "minperweek", "totalfv", "hwmdbmi", "whr", "slp_11"), 
+  vars_to_plot = c("clc_age", "minperweek", "totalfv", "hwmdbmi", "slp_11"), 
   group_labels = c("Male", "Female"), 
   group_colors = c("blue", "red"), 
   plot_titles = c(
@@ -536,7 +552,6 @@ create_weighted_density_plots(
     "Exercise Distribution",
     "Fruit and Vegetable Consumption Distribution",
     "Body Mass Index Distribution",
-    "Waist-to-Height Ratio Distribution",
     "Sleep Duration Distribution"
   ),
   x_labels = c(
@@ -544,7 +559,6 @@ create_weighted_density_plots(
     "Average minutes of exercise per week",
     "Times per day produce consumed",
     "Body mass index (kg/m2)",
-    "Waist-to-height ratio (%)",
     "Hours slept per night"
   )
 )
@@ -610,7 +624,7 @@ weighted_female <- female_data %>%
 weighted_female$degf <- 68
 
 # Center continious variables
-cont_variables <- c("clc_age", "hwmdbmi", "minperweek", "totalfv", "whr", "slp_11")
+cont_variables <- c("clc_age", "hwmdbmi", "minperweek", "totalfv", "slp_11")
 
 for (var in cont_variables) {
   weighted_male$variables[[var]] <- center_cont_variable(var, weighted_male)
@@ -629,6 +643,7 @@ for (var in cat_variables) {
 
 # List of predictors
 predictors <- recodeflow:::select_vars_by_role(c("Predictor"), my_variables)
+predictors <- predictors[predictors != "whr"]
 
 # Fit crude models for males and extract ORs and CIs
 crude_models_male <- lapply(predictors, fit_crude_model, design = weighted_male)
@@ -645,7 +660,7 @@ combined_crude_models <- bind_rows(
 )
 
 # Define the custom order for the Level column
-custom_order <- c("Age", "Widowed, separated, or divorced", "Single", "High school graduate only", "Did not graduate high school", "Does not have a job", "Family history for hypertension", "Minutes of exercise per week", "Daily fruit and vegetable consumption", "Body mass index", "Waist-to-height ratio", "Diabetes", "Chronic kidney disease", "Former drinker", "Light drinker", "Moderate to heavy drinker", "Former smoker", "Current smoker", "Sleep duration", "Fair or good mental health", "Poor mental health", "Quite a bit or extremely stressed", "Weak sense of belonging")
+custom_order <- c("Age", "Widowed, separated, or divorced", "Single", "High school graduate only", "Did not graduate high school", "Does not have a job", "Family history for hypertension", "Minutes of exercise per week", "Daily fruit and vegetable consumption", "Body mass index", "Diabetes", "Chronic kidney disease", "Former or light drinker", "Moderate drinker", "Heavy drinker", "Former smoker", "Current smoker", "Sleep duration", "Fair or good mental health", "Poor mental health", "Quite a bit or extremely stressed", "Weak sense of belonging")
 
 # Combine custom order with the original order
 original_order <- unique(combined_crude_models$Level)

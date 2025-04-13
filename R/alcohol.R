@@ -84,96 +84,80 @@ low_drink_score_fun <- function(CLC_SEX, ALC_11, ALCDWKY) {
   return(low_drink_score)
 }
 
-#' @title Calculate the Low Drink Score for a Respondent Based on Alcohol Consumption 
-#'        (Including Former and Never Categories)
+#' @title Calculate Low Drink Score According to Canada's Low-Risk Drinking Guidelines
 #'
 #' @description 
-#' This function calculates a low drink score using Canada's Low-Risk Alcohol Drinking Guideline 
-#' (step 1 only) while also differentiating between never drinkers and former drinkers. The score 
-#' is based on the respondent's weekly alcohol consumption, whether they drank in the past year, 
-#' their lifetime drinking history, and whether they regularly drank more than 12 drinks a week.
+#' Computes a categorical alcohol consumption score based on Canada's Low-Risk Alcohol Drinking Guidelines (Step 1),
+#' while distinguishing between never, former, light, moderate, and heavy drinkers. The function uses information 
+#' about weekly consumption, past-year use, lifetime drinking, and history of heavy drinking.
 #'
-#' @param CLC_SEX An integer indicating the respondent's sex (1 for male, 2 for female).
-#' @param ALC_11 An integer indicating whether the respondent drank alcohol in the past year (1 for "Yes", 2 for "No").
-#' @param ALCDWKY An integer representing the number of standard drinks consumed in a week.
-#' @param ALC_17 An integer indicating whether the respondent ever drank alcohol in their lifetime 
-#'              (1 for "Yes", 2 for "No").
-#' @param ALC_18 An integer indicating whether the respondent regularly drank more than 12 drinks a week 
-#'              (1 for "Yes", 2 for "No").
+#' @param CLC_SEX Integer. Respondent's sex (1 = male, 2 = female).
+#' @param ALC_11 Integer. Whether the respondent drank alcohol in the past year (1 = Yes, 2 = No).
+#' @param ALCDWKY Integer. Number of standard drinks consumed in a typical week (0–84).
+#' @param ALC_17 Integer. Whether the respondent ever drank alcohol in their lifetime (1 = Yes, 2 = No).
+#' @param ALC_18 Integer. Whether the respondent regularly drank more than 12 drinks per week (1 = Yes, 2 = No).
 #'
-#' @return An integer representing the low drink score, defined as follows:
-#'   - 1: Never drank (0 points)
-#'   - 2: Former drinker (0 points)
-#'   - 3: Light drinker (1–2 points)
-#'   - 4: Moderate-to-heavy drinker (3–4 points)
-#'   - NA: If any input is invalid or contains non-response values.
+#' @return An integer score:
+#' - 1 = Never drank
+#' - 2 = Former or light drinker  
+#' - 3 = Moderate drinker (1–2 points)  
+#' - 4 = Heavy drinker (3–4 points)  
+#' If inputs are invalid or out of bounds, the function returns a tagged NA.
 #'
 #' @details 
-#' The function calculates the score in two steps:
-#' 
-#' **Step 1: Points Allocation Based on Weekly Consumption**
-#' - For respondents who drank in the past year (ALC_11 == 1):
-#'   - If ALCDWKY is 10 or fewer, assign 0 points.
-#'   - If ALCDWKY is greater than 10 but ≤ 15:
-#'     - Males (CLC_SEX == 1) receive 0 points.
-#'     - Females (CLC_SEX == 2) receive 1 point.
-#'   - If ALCDWKY is greater than 15 but ≤ 20:
-#'     - Males receive 1 point.
-#'     - Females receive 3 points.
-#'   - If ALCDWKY is greater than 20:
-#'     - Males receive 3 points.
-#'     - Females receive 5 points.
+#' Step 1: Assign points based on weekly alcohol consumption.  
+#' - If the respondent drank in the past year (ALC_11 == 1):  
+#'   - ≤10 drinks/week: 0 points  
+#'   - 11–15 drinks/week: 0 points for males, 1 point for females  
+#'   - 16–20 drinks/week: 1 point for males, 3 points for females  
+#'   - >20 drinks/week: 3 points for males, 5 points for females  
+#' - If they did not drink in the past year (ALC_11 == 2): 0 points  
 #'
-#' - For respondents who did not drink in the past year (ALC_11 == 2), 0 points are assigned.
-#'
-#' **Step 2: Deriving the Final Categorical Score**
-#' - For respondents with 0 points in Step 1:
-#'   - If they never drank in their lifetime (ALC_17 == 2) and did not drink in the past year (ALC_11 == 2), 
-#'     the score is 1.
-#'   - If they have a history of drinking (ALC_17 == 1) or if ALC_17 is missing for respondents who drank in the past year, 
-#'     then:
-#'       - If they did not regularly drink more than 12 drinks a week (ALC_18 == 2), the score is 1.
-#'       - Otherwise, the score is 2.
-#' - For respondents with 1 or 2 points from Step 1, the final score is 3.
-#' - For respondents with 3 or more points from Step 1 (i.e., between 3 and 9), the final score is 4.
+#' Step 2: Determine the final categorical score.  
+#' - If Step 1 = 0:  
+#'   - If ALC_17 == 2 and ALC_11 == 2 → score = 1
+#'   - If ALC_17 == 1 and ALC_11 == 2:  
+#'     - ALC_18 == 2 → score = 1  
+#'     - ALC_18 == 1 → score = 2  
+#'   - If ALC_11 == 1 → score = 2  
+#' - If Step 1 = 1 or 2 → score = 3  
+#' - If Step 1 is 3 or more → score = 4  
 #'
 #' @note 
-#' This function is based only on Step 1 of the guideline since additional drinking habit questions (Step 2) 
-#' are not available in the CHMS cycles.
+#' This function uses only Step 1 of the guidelines, as Step 2 information is unavailable in CHMS.
 #'
 #' @examples
-#' # Example: A male respondent who consumed 3 standard drinks per week, drank in the past year, 
-#' # and did not regularly drink more than 12 drinks a week.
+#' # Male, drinks 3 drinks/week, drank in past year, no history of heavy drinking
 #' low_drink_score_fun1(CLC_SEX = 1, ALC_11 = 1, ALCDWKY = 3, ALC_17 = NA, ALC_18 = 2)
-#' # Expected output: 1
+#' # Expected output: 2
 #'
 #' @export
 low_drink_score_fun1 <- function(CLC_SEX, ALC_11, ALCDWKY, ALC_17, ALC_18) {
   
   ## Step 1: How many standard drinks did you have in a week?
-  if (CLC_SEX %in% c(1, 2) && !is.na(ALC_11) && ALC_11 == 1) {
-    if (!is.na(ALCDWKY) && ALCDWKY <= 10) {
+  if (CLC_SEX %in% c(1, 2) && (!is.na(ALC_11) && ALC_11 == 1) && (!is.na(ALCDWKY) && ALCDWKY >= 0 && ALCDWKY <= 84)) {
+    if (ALCDWKY <= 10) {
       step1 <- 0
-    } else if (!is.na(ALCDWKY) && ALCDWKY > 10 && ALCDWKY <= 15) {
+    } else if (ALCDWKY > 10 && ALCDWKY <= 15) {
       if (CLC_SEX == 1) {
         step1 <- 0
       } else {
         step1 <- 1
       }
-    } else if (!is.na(ALCDWKY) && ALCDWKY > 15 && ALCDWKY <= 20) {
+    } else if (ALCDWKY > 15 && ALCDWKY <= 20) {
       if (CLC_SEX == 1) {
         step1 <- 1
       } else {
         step1 <- 3
       }
-    } else if (!is.na(ALCDWKY) && ALCDWKY > 20) {
+    } else if (ALCDWKY > 20) {
       if (CLC_SEX == 1) {
         step1 <- 3
       } else {
         step1 <- 5
       }
     }
-  } else if (CLC_SEX %in% c(1, 2) && !is.na(ALC_11) && ALC_11 == 2) {
+  } else if (CLC_SEX %in% c(1, 2) && (!is.na(ALC_11) && ALC_11 == 2) && is.na(ALCDWKY)) {
     step1 <- 0
   } else {
     step1 <- NA
@@ -188,16 +172,14 @@ low_drink_score_fun1 <- function(CLC_SEX, ALC_11, ALCDWKY, ALC_17, ALC_18) {
         if (!is.na(ALC_18) && ALC_18 == 2) {
           low_drink_score1 <- 1
         }
-        else {
+        else if (!is.na(ALC_18) && ALC_18 == 1) {
           low_drink_score1 <- 2
         }
-      } else if (is.na(ALC_17) && !is.na(ALC_11) && ALC_11 == 1) {
-        if (!is.na(ALC_18) && ALC_18 == 2) {
-          low_drink_score1 <- 1
-        }
         else {
-          low_drink_score1 <- 2
+          low_drink_score1 <- haven::tagged_na("b")
         }
+      } else if (!is.na(ALC_11) && ALC_11 == 1) {
+        low_drink_score1 <- 2
       } else {
         low_drink_score1 <- haven::tagged_na("b")
       }

@@ -391,3 +391,63 @@ calculate_shap_or_ci <- function(shap_values_df, predictor) {
     return(result)
   }
 }
+
+# Function to plot ORs for age interactions
+plot_age_int_or <- function(model, var, var_type = c("categorical", "continuous"),
+                    design = NULL, sex_label = "Group",
+                    title_labels = NULL, legend_labels = NULL,
+                    level_labels = NULL, qval_round = 2) {
+  
+  var_type <- match.arg(var_type)
+  
+  title_label <- if (!is.null(title_labels) && var %in% names(title_labels)) title_labels[[var]] else var
+  legend_label <- if (!is.null(legend_labels) && var %in% names(legend_labels)) legend_labels[[var]] else var
+  
+  if (var_type == "categorical") {
+    preds <- ggpredict(model, terms = c("clc_age", var)) %>%
+      group_by(x) %>%
+      mutate(odds = predicted / (1 - predicted),
+             or = odds / odds[1]) %>%
+      filter(row_number() != 1) %>%  # Remove reference group
+      ungroup()
+    
+    p <- ggplot(preds, aes(x = x, y = or, color = group)) +
+      geom_line(size = 1.2) +
+      labs(
+        title = paste0("Odds ratio by age for ", title_label, " in ", sex_label),
+        x = "Age (years)",
+        y = "Odds ratio",
+        color = legend_label
+      ) +
+      scale_y_continuous(labels = number_format(accuracy = 0.1), limits = c(0, NA)) +
+      scale_color_discrete(name = legend_label,
+                           labels = if (!is.null(level_labels)) level_labels[[var]] else NULL) +
+      theme_minimal()
+    
+  } else if (var_type == "continuous" && !is.null(design)) {
+    quartiles <- svyquantile(as.formula(paste0("~", var)), design = design,
+                             quantiles = c(0.25, 0.50, 0.75), na.rm = TRUE)
+    qvals <- round(as.vector(coef(quartiles)), qval_round)
+    terms_string <- paste0(var, " [", paste(qvals, collapse = ", "), "]")
+    
+    preds <- ggpredict(model, terms = c("clc_age", terms_string)) %>%
+      group_by(x) %>%
+      mutate(odds = predicted / (1 - predicted),
+             or = odds / odds[1]) %>%
+      filter(row_number() != 1) %>%
+      ungroup()
+    
+    p <- ggplot(preds, aes(x = x, y = or, color = group)) +
+      geom_line(size = 1.2) +
+      labs(
+        title = paste0("Odds ratio by age for ", title_label, " in ", sex_label),
+        x = "Age (years)",
+        y = "Odds ratio",
+        color = legend_label
+      ) +
+      scale_y_continuous(labels = number_format(accuracy = 0.1), limits = c(0, NA)) +
+      theme_minimal()
+  }
+  
+  return(p)
+}
