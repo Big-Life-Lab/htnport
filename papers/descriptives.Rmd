@@ -230,7 +230,7 @@ gtsummary::tbl_svysummary(
           variable == "Diabetes" & label == "1" ~ "Yes",
           variable == "Diabetes" & label == "2" ~ "No",
           variable == "Alcohol consumption level" & label == "1" ~ "Never drank",
-          variable == "Alcohol consumption level" & label == "2" ~ "Former or light drinker",
+          variable == "Alcohol consumption level" & label == "2" ~ "Low-risk drinker",
           variable == "Alcohol consumption level" & label == "3" ~ "Moderate drinker",
           variable == "Alcohol consumption level" & label == "4" ~ "Heavy drinker",
           variable == "Smoking status" & label == "1" ~ "Current smoker",
@@ -391,7 +391,7 @@ gtsummary::tbl_svysummary(
           variable == "Diabetes" & label == "1" ~ "Yes",
           variable == "Diabetes" & label == "2" ~ "No",
           variable == "Alcohol consumption level" & label == "1" ~ "Never drank",
-          variable == "Alcohol consumption level" & label == "2" ~ "Former or light drinker",
+          variable == "Alcohol consumption level" & label == "2" ~ "Low-risk drinker",
           variable == "Alcohol consumption level" & label == "3" ~ "Moderate drinker",
           variable == "Alcohol consumption level" & label == "4" ~ "Heavy drinker",
           variable == "Smoking status" & label == "1" ~ "Current smoker",
@@ -660,7 +660,7 @@ combined_crude_models <- bind_rows(
 )
 
 # Define the custom order for the Level column
-custom_order <- c("Age", "Widowed, separated, or divorced", "Single", "High school graduate only", "Did not graduate high school", "Does not have a job", "Family history for hypertension", "Minutes of exercise per week", "Daily fruit and vegetable consumption", "Body mass index", "Diabetes", "Chronic kidney disease", "Former or light drinker", "Moderate drinker", "Heavy drinker", "Former smoker", "Current smoker", "Sleep duration", "Fair or good mental health", "Poor mental health", "Quite a bit or extremely stressed", "Weak sense of belonging")
+custom_order <- c("Age", "Widowed, separated, or divorced", "Single", "High school graduate only", "Did not graduate high school", "Does not have a job", "Family history for hypertension", "Minutes of exercise per week", "Daily fruit and vegetable consumption", "Body mass index", "Diabetes", "Chronic kidney disease", "Low-risk drinker", "Moderate drinker", "Heavy drinker", "Former smoker", "Current smoker", "Sleep duration", "Fair or good mental health", "Poor mental health", "Quite a bit or extremely stressed", "Weak sense of belonging")
 
 # Combine custom order with the original order
 original_order <- unique(combined_crude_models$Level)

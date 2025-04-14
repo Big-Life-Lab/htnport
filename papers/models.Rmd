@@ -589,7 +589,7 @@ level_labels <- list(
   "fmh_15" = c("1" = "Yes", "0" = "No"),
   "diabx" = c("1" = "Yes", "0" = "No"),
   "ckd" = c("1" = "Yes", "0" = "No"),
-  "low_drink_score1" = c("1" = "Never drank", "2" = "Former or light drinker", "3" = "Moderate drinker", "4" = "Heavy drinker"),
+  "low_drink_score1" = c("1" = "Never drank", "2" = "Low-risk drinker", "3" = "Moderate drinker", "4" = "Heavy drinker"),
   "smoke" = c("0" = "Never smoker", "1" = "Former smoker", "2" = "Current smoker"),
   "mvpa150wk" = c("1" = "Physically active", "2" = "Physically inactive"),
   "gooddiet" = c("1" = "Eats fruits/veg ≥5 times per day", "2" = "Eats fruits/veg <5 times per day"),

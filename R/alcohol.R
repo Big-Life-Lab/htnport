@@ -99,7 +99,7 @@ low_drink_score_fun <- function(CLC_SEX, ALC_11, ALCDWKY) {
 #'
 #' @return An integer score:
 #' - 1 = Never drank
-#' - 2 = Former or light drinker  
+#' - 2 = Low-risk (former or light) drinker  
 #' - 3 = Moderate drinker (1–2 points)  
 #' - 4 = Heavy drinker (3–4 points)  
 #' If inputs are invalid or out of bounds, the function returns a tagged NA.
