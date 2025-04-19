@@ -981,7 +981,7 @@ prs_11,prs_11_cat2_NA::b,cat,"cycle1, cycle2, cycle3, cycle4, cycle5, cycle6","c
 prs_11,prs_11_cat2_NA::b,cat,"cycle1, cycle2, cycle3, cycle4, cycle5, cycle6","cycle1::phc_11, cycle2::phc_11, cycle3::phc_11, cycle4::phc_11, [prs_11]",cat,NA::b,2,missing,missing,N/A,else,else,Pregnancy status,Pregnant,
 sbp_adj,N/A,cont,"cycle1, cycle2, cycle3, cycle4, cycle5, cycle6",DerivedVar::[bpmdpbps],N/A,Func::adjust_SBP,N/A,N/A,N/A,mmHg,N/A,N/A,Systolic blood pressure (adjusted),Adjusted systolic blood pressure measurement,
 sbp_adj,N/A,cont,"cycle1, cycle2, cycle3, cycle4, cycle5, cycle6",DerivedVar::[bpmdpbps],N/A,NA::b,N/A,missing,missing,mmHg,N/A,N/A,Systolic blood pressure (adjusted),Adjusted systolic blood pressure measurement,
-slp_11,N/A,cont,"cycle1, cycle2, cycle3, cycle4",[slp_11],cont,copy,N/A,Number of hours,Number of hours,hours/day,"[2.0, 18.0]",Number of hours,Hours of sleep per day,Hours spent sleeping in 24 hour period,
+slp_11,N/A,cont,"cycle1, cycle2, cycle3, cycle4",[slp_11],cont,copy,N/A,Number of hours,Number of hours,hours/day,"[0.0, 20.0]",Number of hours,Hours of sleep per day,Hours spent sleeping in 24 hour period,
 slp_11,N/A,cont,"cycle1, cycle2, cycle3, cycle4",[slp_11],cont,NA::a,N/A,not applicable,not applicable,hours/day,99.6,Valid skip,Hours of sleep per day,Hours spent sleeping in 24 hour period,
 slp_11,N/A,cont,"cycle1, cycle2, cycle3, cycle4",[slp_11],cont,NA::b,N/A,missing,missing,hours/day,"[99.7, 99.9]",Don't know (99999997); Refusal (99999998); Not stated (99999999),Hours of sleep per day,Hours spent sleeping in 24 hour period,
 slp_11,N/A,cont,"cycle1, cycle2, cycle3, cycle4",[slp_11],cont,NA::c,N/A,not asked,not asked,hours/day,else,else,Hours of sleep per day,Hours spent sleeping in 24 hour period,

@@ -173,7 +173,7 @@ imputed_cycles1to6_data <- dplyr::left_join(imputed_cycles1to6_data, cycles1to6_
 #   clc_sex = sample(1:2, 1000, replace = TRUE), # Binary sex
 #   wgt_full = runif(1000, 0, 1), # Numeric weights
 #   clc_age = sample(20:79, 1000, replace = TRUE), # Integer age
-#   hwmdbmi = runif(1000, 9.47, 56.77), # Numeric body mass index
+#  
 #   minperweek = runif(1000, 0, 2004), # Numeric physical activity minutes
 #   totalfv = runif(1000, 0, 20), # Numeric fruit and vegetable consumption
 #   whr = runif(1000, 25, 100), # Numeric waist-to-height ratio
@@ -183,17 +183,17 @@ imputed_cycles1to6_data <- dplyr::left_join(imputed_cycles1to6_data, cycles1to6_
 #   anymed2 = sample(0:1, 1000, replace = TRUE), # Binary HTN medication (derived)
 #   ccc_32 = sample(1:2, 1000, replace = TRUE), # Binary HTN medication (self-reported)
 #   cardiov = sample(1:2, 1000, replace = TRUE), # Binary CVD
-#   adj_hh_inc = runif(1000, 20000, 150000), # Numeric income
+#  
 #   agegroup4 = sample(1:4, 1000, replace = TRUE), # Categorical age group
 #   alcdwky = sample(0:84, 1000, replace = TRUE), # Integer alcohol consumption per week
 #   bmigroup = sample(1:4, 1000, replace = TRUE), # Categorical BMI group
 #   gendhdi = sample(0:4, 1000, replace = TRUE), # Categorical self-rated health
-#   gfr = runif(1000, 6, 240), # Numeric glomerular filtration rate
-#   hwm_13kg = runif(1000, 42.0, 176.5), # Numeric weight in kg
-#   hwm_14cx = runif(1000, 61.4, 162.5), # Numeric waist circumference in cm
+#   
+#  
+#   
 #   img_03 = sample(1:2, 1000, replace = TRUE), # Binary immigration variable
-#   lab_bpb = runif(1000, 0.009, 1.2), # Numeric blood lead measurement
-#   lab_hba1 = runif(1000, 0.042, 0.130), # Numeric HbA1c
+#   
+#   
 #   mvpa150wk = sample(1:2, 1000, replace = TRUE), # Binary moderate-vigorous activity
 #   nonhdltodd = sample(1:2, 1000, replace = TRUE), # Binary non-HDL cholesterol
 #   gooddiet = sample(1:2, 1000, replace = TRUE), # Binary poor diet indicator
@@ -838,6 +838,568 @@ for (subgroup in subgroups) {
 female_calibration_results
 ```
 
+### Partial effect plots
+
+```{r, warning = FALSE, message = FALSE}
+# Set data distributions
+male_dd <- datadist(male_data)
+options(datadist = "male_dd")
+
+female_dd <- datadist(female_data)
+options(datadist = "female_dd")
+
+# Fit final full models with lrm to make partial effect plots work
+male_final_model <- rms::lrm(highbp14090_adj ~ rcs(clc_age, 4) + married + edudr04 + working + gendmhi + gen_025 + gen_045 + fmh_15 + rcs(hwmdbmi, 3) + low_drink_score1 + rcs(minperweek, 3) + smoke + slp_11 + totalfv + diabx + ckd + rcs(clc_age, 4)*gen_045 + rcs(clc_age, 4)*rcs(hwmdbmi, 3) + rcs(clc_age, 4)*rcs(minperweek, 3) + rcs(clc_age, 4)*smoke + rcs(clc_age, 4)*slp_11 + rcs(clc_age, 4)*diabx + rcs(clc_age, 4)*ckd, data = male_data, weights = wgt_full, tol = 1e-13)
+
+female_final_model <- rms::lrm(highbp14090_adj ~ rcs(clc_age, 4) + married + edudr04 + working + gendmhi + gen_025 + gen_045 + fmh_15 + rcs(hwmdbmi, 3) + low_drink_score1 + rcs(minperweek, 3) + smoke + slp_11 + totalfv + diabx + ckd + rcs(clc_age, 4)*gen_045 + rcs(clc_age, 4)*rcs(hwmdbmi, 3) + rcs(clc_age, 4)*rcs(minperweek, 3) + rcs(clc_age, 4)*smoke + rcs(clc_age, 4)*slp_11 + rcs(clc_age, 4)*diabx + rcs(clc_age, 4)*ckd, data = female_data, weights = wgt_full, tol = 1e-13)
+
+# Generate partial effect plots
+ggplot(Predict(male_final_model))
+ggplot(Predict(female_final_model))
+```
+
+### Model parameters
+
+```{r, warning = FALSE, message = FALSE}
+# Get beta coefficients and their standard errors for full models
+male_full_betas <- extract_beta_coefs(male_model)
+female_full_betas <- extract_beta_coefs(female_model)
+
+# Get beta coefficients and their standard errors for full models
+male_glm_betas <- extract_beta_coefs(male_final_model)
+female_glm_betas <- extract_beta_coefs(female_final_model)
+
+# Get beta coefficients and their standard errors for reduced models
+male_reduced_betas <- extract_beta_coefs(male_reduced_model)
+female_reduced_betas <- extract_beta_coefs(female_reduced_model)
+
+# Export beta coefficient tables as csv files
+write.csv(male_full_betas, file = "P:/10619/Dropbox/htnport/vignettes/New Modelling Output/Model Presentation Output/Parameters/Male Full Model Betas.csv")
+write.csv(female_full_betas, file = "P:/10619/Dropbox/htnport/vignettes/New Modelling Output/Model Presentation Output/Parameters/Female Full Model Betas.csv")
+
+write.csv(male_glm_betas, file = "P:/10619/Dropbox/htnport/vignettes/New Modelling Output/Model Presentation Output/Parameters/Male Full GLM Model Betas.csv")
+write.csv(female_glm_betas, file = "P:/10619/Dropbox/htnport/vignettes/New Modelling Output/Model Presentation Output/Parameters/Female Full GLM Model Betas.csv")
+
+write.csv(male_reduced_betas, file = "P:/10619/Dropbox/htnport/vignettes/New Modelling Output/Model Presentation Output/Parameters/Male Reduced Model Betas.csv")
+write.csv(female_reduced_betas, file = "P:/10619/Dropbox/htnport/vignettes/New Modelling Output/Model Presentation Output/Parameters/Female Reduced Model Betas.csv")
+
+# Re-apply survey weights to male and female data
+male_replicate_weights <- male_data %>%
+  dplyr::select(dplyr::starts_with("bsw")) %>%
+  names()
+
+weighted_male <- male_data %>%
+  srvyr::as_survey_rep(
+    weights = wgt_full,
+    repweights = all_of(male_replicate_weights),
+    type = "bootstrap"
+  )
+
+weighted_male$degf <- 68
+
+female_replicate_weights <- female_data %>%
+  dplyr::select(dplyr::starts_with("bsw")) %>%
+  names()
+
+weighted_female <- female_data %>%
+  srvyr::as_survey_rep(
+    weights = wgt_full,
+    repweights = all_of(female_replicate_weights),
+    type = "bootstrap"
+  )
+
+weighted_female$degf <- 68
+
+# Print weighted means for each continuous variable
+for (var in cont_variables) {
+  mean_value <- survey::svymean(as.formula(paste("~", var)), design = weighted_male)
+  cat(var, ":", mean_value, "\n")
+}
+for (var in cont_variables) {
+  mean_value <- survey::svymean(as.formula(paste("~", var)), design = weighted_female)
+  cat(var, ":", mean_value, "\n")
+}
+
+# Print weighted means for each categorical variable level
+for (var in cat_variables) {
+  var_data <- weighted_male$variables[[var]]  # Extract the variable
+  
+  # Calculate weighted frequencies
+  freq_table <- survey::svytable(as.formula(paste0("~", var)), design = weighted_male)
+  
+  # Weighted mean (proportion for each category)
+  weighted_mean <- freq_table / sum(freq_table)
+  
+  # Get all category names and exclude the lowest-numbered one
+  categories <- names(weighted_mean)
+  # reference_category <- min(as.numeric(categories))  # Find the lowest category
+  # filtered_categories <- setdiff(categories, reference_category)  # Exclude it
+  
+  cat("\nVariable:", var, "\n")  # Print the variable name
+  
+  # Loop through remaining categories and print their proportions
+  for (category in categories) {
+    cat("  Category:", category, " - Weighted Mean:", round(weighted_mean[category], 4), "\n")
+  }
+}
+
+for (var in cat_variables) {
+  var_data <- weighted_female$variables[[var]]  # Extract the variable
+  
+  # Calculate weighted frequencies
+  freq_table <- survey::svytable(as.formula(paste0("~", var)), design = weighted_female)
+  
+  # Weighted mean (proportion for each category)
+  weighted_mean <- freq_table / sum(freq_table)
+  
+  # Get all category names and exclude the lowest-numbered one
+  categories <- names(weighted_mean)
+  # reference_category <- min(as.numeric(categories))  # Find the lowest category
+  # filtered_categories <- setdiff(categories, reference_category)  # Exclude it
+  
+  cat("\nVariable:", var, "\n")  # Print the variable name
+  
+  # Loop through remaining categories and print their proportions
+  for (category in categories) {
+    cat("  Category:", category, " - Weighted Mean:", round(weighted_mean[category], 4), "\n")
+  }
+}
+
+# Print knot locations of transformed continuous variables
+rcspline.eval(x = weighted_male$variables$clc_age, nk = 4, knots.only = TRUE)
+rcspline.eval(x = weighted_male$variables$hwmdbmi, nk = 3, knots.only = TRUE)
+rcspline.eval(x = weighted_male$variables$minperweek, nk = 3, knots.only = TRUE)
+
+rcspline.eval(x = weighted_female$variables$clc_age, nk = 4, knots.only = TRUE)
+rcspline.eval(x = weighted_female$variables$hwmdbmi, nk = 3, knots.only = TRUE)
+rcspline.eval(x = weighted_female$variables$minperweek, nk = 3, knots.only = TRUE)
+
+# attributes(rcspline.eval(male_model$clc_age, nk=4))$knots
+# attributes(rcspline.eval(male_model$hwmdbmi, nk=3))$knots
+# attributes(rcspline.eval(male_model$minperweek, nk=3))$knots
+
+# attributes(rcspline.eval(female_model$clc_age, nk=4))$knots
+# attributes(rcspline.eval(female_model$hwmdbmi, nk=3))$knots
+# attributes(rcspline.eval(female_model$minperweek, nk=3))$knots
+```
+
+### Beta x predictor checks (change model for first two lines if nec.) 
+
+```{r}
+# Get the model matrix (contains all transformed variables and interactions)
+model_matrix <- model.matrix(male_model)
+
+# Get the coefficients
+coefs <- coef(male_model)
+
+# Create a matrix where each column is beta * variable for each term
+contributions <- sweep(model_matrix, 2, coefs, "*")
+
+# If you want the sum for each observation (the linear predictor)
+linear_predictor <- rowSums(contributions)
+
+# If you want to look at the contribution of each term for each observation
+head(contributions)
+
+# Or calculate summary statistics of the contributions
+contribution_summary <- colMeans(abs(contributions))
+sort(contribution_summary, decreasing = TRUE)  # Shows most influential terms
+```
+
+### Shap plot (male full model)
+
+```{r, warning = FALSE, message = FALSE}
+# Reset male data
+male_data <- dplyr::filter(imputed_cycles1to6_data, clc_sex == 1)
+male_data <- male_data %>%
+  dplyr::mutate(wgt_full = wgt_full / mean(wgt_full))
+
+# Fit final full male model with glm to avoid errors
+male_final_model <- glm(highbp14090_adj ~ rcs(clc_age, 4) + married + edudr04 + working + gendmhi + gen_025 + gen_045 + fmh_15 + rcs(hwmdbmi, 3) + low_drink_score1 + rcs(minperweek, 3) + smoke + slp_11 + totalfv + diabx + ckd + rcs(clc_age, 4)*gen_045 + rcs(clc_age, 4)*rcs(hwmdbmi, 3) + rcs(clc_age, 4)*rcs(minperweek, 3) + rcs(clc_age, 4)*smoke + rcs(clc_age, 4)*slp_11 + rcs(clc_age, 4)*diabx + rcs(clc_age, 4)*ckd, family = quasibinomial(), data = male_data, weights = wgt_full)
+
+# Predictors and outcome only
+male_data <- male_data %>% 
+  dplyr::select(recodeflow:::select_vars_by_role(c("Predictor"), my_variables)) %>%
+  dplyr::select(-whr)
+
+# Create observation as a data frame
+observation <- data.frame(
+  clc_age = 24,         # 24-year old male
+  married = 3,          # Single
+  edudr04 = 0,          # Post-secondary graduate
+  working = 2,          # Not working
+  gendmhi = 0,          # Good, very good, or excellent mental health
+  gen_025 = 1,          # Not at all to a bit stressed
+  gen_045 = 1,          # Strong sense of belonging
+  fmh_15 = 1,           # Family history of hypertension present
+  hwmdbmi = 19.6,       # BMI = 19.6; Healthy
+  low_drink_score1 = 1, # Never drinker
+  minperweek = 30,      # Exercises 30 min per week; does not meet criteria
+  smoke = 0,            # Never smoked  
+  slp_11 = 7,           # Sleeps 7 hours per night
+  totalfv = 5,          # Eats fruits and veggies 5 times per day; meets criteria
+  diabx = 0,            # Diabetes absent
+  ckd = 0               # Chronic kidney disease absent  
+)
+
+# Ensure observation has the same structure and var order as male_data
+observation <- observation[, names(male_data), drop = FALSE]
+
+for (var in names(male_data)) {
+  if (is.factor(male_data[[var]])) {
+    # Convert to factor and ensure levels match male_data
+    observation[[var]] <- factor(observation[[var]], levels = levels(male_data[[var]]))
+  } else {
+    # Convert to numeric for consistency
+    observation[[var]] <- as.numeric(observation[[var]])
+  }
+}
+
+# Create explainer object for model
+male_explainer <- iml::Predictor$new(
+   model = male_final_model,                                       # Pass the model
+   data = male_data,                                               # Pass the data
+   y = male_data[["highbp14090_adj"]],                             # Indicate outcome
+   type = "response"                                               # Return predicted probabilities )
+)
+
+# Compute and plot SHAP values
+set.seed(456)
+male_shap_values <- iml::Shapley$new(male_explainer, x.interest = observation)
+
+shap_df <- as.data.frame(male_shap_values$results) %>%
+  mutate(
+    std.err = sqrt(phi.var),                         # Compute standard error
+    feature = reorder(feature, phi)                  # Reorder for plotting
+  )
+
+shap_df %>%
+  mutate(feature = reorder(feature, phi)) %>%
+  ggplot(aes(x = phi, y = feature)) +
+  geom_bar(stat = "identity", fill = "grey30") +
+  geom_errorbarh(aes(xmin = phi - std.err, xmax = phi + std.err), height = 0.2) +
+  labs(
+    x = "SHAP value",
+    y = NULL,
+    title = paste0("Actual prediction: ", round(male_shap_values$y.hat.interest, 2),
+                   "\nAverage prediction: ", round(male_shap_values$y.hat.average, 2))
+  ) +
+  theme_minimal()
+
+as.data.frame(shap_df) %>%
+  arrange(desc(phi)) %>%
+  select(feature.value, phi, std.err)
+```
+
+### Shap plot (male reduced model)
+
+```{r}
+# Reset male data
+male_data <- dplyr::filter(imputed_cycles1to6_data, clc_sex == 1)
+male_data <- male_data %>%
+  dplyr::mutate(wgt_full = wgt_full / mean(wgt_full))
+
+# Fit final reduced male model with glm to avoid errors
+male_final_reduced_model <- glm(highbp14090_adj ~ rcs(clc_age, 4) + fmh_15 + rcs(clc_age, 4)*rcs(hwmdbmi, 3) + rcs(clc_age, 4)*diabx, family = quasibinomial(), data = male_data, weights = wgt_full)
+
+# Predictors and outcome only
+male_data <- male_data %>% 
+  dplyr::select(clc_age, fmh_15, diabx, hwmdbmi)
+
+# Create observation as a data frame
+observation <- data.frame(
+  clc_age = 24,         # 24-year old male
+  fmh_15 = 1,           # Family history of hypertension present
+  hwmdbmi = 19.6,       # BMI = 19.6; Healthy
+  diabx = 0             # Diabetes absent
+)
+
+# Ensure observation has the same structure and var order as male_data
+observation <- observation[, names(male_data), drop = FALSE]
+
+for (var in names(male_data)) {
+  if (is.factor(male_data[[var]])) {
+    # Convert to factor and ensure levels match male_data
+    observation[[var]] <- factor(observation[[var]], levels = levels(male_data[[var]]))
+  } else {
+    # Convert to numeric for consistency
+    observation[[var]] <- as.numeric(observation[[var]])
+  }
+}
+
+# Create explainer object for model
+male_explainer <- iml::Predictor$new(
+   model = male_final_reduced_model,                               # Pass the model
+   data = male_data,                                               # Pass the data
+   y = male_data[["highbp14090_adj"]],                             # Indicate outcome
+   type = "response"                                               # Return predicted probabilities )
+)
+
+# Compute and plot SHAP values
+set.seed(456)
+male_shap_values <- iml::Shapley$new(male_explainer, x.interest = observation)
+
+shap_df <- as.data.frame(male_shap_values$results) %>%
+  mutate(
+    std.err = sqrt(phi.var),                         # Compute standard error
+    feature = reorder(feature, phi)                  # Reorder for plotting
+  )
+
+shap_df %>%
+  mutate(feature = reorder(feature, phi)) %>%
+  ggplot(aes(x = phi, y = feature)) +
+  geom_bar(stat = "identity", fill = "grey30") +
+  geom_errorbarh(aes(xmin = phi - std.err, xmax = phi + std.err), height = 0.2) +
+  labs(
+    x = "SHAP value",
+    y = NULL,
+    title = paste0("Actual prediction: ", round(male_shap_values$y.hat.interest, 2),
+                   "\nAverage prediction: ", round(male_shap_values$y.hat.average, 2))
+  ) +
+  theme_minimal()
+
+as.data.frame(shap_df) %>%
+  arrange(desc(phi)) %>%
+  select(feature.value, phi, std.err)
+```
+
+### Shap-adjusted ORs and CIs (full models only)
+
+```{r, warning = FALSE, message = FALSE}
+# Reset male and female data
+male_data <- dplyr::filter(imputed_cycles1to6_data, clc_sex == 1)
+female_data <- dplyr::filter(imputed_cycles1to6_data, clc_sex == 2)
+
+male_data <- male_data %>%
+  dplyr::mutate(wgt_full = wgt_full / mean(wgt_full))
+female_data <- female_data %>%
+  dplyr::mutate(wgt_full = wgt_full / mean(wgt_full))
+
+# Fit final full models with glm to avoid errors
+male_final_model <- glm(highbp14090_adj ~ rcs(clc_age, 4) + married + edudr04 + working + gendmhi + gen_025 + gen_045 + fmh_15 + rcs(hwmdbmi, 3) + low_drink_score1 + rcs(minperweek, 3) + smoke + slp_11 + totalfv + diabx + ckd + rcs(clc_age, 4)*gen_045 + rcs(clc_age, 4)*rcs(hwmdbmi, 3) + rcs(clc_age, 4)*rcs(minperweek, 3) + rcs(clc_age, 4)*smoke + rcs(clc_age, 4)*slp_11 + rcs(clc_age, 4)*diabx + rcs(clc_age, 4)*ckd, data = male_data, family = binomial(), weights = wgt_full)
+
+female_final_model <- glm(highbp14090_adj ~ rcs(clc_age, 4) + married + edudr04 + working + gendmhi + gen_025 + gen_045 + fmh_15 + rcs(hwmdbmi, 3) + low_drink_score1 + rcs(minperweek, 3) + smoke + slp_11 + totalfv + diabx + ckd + rcs(clc_age, 4)*gen_045 + rcs(clc_age, 4)*rcs(hwmdbmi, 3) + rcs(clc_age, 4)*rcs(minperweek, 3) + rcs(clc_age, 4)*smoke + rcs(clc_age, 4)*slp_11 + rcs(clc_age, 4)*diabx + rcs(clc_age, 4)*ckd, data = female_data, family = binomial(), weights = wgt_full)
+
+# Male model
+# Predictors only
+male_data <- male_data %>% 
+  dplyr::select(recodeflow:::select_vars_by_role(c("Predictor"), my_variables)) %>%
+  dplyr::select(-whr)
+
+# Create explainer object for model
+male_explainer <- iml::Predictor$new(
+   model = male_final_model,                                       # Pass the model
+   data = male_data,                                               # Pass the data
+   y = male_data[["highbp14090_adj"]]                              # Indicate outcome
+)
+
+# Initialize a list to store SHAP values
+set.seed(123)
+male_shap_list <- list()
+
+# Generate Shap values for each row in male_data
+for (i in 1:nrow(male_data)) {
+    # Ensure observation remains a data frame
+    observation <- male_data[i, , drop = FALSE]  
+    
+    # Generate SHAP values
+    male_shap_values <- iml::Shapley$new(male_explainer, x.interest = observation)
+    
+    # Store results in the list
+    male_shap_list[[i]] <- male_shap_values$results
+}
+
+# Convert list into a data frame for easier manipulation
+all_male_shap_values <- do.call(rbind, male_shap_list)
+
+# Loop through all predictors and print their S-OR and CI
+predictors <- recodeflow:::select_vars_by_role(c("Predictor"), my_variables)
+predictors <- predictors[predictors != "whr"]
+
+for (pred in predictors) {
+  print(calculate_shap_or_ci(all_male_shap_values, pred))
+}
+
+# Female model
+# Predictors only
+female_data <- female_data %>% 
+  dplyr::select(recodeflow:::select_vars_by_role(c("Predictor"), my_variables)) %>%
+  dplyr::select(-whr)
+
+# Create explainer object for model
+female_explainer <- iml::Predictor$new(
+   model = female_final_model,                                      # Pass the model
+   data = female_data,                                              # Pass the data
+   y = female_data[["highbp14090_adj"]]                             # Indicate outcome
+)
+
+# Initialize a list to store SHAP values
+set.seed(123)
+female_shap_list <- list()
+
+# Generate Shap values for each row in female_data
+for (i in 1:nrow(female_data)) {
+    # Ensure observation remains a data frame
+    observation <- female_data[i, , drop = FALSE]  
+    
+    # Generate SHAP values
+    female_shap_values <- iml::Shapley$new(female_explainer, x.interest = observation)
+    
+    # Store results in the list
+    female_shap_list[[i]] <- female_shap_values$results
+}
+
+# Convert list into a data frame for easier manipulation
+all_female_shap_values <- do.call(rbind, female_shap_list)
+
+# Loop through all predictors and print their S-OR and CI
+predictors <- recodeflow:::select_vars_by_role(c("Predictor"), my_variables)
+predictors <- predictors[predictors != "whr"]
+
+for (pred in predictors) {
+  print(calculate_shap_or_ci(all_female_shap_values, pred))
+}
+```
+
+### Log OR plots for non-linear predictors and interactions (full models only)
+
+```{r, warning = FALSE, message = FALSE}
+# Define title labels for all plots
+title_labels <- list(
+  "ckd" = "chronic kidney disease",
+  "clc_age" = "age",
+  "diabx" = "diabetes",
+  "gen_045" = "sense of belonging",
+  "hwmdbmi" = "body mass index",
+  "minperweek" = "physical activity minutes",
+  "slp_11" = "sleep duration",
+  "smoke" = "smoking status"
+)
+
+# Define x-axis labels for RCS variable plots
+var_labels <- list(
+  "clc_age" = "Age (years)",
+  "hwmdbmi" = "Body mass index (kg/m²)",
+  "minperweek" = "Physical activity minutes (min/week)"
+)
+
+# Define legend title labels for age interaction plots
+legend_labels <- list(
+  "ckd" = "Chronic kidney disease",
+  "diabx" = "Diabetes",
+  "gen_045" = "Sense of belonging",
+  "hwmdbmi" = "Body mass index (kg/m²)",
+  "minperweek" = "Physical activity minutes (min/week)",
+  "slp_11" = "Sleep duration (hrs/night)",
+  "smoke" = "Smoking status"
+)
+
+# Define legend level labels for age x categorical variable plots
+level_labels <- list(
+  "ckd" = c("1" = "Yes", "0" = "No"),
+  "diabx" = c("1" = "Yes", "0" = "No"),
+  "gen_045" = c("1" = "Strong", "2" = "Weak"),
+  "smoke" = c("0" = "Never smoker", "1" = "Former smoker", "2" = "Current smoker")
+)
+
+# RCS variable plots
+rcs_variables <- c("clc_age", "hwmdbmi", "minperweek")
+
+for (var in rcs_variables) {
+  
+  title_label <- ifelse(var %in% names(title_labels), title_labels[[var]], var)
+  x_label <- ifelse(var %in% names(var_labels), var_labels[[var]], var)
+
+  # Male
+  preds_male <- ggpredict(male_final_model, terms = var)
+  preds_male$odds <- preds_male$predicted / (1 - preds_male$predicted)
+  ref_row <- preds_male[which.min(preds_male$x), ]
+  ref_odds <- ref_row$odds
+  preds_male$or <- preds_male$odds / ref_odds
+
+  # Female
+  preds_female <- ggpredict(female_final_model, terms = var)
+  preds_female$odds <- preds_female$predicted / (1 - preds_female$predicted)
+  ref_row <- preds_female[which.min(preds_female$x), ]
+  ref_odds <- ref_row$odds
+  preds_female$or <- preds_female$odds / ref_odds
+
+  # Male plot
+  print(ggplot(preds_male, aes(x = x, y = or)) +
+    geom_line(color = "black", size = 1.2) +
+    labs(title = paste0("Odds ratio by ", title_label, " in men"),
+         x = x_label, y = "Adjusted odds ratio") +
+    scale_y_continuous(labels = number_format(accuracy = 0.1), limits = c(0, NA)) +
+    theme_minimal())
+
+  # Female plot
+  print(ggplot(preds_female, aes(x = x, y = or)) +
+    geom_line(color = "black", size = 1.2) +
+    labs(title = paste0("Odds ratio by ", title_label, " in women"),
+         x = x_label, y = "Adjusted odds ratio") +
+    scale_y_continuous(labels = number_format(accuracy = 0.1), limits = c(0, NA)) +
+    theme_minimal())
+}
+
+# Age x categorical variable plots
+age_cat_int_variables <- c("gen_045", "smoke", "diabx", "ckd")
+
+for (var in age_cat_int_variables) {
+  print(plot_age_int_or(
+    model = male_final_model,
+    var = var,
+    var_type = "categorical",
+    sex_label = "men",
+    title_labels = title_labels,
+    legend_labels = legend_labels,
+    level_labels = level_labels
+  ))
+  
+  print(plot_age_int_or(
+    model = female_final_model,
+    var = var,
+    var_type = "categorical",
+    sex_label = "women",
+    title_labels = title_labels,
+    legend_labels = legend_labels,
+    level_labels = level_labels
+  ))
+}
+
+# Age x continuous variable plots
+age_cont_int_variables <- c("hwmdbmi", "minperweek", "slp_11")
+
+for (var in age_cont_int_variables) {
+  print(plot_age_int_or(
+    model = male_final_model,
+    var = var,
+    var_type = "continuous",
+    design = weighted_male,
+    sex_label = "men",
+    title_labels = title_labels,
+    legend_labels = legend_labels
+  ))
+
+  print(plot_age_int_or(
+    model = female_final_model,
+    var = var,
+    var_type = "continuous",
+    design = weighted_female,
+    sex_label = "women",
+    title_labels = title_labels,
+    legend_labels = legend_labels
+  ))
+}
+
+get_weighted_quantiles("hwmdbmi", weighted_male, c(0.25, 0.50, 0.75))
+get_weighted_quantiles("minperweek", weighted_male, c(0.25, 0.50, 0.75))
+get_weighted_quantiles("slp_11", weighted_male, c(0.25, 0.50, 0.75))
+
+get_weighted_quantiles("hwmdbmi", weighted_female, c(0.25, 0.50, 0.75))
+get_weighted_quantiles("minperweek", weighted_female, c(0.25, 0.50, 0.75))
+get_weighted_quantiles("slp_11", weighted_female, c(0.25, 0.50, 0.75))
+```
+
 ### Sensitivity analyses (missing data)
 
 ```{r, warning = FALSE, message = FALSE}
@@ -964,7 +1526,20 @@ weighted_female_nofmh <- female_data_nofmh %>%
     type = "bootstrap"
   )
 
-# Fit reduced models with new family history predictor to see effect
+# Fit full models with new family history predictor and see effect
+weighted_male_nofmh$degf <- 68
+male_model_nofmh <- survey::svyglm(highbp14090_adj ~ rcs(clc_age, 4) + married + edudr04 + working + gendmhi + gen_025 + gen_045 + fmh_15 + rcs(hwmdbmi, 3) + low_drink_score1 + rcs(minperweek, 3) + smoke + slp_11 + totalfv + diabx + ckd + rcs(clc_age, 4)*gen_045 + rcs(clc_age, 4)*rcs(hwmdbmi, 3) + rcs(clc_age, 4)*rcs(minperweek, 3) + rcs(clc_age, 4)*smoke + rcs(clc_age, 4)*slp_11 + rcs(clc_age, 4)*diabx + rcs(clc_age, 4)*ckd, design = weighted_male_nofmh, family = quasibinomial())
+
+weighted_female_nofmh$degf <- 68
+female_model_nofmh <- survey::svyglm(highbp14090_adj ~ rcs(clc_age, 4) + married + edudr04 + working + gendmhi + gen_025 + gen_045 + fmh_15 + rcs(hwmdbmi, 3) + low_drink_score1 + rcs(minperweek, 3) + smoke + slp_11 + totalfv + diabx + ckd + rcs(clc_age, 4)*gen_045 + rcs(clc_age, 4)*rcs(hwmdbmi, 3) + rcs(clc_age, 4)*rcs(minperweek, 3) + rcs(clc_age, 4)*smoke + rcs(clc_age, 4)*slp_11 + rcs(clc_age, 4)*diabx + rcs(clc_age, 4)*ckd, design = weighted_female_nofmh, family = quasibinomial())
+
+male_predicted_probabilities <- generate_predicted_probabilities(male_model_nofmh)
+female_predicted_probabilities <- generate_predicted_probabilities(female_model_nofmh)
+
+calibration(male_predicted_probabilities, model.frame(male_model_nofmh)$highbp14090_adj)
+calibration(female_predicted_probabilities, model.frame(female_model_nofmh)$highbp14090_adj)
+
+# Fit reduced models with new family history predictor and see effect
 weighted_male_nofmh$degf <- 68
 male_reduced_model_nofmh <- survey::svyglm(highbp14090_adj ~ rcs(clc_age, 4) + fmh_15 + rcs(clc_age, 4)*rcs(hwmdbmi, 3) + rcs(clc_age, 4)*diabx, design = weighted_male_nofmh, family = quasibinomial())
 
@@ -1047,10 +1622,40 @@ calibration(male_predicted_probabilities, model.frame(unimputed_male_reduced_mod
 calibration(female_predicted_probabilities, model.frame(unimputed_female_reduced_model)$highbp14090_adj)
 ```
 
-### Sensitivity analyses (WHR but not BMI)
+### Sensitivity analyses (outliers)
 
 ```{r, warning = FALSE, message = FALSE}
-# Reobtain centered weighted objects
+# Reobtain imputed data and centered objects but don't truncate anything
+imputed_cycles1to6_data <- impute_variables(dplyr::select(cycles1to6_data, -clinicid), outcomes = recodeflow:::select_vars_by_role(c("Predictor", "cali-subgroup"), my_variables), predictors = recodeflow:::select_vars_by_role(c("imputation-predictor"), my_variables))
+imputed_cycles1to6_data$clinicid <- cycles1to6_data$clinicid
+
+names(cycles1to6_bsw) <- tolower(names(cycles1to6_bsw))
+
+cycles1to6_bsw <- cycles1to6_bsw %>%
+  dplyr::select(c(clinicid, starts_with("bsw")))
+
+imputed_cycles1to6_data <- dplyr::left_join(imputed_cycles1to6_data, cycles1to6_bsw, by = c("clinicid"))
+
+imputed_cycles1to6_data <- imputed_cycles1to6_data %>%
+  dplyr::mutate(highbp14090_adj = ifelse(highbp14090_adj == 2, 0, highbp14090_adj),
+                ckd = ifelse(ckd == 2, 0, ckd),
+                diabx = ifelse(diabx == 2, 0, diabx),
+                fmh_15 = ifelse(fmh_15 == 2, 0, fmh_15),
+                gendmhi = ifelse(gendmhi == 2, 0, gendmhi),
+                edudr04 = case_when(
+                  edudr04 == 1 ~ 2,
+                  edudr04 == 2 ~ 1,
+                  edudr04 == 3 ~ 0
+                ),
+                smoke = case_when(
+                  smoke == 1 ~ 2,
+                  smoke == 2 ~ 1,
+                  smoke == 3 ~ 0
+                ))
+
+imputed_cycles1to6_data <- imputed_cycles1to6_data %>%
+  dplyr::mutate(across(all_of(cat_variables), as.factor))
+
 male_data <- dplyr::filter(imputed_cycles1to6_data, clc_sex == 1)
 female_data <- dplyr::filter(imputed_cycles1to6_data, clc_sex == 2)
 
@@ -1104,66 +1709,75 @@ for (var in cat_variables) {
   weighted_female$variables[[var]] <- center_cat_variable(var, weighted_female)
 }
 
-# Fit full male and female models with WHR only and see effect
+# Fit full male and female models with outliers and see effect
 weighted_male$degf <- 68
-male_model_whr <- survey::svyglm(highbp14090_adj ~ rcs(clc_age, 4) + married + edudr04 + working + gendmhi + gen_025 + gen_045 + fmh_15 + rcs(whr, 3) + low_drink_score1 + rcs(minperweek, 3) + smoke + slp_11 + totalfv + diabx + ckd + rcs(clc_age, 4)*gen_045 + rcs(clc_age, 4)*rcs(whr, 3) + rcs(clc_age, 4)*rcs(minperweek, 3) + rcs(clc_age, 4)*smoke + rcs(clc_age, 4)*slp_11 + rcs(clc_age, 4)*diabx + rcs(clc_age, 4)*ckd, design = weighted_male, family = quasibinomial())
+untruncated_male_model <- survey::svyglm(highbp14090_adj ~ rcs(clc_age, 4) + married + edudr04 + working + gendmhi + gen_025 + gen_045 + fmh_15 + rcs(hwmdbmi, 3) + low_drink_score1 + rcs(minperweek, 3) + smoke + slp_11 + totalfv + diabx + ckd + rcs(clc_age, 4)*gen_045 + rcs(clc_age, 4)*rcs(hwmdbmi, 3) + rcs(clc_age, 4)*rcs(minperweek, 3) + rcs(clc_age, 4)*smoke + rcs(clc_age, 4)*slp_11 + rcs(clc_age, 4)*diabx + rcs(clc_age, 4)*ckd, design = weighted_male, family = quasibinomial())
 
 weighted_female$degf <- 68
-female_model_whr <- survey::svyglm(highbp14090_adj ~ rcs(clc_age, 4) + married + edudr04 + working + gendmhi + gen_025 + gen_045 + fmh_15 + rcs(whr, 3) + low_drink_score1 + rcs(minperweek, 3) + smoke + slp_11 + totalfv + diabx + ckd + rcs(clc_age, 4)*gen_045 + rcs(clc_age, 4)*rcs(whr, 3) + rcs(clc_age, 4)*rcs(minperweek, 3) + rcs(clc_age, 4)*smoke + rcs(clc_age, 4)*slp_11 + rcs(clc_age, 4)*diabx + rcs(clc_age, 4)*ckd, design = weighted_female, family = quasibinomial())
+untruncated_female_model <- survey::svyglm(highbp14090_adj ~ rcs(clc_age, 4) + married + edudr04 + working + gendmhi + gen_025 + gen_045 + fmh_15 + rcs(hwmdbmi, 3) + low_drink_score1 + rcs(minperweek, 3) + smoke + slp_11 + totalfv + diabx + ckd + rcs(clc_age, 4)*gen_045 + rcs(clc_age, 4)*rcs(hwmdbmi, 3) + rcs(clc_age, 4)*rcs(minperweek, 3) + rcs(clc_age, 4)*smoke + rcs(clc_age, 4)*slp_11 + rcs(clc_age, 4)*diabx + rcs(clc_age, 4)*ckd, design = weighted_female, family = quasibinomial())
 
-male_predicted_probabilities <- generate_predicted_probabilities(male_model_whr)
-female_predicted_probabilities <- generate_predicted_probabilities(female_model_whr)
+male_predicted_probabilities <- generate_predicted_probabilities(untruncated_male_model)
+female_predicted_probabilities <- generate_predicted_probabilities(untruncated_female_model)
 
-calibration(male_predicted_probabilities, model.frame(male_model_whr)$highbp14090_adj)
-calibration(female_predicted_probabilities, model.frame(female_model_whr)$highbp14090_adj)
+calibration(male_predicted_probabilities, model.frame(untruncated_male_model)$highbp14090_adj)
+calibration(female_predicted_probabilities, model.frame(untruncated_female_model)$highbp14090_adj)
+
+# Fit reduced male and female models with outliers and see effect
+weighted_male$degf <- 68
+untruncated_male_reduced_model <- survey::svyglm(highbp14090_adj ~ rcs(clc_age, 4) + fmh_15 + rcs(clc_age, 4)*rcs(hwmdbmi, 3) + rcs(clc_age, 4)*diabx, design = weighted_male, family = quasibinomial())
+
+weighted_female$degf <- 68
+untruncated_female_reduced_model <- survey::svyglm(highbp14090_adj ~ rcs(clc_age, 4) + fmh_15 + rcs(clc_age, 4)*rcs(hwmdbmi, 3) + rcs(clc_age, 4)*diabx, design = weighted_female, family = quasibinomial())
+
+male_predicted_probabilities <- generate_predicted_probabilities(untruncated_male_reduced_model)
+female_predicted_probabilities <- generate_predicted_probabilities(untruncated_female_reduced_model)
+
+calibration(male_predicted_probabilities, model.frame(untruncated_male_reduced_model)$highbp14090_adj)
+calibration(female_predicted_probabilities, model.frame(untruncated_female_reduced_model)$highbp14090_adj)
 ```
 
-### Partial effect plots
+### Sensitivity analyses (BMI and WHR together)
 
 ```{r, warning = FALSE, message = FALSE}
-# Set data distributions
-male_dd <- datadist(male_data)
-options(datadist = "male_dd")
+# Reobtain imputed, truncated data and centered objects
+imputed_cycles1to6_data <- impute_variables(dplyr::select(cycles1to6_data, -clinicid), outcomes = recodeflow:::select_vars_by_role(c("Predictor", "cali-subgroup"), my_variables), predictors = recodeflow:::select_vars_by_role(c("imputation-predictor"), my_variables))
+imputed_cycles1to6_data$clinicid <- cycles1to6_data$clinicid
 
-female_dd <- datadist(female_data)
-options(datadist = "female_dd")
+names(cycles1to6_bsw) <- tolower(names(cycles1to6_bsw))
 
-# Fit final full models with lrm to make partial effect plots work
-male_final_model <- rms::lrm(highbp14090_adj ~ rcs(clc_age, 4) + married + edudr04 + working + gendmhi + gen_025 + gen_045 + fmh_15 + rcs(hwmdbmi, 3) + low_drink_score1 + rcs(minperweek, 3) + smoke + slp_11 + totalfv + diabx + ckd + rcs(clc_age, 4)*gen_045 + rcs(clc_age, 4)*rcs(hwmdbmi, 3) + rcs(clc_age, 4)*rcs(minperweek, 3) + rcs(clc_age, 4)*smoke + rcs(clc_age, 4)*slp_11 + rcs(clc_age, 4)*diabx + rcs(clc_age, 4)*ckd, data = male_data, weights = wgt_full, tol = 1e-13)
+cycles1to6_bsw <- cycles1to6_bsw %>%
+  dplyr::select(c(clinicid, starts_with("bsw")))
 
-female_final_model <- rms::lrm(highbp14090_adj ~ rcs(clc_age, 4) + married + edudr04 + working + gendmhi + gen_025 + gen_045 + fmh_15 + rcs(hwmdbmi, 3) + low_drink_score1 + rcs(minperweek, 3) + smoke + slp_11 + totalfv + diabx + ckd + rcs(clc_age, 4)*gen_045 + rcs(clc_age, 4)*rcs(hwmdbmi, 3) + rcs(clc_age, 4)*rcs(minperweek, 3) + rcs(clc_age, 4)*smoke + rcs(clc_age, 4)*slp_11 + rcs(clc_age, 4)*diabx + rcs(clc_age, 4)*ckd, data = female_data, weights = wgt_full, tol = 1e-13)
+imputed_cycles1to6_data <- dplyr::left_join(imputed_cycles1to6_data, cycles1to6_bsw, by = c("clinicid"))
 
-# Generate partial effect plots
-ggplot(Predict(male_final_model))
-ggplot(Predict(female_final_model))
-```
+imputed_cycles1to6_data <- truncate_skewed(imputed_cycles1to6_data)
 
-### Model parameters
+imputed_cycles1to6_data <- imputed_cycles1to6_data %>%
+  dplyr::mutate(highbp14090_adj = ifelse(highbp14090_adj == 2, 0, highbp14090_adj),
+                ckd = ifelse(ckd == 2, 0, ckd),
+                diabx = ifelse(diabx == 2, 0, diabx),
+                fmh_15 = ifelse(fmh_15 == 2, 0, fmh_15),
+                gendmhi = ifelse(gendmhi == 2, 0, gendmhi),
+                edudr04 = case_when(
+                  edudr04 == 1 ~ 2,
+                  edudr04 == 2 ~ 1,
+                  edudr04 == 3 ~ 0
+                ),
+                smoke = case_when(
+                  smoke == 1 ~ 2,
+                  smoke == 2 ~ 1,
+                  smoke == 3 ~ 0
+                ))
 
-```{r, warning = FALSE, message = FALSE}
-# Get beta coefficients and their standard errors for full models
-male_full_betas <- extract_beta_coefs(male_model)
-female_full_betas <- extract_beta_coefs(female_model)
+imputed_cycles1to6_data <- imputed_cycles1to6_data %>%
+  dplyr::mutate(across(all_of(cat_variables), as.factor))
 
-# Get beta coefficients and their standard errors for full models
-male_glm_betas <- extract_beta_coefs(male_final_model)
-female_glm_betas <- extract_beta_coefs(female_final_model)
+male_data <- dplyr::filter(imputed_cycles1to6_data, clc_sex == 1)
+female_data <- dplyr::filter(imputed_cycles1to6_data, clc_sex == 2)
 
-# Get beta coefficients and their standard errors for reduced models
-male_reduced_betas <- extract_beta_coefs(male_reduced_model)
-female_reduced_betas <- extract_beta_coefs(female_reduced_model)
+male_data <- male_data %>%
+  dplyr::mutate(wgt_full = wgt_full / mean(wgt_full))
 
-# Export beta coefficient tables as csv files
-write.csv(male_full_betas, file = "P:/10619/Dropbox/htnport/vignettes/Model Presentation Output/Male Full Model Betas.csv")
-write.csv(female_full_betas, file = "P:/10619/Dropbox/htnport/vignettes/Model Presentation Output/Female Full Model Betas.csv")
-
-write.csv(male_glm_betas, file = "P:/10619/Dropbox/htnport/vignettes/Model Presentation Output/Male Full GLM Model Betas.csv")
-write.csv(female_glm_betas, file = "P:/10619/Dropbox/htnport/vignettes/Model Presentation Output/Female Full GLM Model Betas.csv")
-
-write.csv(male_reduced_betas, file = "P:/10619/Dropbox/htnport/vignettes/Model Presentation Output/Male Reduced Model Betas.csv")
-write.csv(female_reduced_betas, file = "P:/10619/Dropbox/htnport/vignettes/Model Presentation Output/Female Reduced Model Betas.csv")
-
-# Re-apply survey weights to male and female data
 male_replicate_weights <- male_data %>%
   dplyr::select(dplyr::starts_with("bsw")) %>%
   names()
@@ -1176,6 +1790,9 @@ weighted_male <- male_data %>%
   )
 
 weighted_male$degf <- 68
+
+female_data <- female_data %>%
+  dplyr::mutate(wgt_full = wgt_full / mean(wgt_full))
 
 female_replicate_weights <- female_data %>%
   dplyr::select(dplyr::starts_with("bsw")) %>%
@@ -1190,227 +1807,37 @@ weighted_female <- female_data %>%
 
 weighted_female$degf <- 68
 
-# Print weighted means for each continuous variable
 for (var in cont_variables) {
-  mean_value <- survey::svymean(as.formula(paste("~", var)), design = weighted_male)
-  cat(var, ":", mean_value, "\n")
+  weighted_male$variables[[var]] <- center_cont_variable(var, weighted_male)
 }
 for (var in cont_variables) {
-  mean_value <- survey::svymean(as.formula(paste("~", var)), design = weighted_female)
-  cat(var, ":", mean_value, "\n")
-}
-
-# Print weighted means for each categorical variable level
-for (var in cat_variables) {
-  var_data <- weighted_male$variables[[var]]  # Extract the variable
-  
-  # Calculate weighted frequencies
-  freq_table <- survey::svytable(as.formula(paste0("~", var)), design = weighted_male)
-  
-  # Weighted mean (proportion for each category)
-  weighted_mean <- freq_table / sum(freq_table)
-  
-  # Get all category names and exclude the lowest-numbered one
-  categories <- names(weighted_mean)
-  # reference_category <- min(as.numeric(categories))  # Find the lowest category
-  # filtered_categories <- setdiff(categories, reference_category)  # Exclude it
-  
-  cat("\nVariable:", var, "\n")  # Print the variable name
-  
-  # Loop through remaining categories and print their proportions
-  for (category in categories) {
-    cat("  Category:", category, " - Weighted Mean:", round(weighted_mean[category], 4), "\n")
-  }
+  weighted_female$variables[[var]] <- center_cont_variable(var, weighted_female)
 }
 
 for (var in cat_variables) {
-  var_data <- weighted_female$variables[[var]]  # Extract the variable
-  
-  # Calculate weighted frequencies
-  freq_table <- survey::svytable(as.formula(paste0("~", var)), design = weighted_female)
-  
-  # Weighted mean (proportion for each category)
-  weighted_mean <- freq_table / sum(freq_table)
-  
-  # Get all category names and exclude the lowest-numbered one
-  categories <- names(weighted_mean)
-  # reference_category <- min(as.numeric(categories))  # Find the lowest category
-  # filtered_categories <- setdiff(categories, reference_category)  # Exclude it
-  
-  cat("\nVariable:", var, "\n")  # Print the variable name
-  
-  # Loop through remaining categories and print their proportions
-  for (category in categories) {
-    cat("  Category:", category, " - Weighted Mean:", round(weighted_mean[category], 4), "\n")
-  }
+  weighted_male$variables[[var]] <- center_cat_variable(var, weighted_male)
+}
+for (var in cat_variables) {
+  weighted_female$variables[[var]] <- center_cat_variable(var, weighted_female)
 }
 
-# Print knot locations of transformed continuous variables
-rcspline.eval(x = weighted_male$variables$clc_age, nk = 4, knots.only = TRUE)
-rcspline.eval(x = weighted_male$variables$hwmdbmi, nk = 3, knots.only = TRUE)
-rcspline.eval(x = weighted_male$variables$minperweek, nk = 3, knots.only = TRUE)
+# Fit full male and female models with WHR and its interactions re-included and see effect
+weighted_male$degf <- 68
+male_model_whr <- survey::svyglm(highbp14090_adj ~ rcs(clc_age, 4) + married + edudr04 + working + gendmhi + gen_025 + gen_045 + fmh_15 + rcs(hwmdbmi, 3) + rcs(whr, 3) + low_drink_score1 + rcs(minperweek, 3) + smoke + slp_11 + totalfv + diabx + ckd + rcs(clc_age, 4)*gen_045 + rcs(clc_age, 4)*rcs(hwmdbmi, 3) + rcs(clc_age, 4)*rcs(whr, 3) + rcs(clc_age, 4)*rcs(minperweek, 3) + rcs(clc_age, 4)*smoke + rcs(clc_age, 4)*slp_11 + rcs(clc_age, 4)*diabx + rcs(clc_age, 4)*ckd + rcs(hwmdbmi, 3)*rcs(whr, 3), design = weighted_male, family = quasibinomial())
 
-rcspline.eval(x = weighted_female$variables$clc_age, nk = 4, knots.only = TRUE)
-rcspline.eval(x = weighted_female$variables$hwmdbmi, nk = 3, knots.only = TRUE)
-rcspline.eval(x = weighted_female$variables$minperweek, nk = 3, knots.only = TRUE)
+weighted_female$degf <- 68
+female_model_whr <- survey::svyglm(highbp14090_adj ~ rcs(clc_age, 4) + married + edudr04 + working + gendmhi + gen_025 + gen_045 + fmh_15 + rcs(hwmdbmi, 3) + rcs(whr, 3) + low_drink_score1 + rcs(minperweek, 3) + smoke + slp_11 + totalfv + diabx + ckd + rcs(clc_age, 4)*gen_045 + rcs(clc_age, 4)*rcs(hwmdbmi, 3) + rcs(clc_age, 4)*rcs(whr, 3) + rcs(clc_age, 4)*rcs(minperweek, 3) + rcs(clc_age, 4)*smoke + rcs(clc_age, 4)*slp_11 + rcs(clc_age, 4)*diabx + rcs(clc_age, 4)*ckd + rcs(hwmdbmi, 3)*rcs(whr, 3), design = weighted_female, family = quasibinomial())
 
-# attributes(rcspline.eval(male_model$clc_age, nk=4))$knots
-# attributes(rcspline.eval(male_model$hwmdbmi, nk=3))$knots
-# attributes(rcspline.eval(male_model$minperweek, nk=3))$knots
+male_predicted_probabilities <- generate_predicted_probabilities(male_model_whr)
+female_predicted_probabilities <- generate_predicted_probabilities(female_model_whr)
 
-# attributes(rcspline.eval(female_model$clc_age, nk=4))$knots
-# attributes(rcspline.eval(female_model$hwmdbmi, nk=3))$knots
-# attributes(rcspline.eval(female_model$minperweek, nk=3))$knots
+calibration(male_predicted_probabilities, model.frame(male_model_whr)$highbp14090_adj)
+calibration(female_predicted_probabilities, model.frame(female_model_whr)$highbp14090_adj)
 ```
 
-### Beta x Predictor checks (change model for first two lines if nec.) 
+### Sensitivity analysis (linear interactions)
 
 ```{r}
-# Get the model matrix (contains all transformed variables and interactions)
-model_matrix <- model.matrix(male_model)
-
-# Get the coefficients
-coefs <- coef(male_model)
-
-# Create a matrix where each column is beta * variable for each term
-contributions <- sweep(model_matrix, 2, coefs, "*")
-
-# If you want the sum for each observation (the linear predictor)
-linear_predictor <- rowSums(contributions)
-
-# If you want to look at the contribution of each term for each observation
-head(contributions)
-
-# Or calculate summary statistics of the contributions
-contribution_summary <- colMeans(abs(contributions))
-sort(contribution_summary, decreasing = TRUE)  # Shows most influential terms
-```
-
-### Shap plot (male full model)
-
-```{r, warning = FALSE, message = FALSE}
-# Reset male data
-male_data <- dplyr::filter(imputed_cycles1to6_data, clc_sex == 1)
-male_data <- male_data %>%
-  dplyr::mutate(wgt_full = wgt_full / mean(wgt_full))
-
-# Fit final full male model with glm to avoid errors
-male_final_model <- glm(highbp14090_adj ~ rcs(clc_age, 4) + married + edudr04 + working + gendmhi + gen_025 + gen_045 + fmh_15 + rcs(hwmdbmi, 3) + low_drink_score1 + rcs(minperweek, 3) + smoke + slp_11 + totalfv + diabx + ckd + rcs(clc_age, 4)*gen_045 + rcs(clc_age, 4)*rcs(hwmdbmi, 3) + rcs(clc_age, 4)*rcs(minperweek, 3) + rcs(clc_age, 4)*smoke + rcs(clc_age, 4)*slp_11 + rcs(clc_age, 4)*diabx + rcs(clc_age, 4)*ckd, family = quasibinomial(), data = male_data, weights = wgt_full)
-
-# Predictors only
-male_data <- male_data %>% 
-  dplyr::select(recodeflow:::select_vars_by_role(c("Predictor"), my_variables))
-
-# Create observation as a data frame
-observation <- data.frame(
-  clc_age = 24,         # 24-year old male
-  married = 3,          # Single
-  edudr04 = 0,          # Post-secondary graduate
-  working = 2,          # Not working
-  gendmhi = 0,          # Good, very good, or excellent mental health
-  gen_025 = 1,          # Not at all to a bit stressed
-  gen_045 = 1,          # Strong sense of belonging
-  fmh_15 = 1,           # Family history of hypertension present
-  hwmdbmi = 19.6,       # BMI = 19.6; Healthy
-  low_drink_score1 = 1, # Never drinker
-  minperweek = 30,      # Exercises 30 min per week; does not meet criteria
-  smoke = 0,            # Never smoked  
-  slp_11 = 7,           # Sleeps 7 hours per night
-  totalfv = 5,          # Eats fruits and veggies 5 times per day; meets criteria
-  diabx = 0,            # Diabetes absent
-  ckd = 0               # Chronic kidney disease absent  
-)
-
-# Ensure observation has the same structure and var order as male_data
-observation <- observation[, names(male_data), drop = FALSE]
-
-for (var in names(male_data)) {
-  if (is.factor(male_data[[var]])) {
-    # Convert to factor and ensure levels match male_data
-    observation[[var]] <- factor(observation[[var]], levels = levels(male_data[[var]]))
-  } else {
-    # Convert to numeric for consistency
-    observation[[var]] <- as.numeric(observation[[var]])
-  }
-}
-
-# Create explainer object for model
-male_explainer <- iml::Predictor$new(
-   model = male_final_model,                                       # Pass the model
-   data = male_data,                                               # Pass the data
-   y = male_data[["highbp14090_adj"]],                             # Indicate outcome
-   type = "response"                                               # Return predicted probabilities )
-)
-
-# Compute and plot SHAP values
-set.seed(123)
-male_shap_values <- iml::Shapley$new(male_explainer, x.interest = observation)
-
-as.data.frame(male_shap_values$results) %>%
-  arrange(desc(phi)) %>%
-  select(phi, feature.value)
-
-plot(male_shap_values)
-```
-
-### Shap plot (male reduced model)
-
-```{r}
-# Reset male data
-male_data <- dplyr::filter(imputed_cycles1to6_data, clc_sex == 1)
-male_data <- male_data %>%
-  dplyr::mutate(wgt_full = wgt_full / mean(wgt_full))
-
-# Fit final reduced male model with glm to avoid errors
-male_final_reduced_model <- glm(highbp14090_adj ~ rcs(clc_age, 4) + fmh_15 + rcs(clc_age, 4)*rcs(hwmdbmi, 3) + rcs(clc_age, 4)*diabx, family = quasibinomial(), data = male_data, weights = wgt_full)
-
-# Predictors only
-male_data <- male_data %>% 
-  dplyr::select(clc_age, fmh_15, diabx, hwmdbmi)
-
-# Create observation as a data frame
-observation <- data.frame(
-  clc_age = 24,         # 24-year old male
-  fmh_15 = 1,           # Family history of hypertension present
-  hwmdbmi = 19.6,       # BMI = 19.6; Healthy
-  diabx = 0             # Diabetes absent
-)
-
-# Ensure observation has the same structure and var order as male_data
-observation <- observation[, names(male_data), drop = FALSE]
-
-for (var in names(male_data)) {
-  if (is.factor(male_data[[var]])) {
-    # Convert to factor and ensure levels match male_data
-    observation[[var]] <- factor(observation[[var]], levels = levels(male_data[[var]]))
-  } else {
-    # Convert to numeric for consistency
-    observation[[var]] <- as.numeric(observation[[var]])
-  }
-}
-
-# Create explainer object for model
-male_explainer <- iml::Predictor$new(
-   model = male_final_reduced_model,                               # Pass the model
-   data = male_data,                                               # Pass the data
-   y = male_data[["highbp14090_adj"]],                             # Indicate outcome
-   type = "response"                                               # Return predicted probabilities
-)
-
-# Compute and plot SHAP values
-set.seed(123)
-male_shap_values <- iml::Shapley$new(male_explainer, x.interest = observation)
-
-as.data.frame(male_shap_values$results) %>%
-  arrange(desc(phi)) %>%
-  select(phi, feature.value)
-
-plot(male_shap_values)
-```
-
-### Shap-adjusted ORs and CIs (full models only)
-
-```{r, warning = FALSE, message = FALSE}
 # Reset male and female data
 male_data <- dplyr::filter(imputed_cycles1to6_data, clc_sex == 1)
 female_data <- dplyr::filter(imputed_cycles1to6_data, clc_sex == 2)
@@ -1420,44 +1847,50 @@ male_data <- male_data %>%
 female_data <- female_data %>%
   dplyr::mutate(wgt_full = wgt_full / mean(wgt_full))
 
-# Fit final full models with glm to avoid errors
-male_final_model <- glm(highbp14090_adj ~ rcs(clc_age, 4) + married + edudr04 + working + gendmhi + gen_025 + gen_045 + fmh_15 + rcs(hwmdbmi, 3) + low_drink_score1 + rcs(minperweek, 3) + smoke + slp_11 + totalfv + diabx + ckd + rcs(clc_age, 4)*gen_045 + rcs(clc_age, 4)*rcs(hwmdbmi, 3) + rcs(clc_age, 4)*rcs(minperweek, 3) + rcs(clc_age, 4)*smoke + rcs(clc_age, 4)*slp_11 + rcs(clc_age, 4)*diabx + rcs(clc_age, 4)*ckd, data = male_data, family = binomial(), weights = wgt_full)
+# Fit full models with linear interactions and see effect
+male_final_model_linint <- glm(highbp14090_adj ~ rcs(clc_age, 4) + married + edudr04 + working + gendmhi + gen_025 + gen_045 + fmh_15 + rcs(hwmdbmi, 3) + low_drink_score1 + rcs(minperweek, 3) + smoke + slp_11 + totalfv + diabx + ckd + clc_age*gen_045 + clc_age*hwmdbmi + clc_age*minperweek + clc_age*smoke + clc_age*slp_11 + clc_age*diabx + clc_age*ckd, data = male_data, family = binomial(), weights = wgt_full)
 
-female_final_model <- glm(highbp14090_adj ~ rcs(clc_age, 4) + married + edudr04 + working + gendmhi + gen_025 + gen_045 + fmh_15 + rcs(hwmdbmi, 3) + low_drink_score1 + rcs(minperweek, 3) + smoke + slp_11 + totalfv + diabx + ckd + rcs(clc_age, 4)*gen_045 + rcs(clc_age, 4)*rcs(hwmdbmi, 3) + rcs(clc_age, 4)*rcs(minperweek, 3) + rcs(clc_age, 4)*smoke + rcs(clc_age, 4)*slp_11 + rcs(clc_age, 4)*diabx + rcs(clc_age, 4)*ckd, data = female_data, family = binomial(), weights = wgt_full)
+female_final_model_linint <- glm(highbp14090_adj ~ rcs(clc_age, 4) + married + edudr04 + working + gendmhi + gen_025 + gen_045 + fmh_15 + rcs(hwmdbmi, 3) + low_drink_score1 + rcs(minperweek, 3) + smoke + slp_11 + totalfv + diabx + ckd + clc_age*gen_045 + clc_age*hwmdbmi + clc_age*minperweek + clc_age*smoke + clc_age*slp_11 + clc_age*diabx + clc_age*ckd, data = female_data, family = binomial(), weights = wgt_full)
 
-# Male model
-# Predictors only
+male_predicted_probabilities <- generate_predicted_probabilities(male_final_model_linint)
+female_predicted_probabilities <- generate_predicted_probabilities(female_final_model_linint)
+
+calibration(male_predicted_probabilities, model.frame(male_final_model_linint)$highbp14090_adj)
+calibration(female_predicted_probabilities, model.frame(female_final_model_linint)$highbp14090_adj)
+
+# Fit reduced models with linear interactions and see effect
+male_final_reduced_model_linint <- glm(highbp14090_adj ~ rcs(clc_age, 4) + fmh_15 + clc_age*hwmdbmi + clc_age*diabx, family = quasibinomial(), data = male_data, weights = wgt_full)
+
+female_final_reduced_model_linint <- glm(highbp14090_adj ~ rcs(clc_age, 4) + fmh_15 + clc_age*hwmdbmi + clc_age*diabx, family = quasibinomial(), data = female_data, weights = wgt_full)
+
+male_predicted_probabilities <- generate_predicted_probabilities(male_final_reduced_model_linint)
+female_predicted_probabilities <- generate_predicted_probabilities(female_final_reduced_model_linint)
+
+calibration(male_predicted_probabilities, model.frame(male_final_reduced_model_linint)$highbp14090_adj)
+calibration(female_predicted_probabilities, model.frame(female_final_reduced_model_linint)$highbp14090_adj)
+
+# See effect on S-ORs and CIs for new full male model
 male_data <- male_data %>% 
   dplyr::select(recodeflow:::select_vars_by_role(c("Predictor"), my_variables)) %>%
   dplyr::select(-whr)
 
-# Create explainer object for model
 male_explainer <- iml::Predictor$new(
-   model = male_final_model,                                       # Pass the model
+   model = male_final_model_linint,                                # Pass the model
    data = male_data,                                               # Pass the data
    y = male_data[["highbp14090_adj"]]                              # Indicate outcome
 )
 
-# Initialize a list to store SHAP values
 set.seed(123)
 male_shap_list <- list()
 
-# Generate Shap values for each row in male_data
 for (i in 1:nrow(male_data)) {
-    # Ensure observation remains a data frame
     observation <- male_data[i, , drop = FALSE]  
-    
-    # Generate SHAP values
     male_shap_values <- iml::Shapley$new(male_explainer, x.interest = observation)
-    
-    # Store results in the list
     male_shap_list[[i]] <- male_shap_values$results
 }
 
-# Convert list into a data frame for easier manipulation
 all_male_shap_values <- do.call(rbind, male_shap_list)
 
-# Loop through all predictors and print their S-OR and CI
 predictors <- recodeflow:::select_vars_by_role(c("Predictor"), my_variables)
 predictors <- predictors[predictors != "whr"]
 
@@ -1465,133 +1898,39 @@ for (pred in predictors) {
   print(calculate_shap_or_ci(all_male_shap_values, pred))
 }
 
-# Female model
-# Predictors only
+# See effect on S-ORs and CIs for new full female model
 female_data <- female_data %>% 
   dplyr::select(recodeflow:::select_vars_by_role(c("Predictor"), my_variables)) %>%
   dplyr::select(-whr)
 
-# Create explainer object for model
 female_explainer <- iml::Predictor$new(
-   model = female_final_model,                                      # Pass the model
+   model = female_final_model_linint,                               # Pass the model
    data = female_data,                                              # Pass the data
    y = female_data[["highbp14090_adj"]]                             # Indicate outcome
 )
 
-# Initialize a list to store SHAP values
 set.seed(123)
 female_shap_list <- list()
 
-# Generate Shap values for each row in female_data
 for (i in 1:nrow(female_data)) {
-    # Ensure observation remains a data frame
     observation <- female_data[i, , drop = FALSE]  
-    
-    # Generate SHAP values
     female_shap_values <- iml::Shapley$new(female_explainer, x.interest = observation)
-    
-    # Store results in the list
     female_shap_list[[i]] <- female_shap_values$results
 }
 
-# Convert list into a data frame for easier manipulation
 all_female_shap_values <- do.call(rbind, female_shap_list)
 
-# Loop through all predictors and print their S-OR and CI
 predictors <- recodeflow:::select_vars_by_role(c("Predictor"), my_variables)
 predictors <- predictors[predictors != "whr"]
 
 for (pred in predictors) {
   print(calculate_shap_or_ci(all_female_shap_values, pred))
 }
-```
 
-### OR plots for non-linear predictors and interactions (full models only)
-
-```{r, warning = FALSE, message = FALSE}
-# Define title labels for all plots
-title_labels <- list(
-  "ckd" = "chronic kidney disease",
-  "clc_age" = "age",
-  "diabx" = "diabetes",
-  "gen_045" = "sense of belonging",
-  "hwmdbmi" = "body mass index",
-  "minperweek" = "physical activity minutes",
-  "slp_11" = "sleep duration",
-  "smoke" = "smoking status"
-)
-
-# Define x-axis labels for RCS variable plots
-var_labels <- list(
-  "clc_age" = "Age (years)",
-  "hwmdbmi" = "Body mass index (kg/m²)",
-  "minperweek" = "Physical activity minutes (min/week)"
-)
-
-# Define legend title labels for age interaction plots
-legend_labels <- list(
-  "ckd" = "Chronic kidney disease",
-  "diabx" = "Diabetes",
-  "gen_045" = "Sense of belonging",
-  "hwmdbmi" = "Body mass index (kg/m²)",
-  "minperweek" = "Physical activity minutes (min/week)",
-  "slp_11" = "Sleep duration (hrs/night)",
-  "smoke" = "Smoking status"
-)
-
-# Define legend level labels for age x categorical variable plots
-level_labels <- list(
-  "ckd" = c("1" = "Yes", "0" = "No"),
-  "diabx" = c("1" = "Yes", "0" = "No"),
-  "gen_045" = c("1" = "Strong", "2" = "Weak"),
-  "smoke" = c("0" = "Never smoker", "1" = "Former smoker", "2" = "Current smoker")
-)
-
-# RCS variable plots
-rcs_variables <- c("clc_age", "hwmdbmi", "minperweek")
-
-for (var in rcs_variables) {
-  
-  title_label <- ifelse(var %in% names(title_labels), title_labels[[var]], var)
-  x_label <- ifelse(var %in% names(var_labels), var_labels[[var]], var)
-
-  # Male
-  preds_male <- ggpredict(male_final_model, terms = var)
-  preds_male$odds <- preds_male$predicted / (1 - preds_male$predicted)
-  ref_row <- preds_male[which.min(preds_male$x), ]
-  ref_odds <- ref_row$odds
-  preds_male$or <- preds_male$odds / ref_odds
-
-  # Female
-  preds_female <- ggpredict(female_final_model, terms = var)
-  preds_female$odds <- preds_female$predicted / (1 - preds_female$predicted)
-  ref_row <- preds_female[which.min(preds_female$x), ]
-  ref_odds <- ref_row$odds
-  preds_female$or <- preds_female$odds / ref_odds
-
-  # Male plot
-  print(ggplot(preds_male, aes(x = x, y = or)) +
-    geom_line(color = "black", size = 1.2) +
-    labs(title = paste0("Odds ratio by ", title_label, " in men"),
-         x = x_label, y = "Odds ratio") +
-    scale_y_continuous(labels = number_format(accuracy = 0.1), limits = c(0, NA)) +
-    theme_minimal())
-
-  # Female plot
-  print(ggplot(preds_female, aes(x = x, y = or)) +
-    geom_line(color = "black", size = 1.2) +
-    labs(title = paste0("Odds ratio by ", title_label, " in women"),
-         x = x_label, y = "Odds ratio") +
-    scale_y_continuous(labels = number_format(accuracy = 0.1), limits = c(0, NA)) +
-    theme_minimal())
-}
-
-# Age x categorical variable plots
-age_cat_int_variables <- c("gen_045", "smoke", "diabx", "ckd")
-
+# See effect on age interaction log(OR) plots
 for (var in age_cat_int_variables) {
   print(plot_age_int_or(
-    model = male_final_model,
+    model = male_final_model_linint,
     var = var,
     var_type = "categorical",
     sex_label = "men",
@@ -1601,7 +1940,7 @@ for (var in age_cat_int_variables) {
   ))
   
   print(plot_age_int_or(
-    model = female_final_model,
+    model = female_final_model_linint,
     var = var,
     var_type = "categorical",
     sex_label = "women",
@@ -1611,12 +1950,9 @@ for (var in age_cat_int_variables) {
   ))
 }
 
-# Age x continuous variable plots
-age_cont_int_variables <- c("hwmdbmi", "minperweek", "slp_11")
-
 for (var in age_cont_int_variables) {
   print(plot_age_int_or(
-    model = male_final_model,
+    model = male_final_model_linint,
     var = var,
     var_type = "continuous",
     design = weighted_male,
@@ -1626,7 +1962,7 @@ for (var in age_cont_int_variables) {
   ))
 
   print(plot_age_int_or(
-    model = female_final_model,
+    model = female_final_model_linint,
     var = var,
     var_type = "continuous",
     design = weighted_female,
@@ -1635,12 +1971,4 @@ for (var in age_cont_int_variables) {
     legend_labels = legend_labels
   ))
 }
-
-get_weighted_quantiles("hwmdbmi", weighted_male, c(0.25, 0.50, 0.75))
-get_weighted_quantiles("minperweek", weighted_male, c(0.25, 0.50, 0.75))
-get_weighted_quantiles("slp_11", weighted_male, c(0.25, 0.50, 0.75))
-
-get_weighted_quantiles("hwmdbmi", weighted_female, c(0.25, 0.50, 0.75))
-get_weighted_quantiles("minperweek", weighted_female, c(0.25, 0.50, 0.75))
-get_weighted_quantiles("slp_11", weighted_female, c(0.25, 0.50, 0.75))
 ```

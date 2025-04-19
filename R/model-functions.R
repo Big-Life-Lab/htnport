@@ -280,12 +280,12 @@ extract_beta_coefs <- function(model) {
 calculate_shap_or_ci <- function(shap_values_df, predictor) {
   # Define custom cutoffs for continuous variables
   cutoffs <- list(
-    clc_age = c(-Inf, 40, 60, 70, Inf),  # 20-39, 40-59, 60-69, 70-79
-    hwmdbmi = c(-Inf, 25, 30, Inf),  # <25, 25-<30, >=30
-    whr = c(-Inf, 50, 60, Inf),  # <50, 50-<60, >=60
-    minperweek = c(-Inf, 150, Inf),  # <150, >=150
-    totalfv = c(-Inf, 5, Inf),  # <5, >=5
-    slp_11 = c(-Inf, 7, Inf)  # <7, >=7
+    clc_age = c(-Inf, 40, 60, 70, Inf),     # 20-39, 40-59, 60-69, 70-79
+    hwmdbmi = c(-Inf, 25, 30, Inf),         # <25, 25-<30, ≥30
+    whr = c(-Inf, 50, 60, Inf),             # <50, 50-<60, ≥60
+    minperweek = c(-Inf, 150, Inf),         # <150, ≥150
+    totalfv = c(-Inf, 5, Inf),              # <5, ≥5
+    slp_11 = c(-Inf, 7, Inf)                # <7, ≥7
   )
   
   # Filter SHAP values for the predictor
@@ -297,106 +297,84 @@ calculate_shap_or_ci <- function(shap_values_df, predictor) {
   
   unique_values <- sort(unique(shap_filtered$feature.value))
   
-  # Check if the variable has predefined cutoffs
+  # Case 1: Continuous variable with predefined cutoffs
   if (predictor %in% names(cutoffs)) {
-    # Categorize the continuous variable using its specified cutoffs
     shap_filtered <- shap_filtered %>%
-      mutate(shap_category = cut(as.numeric(as.character(sub(".*=", "", feature.value))), 
-                                 breaks = cutoffs[[predictor]], 
-                                 labels = FALSE, include.lowest = TRUE, right = FALSE))
+      mutate(
+        shap_category = cut(as.numeric(as.character(sub(".*=", "", feature.value))),
+                            breaks = cutoffs[[predictor]],
+                            labels = FALSE, include.lowest = TRUE, right = FALSE)
+      )
     
     # Set reference category
-    if (predictor %in% c("minperweek", "totalfv", "slp_11")) {
-      ref_category <- 2  # Set second category as reference
-    } else {
-      ref_category <- min(shap_filtered$shap_category)  # Default: lowest category
-    }
+    ref_category <- if (predictor %in% c("minperweek", "totalfv", "slp_11")) 2 else min(shap_filtered$shap_category)
     
     ref_shap <- shap_filtered %>% filter(shap_category == ref_category)
-    
     ref_mean <- mean(ref_shap$phi)
-    ref_se <- sd(ref_shap$phi) / sqrt(nrow(ref_shap))
+    ref_se <- sqrt(mean(ref_shap$phi.var))
     
     results <- list()
     
     for (cat in sort(unique(shap_filtered$shap_category)[unique(shap_filtered$shap_category) != ref_category])) {
       cat_shap <- shap_filtered %>% filter(shap_category == cat)
-      
       cat_mean <- mean(cat_shap$phi)
-      cat_se <- sd(cat_shap$phi) / sqrt(nrow(cat_shap))
+      cat_se <- sqrt(mean(cat_shap$phi.var))
       
-      # Compute mean difference (non-ref - ref)
       mean_diff <- cat_mean - ref_mean
-      
-      # Compute standard error of the mean difference
       se_diff <- sqrt(ref_se^2 + cat_se^2)
       
-      # Compute S-OR and confidence interval
       S_OR <- exp(mean_diff)
-      lower_bound_or <- exp(mean_diff - 1.96 * se_diff)
-      upper_bound_or <- exp(mean_diff + 1.96 * se_diff)
+      CI <- exp(c(mean_diff - 1.96 * se_diff, mean_diff + 1.96 * se_diff))
       
-      # Use "predictor=category" as the key
-      results[[paste0(predictor, "=", cat)]] <- list(S_OR = S_OR, CI = c(lower_bound_or, upper_bound_or))
+      results[[paste0(predictor, "=", cat)]] <- list(S_OR = S_OR, CI = CI)
     }
     
     return(results)
-  } else if (length(unique_values) > 1 && length(unique_values) <= 4) {
-    # Handle categorical variables
-    ref_category <- min(unique_values)  # Set lowest numbered category as reference
-    ref_shap <- shap_filtered %>% filter(feature.value == ref_category)
     
+    # Case 2: Categorical variable with <= 4 unique values
+  } else if (length(unique_values) > 1 && length(unique_values) <= 4) {
+    ref_category <- min(unique_values)
+    ref_shap <- shap_filtered %>% filter(feature.value == ref_category)
     ref_mean <- mean(ref_shap$phi)
-    ref_se <- sd(ref_shap$phi) / sqrt(nrow(ref_shap))
+    ref_se <- sqrt(mean(ref_shap$phi.var))
     
     results <- list()
     
     for (cat in unique_values[unique_values != ref_category]) {
       cat_shap <- shap_filtered %>% filter(feature.value == cat)
-      
       cat_mean <- mean(cat_shap$phi)
-      cat_se <- sd(cat_shap$phi) / sqrt(nrow(cat_shap))
+      cat_se <- sqrt(mean(cat_shap$phi.var))
       
-      # Compute mean difference (non-ref - ref)
       mean_diff <- cat_mean - ref_mean
-      
-      # Compute standard error of the mean difference
       se_diff <- sqrt(ref_se^2 + cat_se^2)
       
-      # Compute S-OR and confidence interval
       S_OR <- exp(mean_diff)
-      lower_bound_or <- exp(mean_diff - 1.96 * se_diff)
-      upper_bound_or <- exp(mean_diff + 1.96 * se_diff)
+      CI <- exp(c(mean_diff - 1.96 * se_diff, mean_diff + 1.96 * se_diff))
       
-      results[[as.character(cat)]] <- list(S_OR = S_OR, CI = c(lower_bound_or, upper_bound_or))
+      results[[as.character(cat)]] <- list(S_OR = S_OR, CI = CI)
     }
     
     return(results)
+    
+    # Case 3: Continuous variable without specified cutoffs
   } else {
-    # Default to treating continuous variables as a whole (if not specified in cutoffs)
     mean_shap <- mean(shap_filtered$phi)
-    se_shap <- sd(shap_filtered$phi) / sqrt(nrow(shap_filtered))
+    se_shap <- sqrt(mean(shap_filtered$phi.var))
     
-    # Compute S-OR
     S_OR <- exp(mean_shap)
+    CI <- exp(c(mean_shap - 1.96 * se_shap, mean_shap + 1.96 * se_shap))
     
-    # Compute confidence interval
-    lower_bound_or <- exp(mean_shap - 1.96 * se_shap)
-    upper_bound_or <- exp(mean_shap + 1.96 * se_shap)
-    
-    # Explicitly construct a named list
     result <- list()
-    result[[predictor]] <- list(S_OR = S_OR, CI = c(lower_bound_or, upper_bound_or))
-    
+    result[[predictor]] <- list(S_OR = S_OR, CI = CI)
     return(result)
   }
 }
 
 # Function to plot ORs for age interactions
 plot_age_int_or <- function(model, var, var_type = c("categorical", "continuous"),
-                    design = NULL, sex_label = "Group",
-                    title_labels = NULL, legend_labels = NULL,
-                    level_labels = NULL, qval_round = 2) {
+                            design = NULL, sex_label = "Group",
+                            title_labels = NULL, legend_labels = NULL,
+                            level_labels = NULL, qval_round = 2) {
   
   var_type <- match.arg(var_type)
   
@@ -404,48 +382,82 @@ plot_age_int_or <- function(model, var, var_type = c("categorical", "continuous"
   legend_label <- if (!is.null(legend_labels) && var %in% names(legend_labels)) legend_labels[[var]] else var
   
   if (var_type == "categorical") {
+    
     preds <- ggpredict(model, terms = c("clc_age", var)) %>%
       group_by(x) %>%
-      mutate(odds = predicted / (1 - predicted),
-             or = odds / odds[1]) %>%
-      filter(row_number() != 1) %>%  # Remove reference group
-      ungroup()
-    
-    p <- ggplot(preds, aes(x = x, y = or, color = group)) +
-      geom_line(size = 1.2) +
-      labs(
-        title = paste0("Odds ratio by age for ", title_label, " in ", sex_label),
-        x = "Age (years)",
-        y = "Odds ratio",
-        color = legend_label
-      ) +
-      scale_y_continuous(labels = number_format(accuracy = 0.1), limits = c(0, NA)) +
-      scale_color_discrete(name = legend_label,
-                           labels = if (!is.null(level_labels)) level_labels[[var]] else NULL) +
-      theme_minimal()
-    
-  } else if (var_type == "continuous" && !is.null(design)) {
-    quartiles <- svyquantile(as.formula(paste0("~", var)), design = design,
-                             quantiles = c(0.25, 0.50, 0.75), na.rm = TRUE)
-    qvals <- round(as.vector(coef(quartiles)), qval_round)
-    terms_string <- paste0(var, " [", paste(qvals, collapse = ", "), "]")
-    
-    preds <- ggpredict(model, terms = c("clc_age", terms_string)) %>%
-      group_by(x) %>%
-      mutate(odds = predicted / (1 - predicted),
-             or = odds / odds[1]) %>%
+      mutate(
+        odds = predicted / (1 - predicted),
+        or = odds / odds[1],
+        odds_low = conf.low / (1 - conf.low),
+        odds_high = conf.high / (1 - conf.high),
+        or_low = odds_low / odds[1],
+        or_high = odds_high / odds[1],
+        log_or = log(or),
+        ci_low = log(or_low),
+        ci_high = log(or_high)
+      ) %>%
       filter(row_number() != 1) %>%
       ungroup()
     
-    p <- ggplot(preds, aes(x = x, y = or, color = group)) +
+    p <- ggplot(preds, aes(x = x, y = log_or, color = group, fill = group)) +
       geom_line(size = 1.2) +
+      geom_ribbon(aes(ymin = ci_low, ymax = ci_high), alpha = 0.2, color = NA) +
+      geom_hline(yintercept = 0, linetype = "dotted") +
       labs(
-        title = paste0("Odds ratio by age for ", title_label, " in ", sex_label),
+        title = paste0("Log(OR) by age for ", title_label, " in ", sex_label),
         x = "Age (years)",
-        y = "Odds ratio",
-        color = legend_label
+        y = "Log adjusted odds ratio",
+        color = legend_label,
+        fill = legend_label
       ) +
-      scale_y_continuous(labels = number_format(accuracy = 0.1), limits = c(0, NA)) +
+      scale_color_discrete(name = legend_label, labels = if (!is.null(level_labels)) level_labels[[var]] else NULL) +
+      scale_fill_discrete(name = legend_label, labels = if (!is.null(level_labels)) level_labels[[var]] else NULL) +
+      theme_minimal()
+    
+  } else if (var_type == "continuous") {
+    # Define reference and comparison values
+    ref_vals <- list(
+      "hwmdbmi" = 18.5,
+      "minperweek" = 0,
+      "slp_11" = 2
+    )
+    comp_vals <- list(
+      "hwmdbmi" = c(25, 30),
+      "minperweek" = c(75, 150),
+      "slp_11" = c(4.5, 7)
+    )
+    
+    ref_val <- ref_vals[[var]]
+    comps <- comp_vals[[var]]
+    terms_string <- paste0(var, " [", paste(c(ref_val, comps), collapse = ", "), "]")
+    
+    preds <- ggpredict(model, terms = c("clc_age", terms_string)) %>%
+      group_by(x) %>%
+      mutate(
+        odds = predicted / (1 - predicted),
+        or = odds / odds[1],
+        odds_low = conf.low / (1 - conf.low),
+        odds_high = conf.high / (1 - conf.high),
+        or_low = odds_low / odds[1],
+        or_high = odds_high / odds[1],
+        log_or = log(or),
+        ci_low = log(or_low),
+        ci_high = log(or_high)
+      ) %>%
+      filter(row_number() != 1) %>%
+      ungroup()
+    
+    p <- ggplot(preds, aes(x = x, y = log_or, color = group, fill = group, group = group)) +
+      geom_line(size = 1.2) +
+      geom_ribbon(aes(ymin = ci_low, ymax = ci_high), alpha = 0.2, color = NA) +
+      geom_hline(yintercept = 0, linetype = "dotted") +
+      labs(
+        title = paste0("Log(OR) by age for ", title_label, " in ", sex_label),
+        x = "Age (years)",
+        y = "Log adjusted odds ratio",
+        color = legend_label,
+        fill = legend_label
+      ) +
       theme_minimal()
   }
   
