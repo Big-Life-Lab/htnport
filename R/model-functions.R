@@ -385,19 +385,23 @@ plot_age_int_or <- function(model, var, var_type = c("categorical", "continuous"
     
     preds <- ggpredict(model, terms = c("clc_age", var)) %>%
       group_by(x) %>%
+      arrange(group) %>%
       mutate(
+        predicted_ref = first(predicted),
+        se_ref = first(std.error),
         odds = predicted / (1 - predicted),
-        or = odds / odds[1],
-        odds_low = conf.low / (1 - conf.low),
-        odds_high = conf.high / (1 - conf.high),
-        or_low = odds_low / odds[1],
-        or_high = odds_high / odds[1],
-        log_or = log(or),
-        ci_low = log(or_low),
-        ci_high = log(or_high)
+        log_odds = log(predicted / (1 - predicted)),
+        log_odds_ref = log(predicted_ref / (1 - predicted_ref)),
+        log_or = log_odds - log_odds_ref,
+        se_log_or = sqrt(
+          (std.error / (predicted * (1 - predicted)))^2 +
+            (se_ref / (predicted_ref * (1 - predicted_ref)))^2
+        ),
+        ci_low = log_or - 1.96 * se_log_or,
+        ci_high = log_or + 1.96 * se_log_or
       ) %>%
-      filter(row_number() != 1) %>%
-      ungroup()
+      ungroup() %>%
+      filter(group != first(group))  # Remove reference group
     
     p <- ggplot(preds, aes(x = x, y = log_or, color = group, fill = group)) +
       geom_line(size = 1.2) +
@@ -415,7 +419,7 @@ plot_age_int_or <- function(model, var, var_type = c("categorical", "continuous"
       theme_minimal()
     
   } else if (var_type == "continuous") {
-    # Define reference and comparison values
+    
     ref_vals <- list(
       "hwmdbmi" = 18.5,
       "minperweek" = 0,
@@ -433,19 +437,23 @@ plot_age_int_or <- function(model, var, var_type = c("categorical", "continuous"
     
     preds <- ggpredict(model, terms = c("clc_age", terms_string)) %>%
       group_by(x) %>%
+      arrange(group) %>%
       mutate(
+        predicted_ref = first(predicted),
+        se_ref = first(std.error),
         odds = predicted / (1 - predicted),
-        or = odds / odds[1],
-        odds_low = conf.low / (1 - conf.low),
-        odds_high = conf.high / (1 - conf.high),
-        or_low = odds_low / odds[1],
-        or_high = odds_high / odds[1],
-        log_or = log(or),
-        ci_low = log(or_low),
-        ci_high = log(or_high)
+        log_odds = log(predicted / (1 - predicted)),
+        log_odds_ref = log(predicted_ref / (1 - predicted_ref)),
+        log_or = log_odds - log_odds_ref,
+        se_log_or = sqrt(
+          (std.error / (predicted * (1 - predicted)))^2 +
+            (se_ref / (predicted_ref * (1 - predicted_ref)))^2
+        ),
+        ci_low = log_or - 1.96 * se_log_or,
+        ci_high = log_or + 1.96 * se_log_or
       ) %>%
-      filter(row_number() != 1) %>%
-      ungroup()
+      ungroup() %>%
+      filter(group != first(group))  # Remove reference group
     
     p <- ggplot(preds, aes(x = x, y = log_or, color = group, fill = group, group = group)) +
       geom_line(size = 1.2) +

@@ -789,7 +789,7 @@ ggplot(Predict(female_final_model))
 
 ### Beta coefficients for full and reduced models
 
-```{r}
+```{r, warning = FALSE, message = FALSE}
 # Get beta coefficients and their standard errors for full models
 extract_beta_coefs(male_model)
 extract_beta_coefs(female_model)
@@ -886,7 +886,7 @@ as.data.frame(shap_df) %>%
 
 ### Shap plot (male reduced model)
 
-```{r}
+```{r, warning = FALSE, message = FALSE}
 # Reset male data
 male_data <- dplyr::filter(imputed_cycles1to6_data, clc_sex == 1)
 male_data <- male_data %>%
@@ -1105,55 +1105,58 @@ for (var in rcs_variables) {
 
   # Male
   preds_male <- ggpredict(male_final_model, terms = var)
-  preds_male$odds <- preds_male$predicted / (1 - preds_male$predicted)
-  ref_row <- preds_male[which.min(preds_male$x), ]
-  ref_odds <- ref_row$odds
-  preds_male$or <- preds_male$odds / ref_odds
+  ref_row_m <- preds_male[which.min(preds_male$x), ]
   
-  preds_male$odds_low <- preds_male$conf.low / (1 - preds_male$conf.low)
-  preds_male$odds_high <- preds_male$conf.high / (1 - preds_male$conf.high)
-  
-  preds_male$or_low <- preds_male$odds_low / ref_odds
-  preds_male$or_high <- preds_male$odds_high / ref_odds
-  
-  preds_male$log_or <- log(preds_male$or)
-  preds_male$log_or_low <- log(preds_male$or_low)
-  preds_male$log_or_high <- log(preds_male$or_high)
+  # Compute log(OR) and SE
+  preds_male <- preds_male %>%
+    mutate(
+      logit = log(predicted / (1 - predicted)),
+      se_logit = std.error / (predicted * (1 - predicted)),
+      ref_pred = ref_row_m$predicted,
+      ref_se = ref_row_m$std.error,
+      ref_logit = log(ref_pred / (1 - ref_pred)),
+      ref_se_logit = ref_se / (ref_pred * (1 - ref_pred)),
+      log_or = logit - ref_logit,
+      se_log_or = sqrt(se_logit^2 + ref_se_logit^2),
+      log_or_low = log_or - 1.96 * se_log_or,
+      log_or_high = log_or + 1.96 * se_log_or
+    )
 
   # Female
   preds_female <- ggpredict(female_final_model, terms = var)
-  preds_female$odds <- preds_female$predicted / (1 - preds_female$predicted)
-  ref_row <- preds_female[which.min(preds_female$x), ]
-  ref_odds <- ref_row$odds
-  preds_female$or <- preds_female$odds / ref_odds
+  ref_row_f <- preds_female[which.min(preds_female$x), ]
   
-  preds_female$odds_low <- preds_female$conf.low / (1 - preds_female$conf.low)
-  preds_female$odds_high <- preds_female$conf.high / (1 - preds_female$conf.high)
-  
-  preds_female$or_low <- preds_female$odds_low / ref_odds
-  preds_female$or_high <- preds_female$odds_high / ref_odds
-  
-  preds_female$log_or <- log(preds_female$or)
-  preds_female$log_or_low <- log(preds_female$or_low)
-  preds_female$log_or_high <- log(preds_female$or_high)
+  preds_female <- preds_female %>%
+    mutate(
+      logit = log(predicted / (1 - predicted)),
+      se_logit = std.error / (predicted * (1 - predicted)),
+      ref_pred = ref_row_f$predicted,
+      ref_se = ref_row_f$std.error,
+      ref_logit = log(ref_pred / (1 - ref_pred)),
+      ref_se_logit = ref_se / (ref_pred * (1 - ref_pred)),
+      log_or = logit - ref_logit,
+      se_log_or = sqrt(se_logit^2 + ref_se_logit^2),
+      log_or_low = log_or - 1.96 * se_log_or,
+      log_or_high = log_or + 1.96 * se_log_or
+    )
 
   # Male plot
   print(ggplot(preds_male, aes(x = x, y = log_or)) +
-  geom_line(color = "black", size = 1.2) +
-  geom_ribbon(aes(ymin = log_or_low, ymax = log_or_high), fill = "grey", alpha = 0.3) +
-  geom_hline(yintercept = 0, linetype = "dotted") +
-  labs(title = paste0("Log(OR) by ", title_label, " in men"),
-       x = x_label, y = "Log adjusted odds ratio") +
-  theme_minimal())
+    geom_line(color = "black", size = 1.2) +
+    geom_ribbon(aes(ymin = log_or_low, ymax = log_or_high), fill = "grey", alpha = 0.3) +
+    geom_hline(yintercept = 0, linetype = "dotted") +
+    labs(title = paste0("Log(OR) by ", title_label, " in men"),
+         x = x_label, y = "Log adjusted odds ratio") +
+    theme_minimal())
 
   # Female plot
   print(ggplot(preds_female, aes(x = x, y = log_or)) +
-  geom_line(color = "black", size = 1.2) +
-  geom_ribbon(aes(ymin = log_or_low, ymax = log_or_high), fill = "grey", alpha = 0.3) +
-  geom_hline(yintercept = 0, linetype = "dotted") +
-  labs(title = paste0("Log(OR) by ", title_label, " in women"),
-       x = x_label, y = "Log adjusted odds ratio") +
-  theme_minimal())
+    geom_line(color = "black", size = 1.2) +
+    geom_ribbon(aes(ymin = log_or_low, ymax = log_or_high), fill = "grey", alpha = 0.3) +
+    geom_hline(yintercept = 0, linetype = "dotted") +
+    labs(title = paste0("Log(OR) by ", title_label, " in women"),
+         x = x_label, y = "Log adjusted odds ratio") +
+    theme_minimal())
 }
 
 # Age x categorical variable plots
@@ -1211,7 +1214,7 @@ for (var in age_cont_int_variables) {
 
 ```{r, warning = FALSE, message = FALSE}
 # Impute data, except family history
-predictors <- recodeflow:::select_vars_by_role("Predictor", my_variables)
+predictors <- recodeflow:::select_vars_by_role(c("Predictor", "cali-subgroup"), my_variables)
 predictors <- predictors[predictors != "fmh_15"]
 
 imputation_predictors <- recodeflow:::select_vars_by_role("imputation-predictor", my_variables)
@@ -1644,7 +1647,7 @@ calibration(female_predicted_probabilities, model.frame(female_model_whr)$highbp
 
 ### Sensitivity analysis (linear interactions)
 
-```{r}
+```{r, warning = FALSE, message = FALSE}
 # Reset male and female data
 male_data <- dplyr::filter(imputed_cycles1to6_data, clc_sex == 1)
 female_data <- dplyr::filter(imputed_cycles1to6_data, clc_sex == 2)
