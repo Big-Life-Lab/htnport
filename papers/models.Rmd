@@ -1906,13 +1906,13 @@ for (i in 1:nrow(male_data)) {
     male_shap_list[[i]] <- male_shap_values$results
 }
 
-all_male_shap_values <- do.call(rbind, male_shap_list)
+all_male_shap_values_linint <- do.call(rbind, male_shap_list)
 
 predictors <- recodeflow:::select_vars_by_role(c("Predictor"), my_variables)
 predictors <- predictors[predictors != "whr"]
 
 for (pred in predictors) {
-  print(calculate_shap_or_ci(all_male_shap_values, pred))
+  print(calculate_shap_or_ci(all_male_shap_values_linint, pred))
 }
 
 # See effect on S-ORs and CIs for new full female model
@@ -1935,13 +1935,13 @@ for (i in 1:nrow(female_data)) {
     female_shap_list[[i]] <- female_shap_values$results
 }
 
-all_female_shap_values <- do.call(rbind, female_shap_list)
+all_female_shap_values_linint <- do.call(rbind, female_shap_list)
 
 predictors <- recodeflow:::select_vars_by_role(c("Predictor"), my_variables)
 predictors <- predictors[predictors != "whr"]
 
 for (pred in predictors) {
-  print(calculate_shap_or_ci(all_female_shap_values, pred))
+  print(calculate_shap_or_ci(all_female_shap_value_linint, pred))
 }
 
 # See effect on age interaction log(OR) plots
