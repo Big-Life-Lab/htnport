@@ -660,7 +660,7 @@ combined_crude_models <- bind_rows(
 )
 
 # Define the custom order for the Level column
-custom_order <- c("Age", "Widowed, separated, or divorced", "Single", "High school graduate only", "Did not graduate high school", "Does not have a job", "Fair or good mental health", "Poor mental health", "Quite a bit or extremely stressed", "Weak sense of belonging", "Family history for hypertension", "Body mass index", "Low-risk drinker", "Moderate drinker", "Heavy drinker", "Former smoker", "Current smoker", "Minutes of exercise per week", "Daily fruit and vegetable consumption", "Sleep duration", "Diabetes", "Chronic kidney disease")
+custom_order <- c("Age", "Widowed, separated, or divorced", "Single", "High school graduate only", "Did not graduate high school", "Does not have a job", "Poor or fair mental health", "Quite a bit or extremely stressed", "Weak sense of belonging", "Family history for hypertension", "Body mass index", "Low-risk drinker", "Moderate drinker", "Heavy drinker", "Former smoker", "Current smoker", "Minutes of exercise per week", "Daily fruit and vegetable consumption", "Sleep duration", "Diabetes", "Chronic kidney disease")
 
 # Combine custom order with the original order
 original_order <- unique(combined_crude_models$Level)
