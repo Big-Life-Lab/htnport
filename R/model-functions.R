@@ -388,29 +388,24 @@ plot_age_int_or <- function(model, var, var_type = c("categorical", "continuous"
       arrange(group) %>%
       mutate(
         predicted_ref = first(predicted),
-        se_ref = first(std.error),
         odds = predicted / (1 - predicted),
-        log_odds = log(predicted / (1 - predicted)),
-        log_odds_ref = log(predicted_ref / (1 - predicted_ref)),
-        log_or = log_odds - log_odds_ref,
-        se_log_or = sqrt(
-          (std.error / (predicted * (1 - predicted)))^2 +
-            (se_ref / (predicted_ref * (1 - predicted_ref)))^2
-        ),
-        ci_low = log_or - 1.96 * se_log_or,
-        ci_high = log_or + 1.96 * se_log_or
+        odds_ref = predicted_ref / (1 - predicted_ref),
+        or = odds / odds_ref,
+        or_low = (conf.low / (1 - conf.low)) / odds_ref,
+        or_high = (conf.high / (1 - conf.high)) / odds_ref
       ) %>%
       ungroup() %>%
       filter(group != first(group))  # Remove reference group
     
-    p <- ggplot(preds, aes(x = x, y = log_or, color = group, fill = group)) +
+    p <- ggplot(preds, aes(x = x, y = or, color = group, fill = group)) +
       geom_line(size = 1.2) +
-      geom_ribbon(aes(ymin = ci_low, ymax = ci_high), alpha = 0.2, color = NA) +
-      geom_hline(yintercept = 0, linetype = "dotted") +
+      geom_ribbon(aes(ymin = or_low, ymax = or_high), alpha = 0.2, color = NA) +
+      geom_hline(yintercept = 1, linetype = "dotted") +
+      scale_y_log10() +
       labs(
-        title = paste0("Log(OR) by age for ", title_label, " in ", sex_label),
+        title = paste0("Odds ratio by age for ", title_label, " in ", sex_label),
         x = "Age (years)",
-        y = "Log adjusted odds ratio",
+        y = "Adjusted odds ratio",
         color = legend_label,
         fill = legend_label
       ) +
@@ -440,29 +435,24 @@ plot_age_int_or <- function(model, var, var_type = c("categorical", "continuous"
       arrange(group) %>%
       mutate(
         predicted_ref = first(predicted),
-        se_ref = first(std.error),
         odds = predicted / (1 - predicted),
-        log_odds = log(predicted / (1 - predicted)),
-        log_odds_ref = log(predicted_ref / (1 - predicted_ref)),
-        log_or = log_odds - log_odds_ref,
-        se_log_or = sqrt(
-          (std.error / (predicted * (1 - predicted)))^2 +
-            (se_ref / (predicted_ref * (1 - predicted_ref)))^2
-        ),
-        ci_low = log_or - 1.96 * se_log_or,
-        ci_high = log_or + 1.96 * se_log_or
+        odds_ref = predicted_ref / (1 - predicted_ref),
+        or = odds / odds_ref,
+        or_low = (conf.low / (1 - conf.low)) / odds_ref,
+        or_high = (conf.high / (1 - conf.high)) / odds_ref
       ) %>%
       ungroup() %>%
       filter(group != first(group))  # Remove reference group
     
-    p <- ggplot(preds, aes(x = x, y = log_or, color = group, fill = group, group = group)) +
+    p <- ggplot(preds, aes(x = x, y = or, color = group, fill = group, group = group)) +
       geom_line(size = 1.2) +
-      geom_ribbon(aes(ymin = ci_low, ymax = ci_high), alpha = 0.2, color = NA) +
-      geom_hline(yintercept = 0, linetype = "dotted") +
+      geom_ribbon(aes(ymin = or_low, ymax = or_high), alpha = 0.2, color = NA) +
+      geom_hline(yintercept = 1, linetype = "dotted") +
+      scale_y_log10() +
       labs(
-        title = paste0("Log(OR) by age for ", title_label, " in ", sex_label),
+        title = paste0("Odds ratio by age for ", title_label, " in ", sex_label),
         x = "Age (years)",
-        y = "Log adjusted odds ratio",
+        y = "Adjusted odds ratio",
         color = legend_label,
         fill = legend_label
       ) +

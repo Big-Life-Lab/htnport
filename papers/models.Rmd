@@ -1081,8 +1081,8 @@ shap_df %>%
   labs(
     x = "SHAP value",
     y = NULL,
-    title = paste0("Actual prediction: ", round(male_shap_values$y.hat.interest, 2),
-                   "\nAverage prediction: ", round(male_shap_values$y.hat.average, 2))
+    title = paste0("Actual prediction: ", round((100 * male_shap_values$y.hat.interest), 2),
+                   "\nAverage prediction: ", round((100 * male_shap_values$y.hat.average), 2))
   ) +
   theme_minimal()
 
@@ -1153,8 +1153,8 @@ shap_df %>%
   labs(
     x = "SHAP value",
     y = NULL,
-    title = paste0("Actual prediction: ", round(male_shap_values$y.hat.interest, 2),
-                   "\nAverage prediction: ", round(male_shap_values$y.hat.average, 2))
+    title = paste0("Actual prediction: ", round((100 * male_shap_values$y.hat.interest), 2),
+                   "\nAverage prediction: ", round((100 * male_shap_values$y.hat.average), 2))
   ) +
   theme_minimal()
 
@@ -1261,7 +1261,7 @@ for (pred in predictors) {
 }
 ```
 
-### Log OR plots for non-linear predictors and interactions (full models only)
+### OR plots for non-linear predictors and interactions (full models only)
 
 ```{r, warning = FALSE, message = FALSE}
 # Define title labels for all plots
@@ -1313,56 +1313,47 @@ for (var in rcs_variables) {
   # Male
   preds_male <- ggpredict(male_final_model, terms = var)
   ref_row_m <- preds_male[which.min(preds_male$x), ]
-  
-  # Compute log(OR) and SE
+
   preds_male <- preds_male %>%
     mutate(
-      logit = log(predicted / (1 - predicted)),
-      se_logit = std.error / (predicted * (1 - predicted)),
-      ref_pred = ref_row_m$predicted,
-      ref_se = ref_row_m$std.error,
-      ref_logit = log(ref_pred / (1 - ref_pred)),
-      ref_se_logit = ref_se / (ref_pred * (1 - ref_pred)),
-      log_or = logit - ref_logit,
-      se_log_or = sqrt(se_logit^2 + ref_se_logit^2),
-      log_or_low = log_or - 1.96 * se_log_or,
-      log_or_high = log_or + 1.96 * se_log_or
+      ref_odds = ref_row_m$predicted / (1 - ref_row_m$predicted),
+      odds = predicted / (1 - predicted),
+      or = odds / ref_odds,
+      or_low = (conf.low / (1 - conf.low)) / ref_odds,
+      or_high = (conf.high / (1 - conf.high)) / ref_odds
     )
 
   # Female
   preds_female <- ggpredict(female_final_model, terms = var)
   ref_row_f <- preds_female[which.min(preds_female$x), ]
-  
+
   preds_female <- preds_female %>%
     mutate(
-      logit = log(predicted / (1 - predicted)),
-      se_logit = std.error / (predicted * (1 - predicted)),
-      ref_pred = ref_row_f$predicted,
-      ref_se = ref_row_f$std.error,
-      ref_logit = log(ref_pred / (1 - ref_pred)),
-      ref_se_logit = ref_se / (ref_pred * (1 - ref_pred)),
-      log_or = logit - ref_logit,
-      se_log_or = sqrt(se_logit^2 + ref_se_logit^2),
-      log_or_low = log_or - 1.96 * se_log_or,
-      log_or_high = log_or + 1.96 * se_log_or
+      ref_odds = ref_row_f$predicted / (1 - ref_row_f$predicted),
+      odds = predicted / (1 - predicted),
+      or = odds / ref_odds,
+      or_low = (conf.low / (1 - conf.low)) / ref_odds,
+      or_high = (conf.high / (1 - conf.high)) / ref_odds
     )
 
   # Male plot
-  print(ggplot(preds_male, aes(x = x, y = log_or)) +
+  print(ggplot(preds_male, aes(x = x, y = or)) +
     geom_line(color = "black", size = 1.2) +
-    geom_ribbon(aes(ymin = log_or_low, ymax = log_or_high), fill = "grey", alpha = 0.3) +
-    geom_hline(yintercept = 0, linetype = "dotted") +
-    labs(title = paste0("Log(OR) by ", title_label, " in men"),
-         x = x_label, y = "Log adjusted odds ratio") +
+    geom_ribbon(aes(ymin = or_low, ymax = or_high), fill = "grey", alpha = 0.3) +
+    geom_hline(yintercept = 1, linetype = "dotted") +
+    scale_y_log10() +
+    labs(title = paste0("Odds ratio by ", title_label, " in men"),
+         x = x_label, y = "Adjusted odds ratio") +
     theme_minimal())
 
   # Female plot
-  print(ggplot(preds_female, aes(x = x, y = log_or)) +
+  print(ggplot(preds_female, aes(x = x, y = or)) +
     geom_line(color = "black", size = 1.2) +
-    geom_ribbon(aes(ymin = log_or_low, ymax = log_or_high), fill = "grey", alpha = 0.3) +
-    geom_hline(yintercept = 0, linetype = "dotted") +
-    labs(title = paste0("Log(OR) by ", title_label, " in women"),
-         x = x_label, y = "Log adjusted odds ratio") +
+    geom_ribbon(aes(ymin = or_low, ymax = or_high), fill = "grey", alpha = 0.3) +
+    geom_hline(yintercept = 1, linetype = "dotted") +
+    scale_y_log10() +
+    labs(title = paste0("Odds ratio by ", title_label, " in women"),
+         x = x_label, y = "Adjusted odds ratio") +
     theme_minimal())
 }
 
@@ -1944,7 +1935,7 @@ for (pred in predictors) {
   print(calculate_shap_or_ci(all_female_shap_value_linint, pred))
 }
 
-# See effect on age interaction log(OR) plots
+# See effect on age interaction OR plots
 for (var in age_cat_int_variables) {
   print(plot_age_int_or(
     model = male_final_model_linint,
