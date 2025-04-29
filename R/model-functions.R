@@ -311,14 +311,14 @@ calculate_shap_or_ci <- function(shap_values_df, predictor) {
     
     ref_shap <- shap_filtered %>% filter(shap_category == ref_category)
     ref_mean <- mean(ref_shap$phi)
-    ref_se <- sqrt(mean(ref_shap$phi.var))
+    ref_se <- sd(ref_shap$phi) / sqrt(nrow(ref_shap)) # Standard error formula for population
     
     results <- list()
     
     for (cat in sort(unique(shap_filtered$shap_category)[unique(shap_filtered$shap_category) != ref_category])) {
       cat_shap <- shap_filtered %>% filter(shap_category == cat)
       cat_mean <- mean(cat_shap$phi)
-      cat_se <- sqrt(mean(cat_shap$phi.var))
+      cat_se <- sd(ref_shap$phi) / sqrt(nrow(ref_shap))
       
       mean_diff <- cat_mean - ref_mean
       se_diff <- sqrt(ref_se^2 + cat_se^2)
@@ -336,14 +336,14 @@ calculate_shap_or_ci <- function(shap_values_df, predictor) {
     ref_category <- min(unique_values)
     ref_shap <- shap_filtered %>% filter(feature.value == ref_category)
     ref_mean <- mean(ref_shap$phi)
-    ref_se <- sqrt(mean(ref_shap$phi.var))
+    ref_se <- sd(ref_shap$phi) / sqrt(nrow(ref_shap))
     
     results <- list()
     
     for (cat in unique_values[unique_values != ref_category]) {
       cat_shap <- shap_filtered %>% filter(feature.value == cat)
       cat_mean <- mean(cat_shap$phi)
-      cat_se <- sqrt(mean(cat_shap$phi.var))
+      cat_se <- sd(ref_shap$phi) / sqrt(nrow(ref_shap))
       
       mean_diff <- cat_mean - ref_mean
       se_diff <- sqrt(ref_se^2 + cat_se^2)
@@ -359,7 +359,7 @@ calculate_shap_or_ci <- function(shap_values_df, predictor) {
     # Case 3: Continuous variable without specified cutoffs
   } else {
     mean_shap <- mean(shap_filtered$phi)
-    se_shap <- sqrt(mean(shap_filtered$phi.var))
+    se_shap <- sd(ref_shap$phi) / sqrt(nrow(ref_shap))
     
     S_OR <- exp(mean_shap)
     CI <- exp(c(mean_shap - 1.96 * se_shap, mean_shap + 1.96 * se_shap))

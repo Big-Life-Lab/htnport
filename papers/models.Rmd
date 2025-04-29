@@ -1069,7 +1069,7 @@ male_shap_values <- iml::Shapley$new(male_explainer, x.interest = observation)
 
 shap_df <- as.data.frame(male_shap_values$results) %>%
   mutate(
-    std.err = sqrt(phi.var),                         # Compute standard error
+    std.err = sqrt(phi.var),                         # Compute standard error (individual)
     feature = reorder(feature, phi)                  # Reorder for plotting
   )
 
@@ -1141,7 +1141,7 @@ male_shap_values <- iml::Shapley$new(male_explainer, x.interest = observation)
 
 shap_df <- as.data.frame(male_shap_values$results) %>%
   mutate(
-    std.err = sqrt(phi.var),                         # Compute standard error
+    std.err = sqrt(phi.var),                         # Compute standard error (individual)
     feature = reorder(feature, phi)                  # Reorder for plotting
   )
 
@@ -1312,29 +1312,21 @@ for (var in rcs_variables) {
 
   # Male
   preds_male <- ggpredict(male_final_model, terms = var)
-  ref_row_m <- preds_male[which.min(preds_male$x), ]
-
-  preds_male <- preds_male %>%
-    mutate(
-      ref_odds = ref_row_m$predicted / (1 - ref_row_m$predicted),
-      odds = predicted / (1 - predicted),
-      or = odds / ref_odds,
-      or_low = (conf.low / (1 - conf.low)) / ref_odds,
-      or_high = (conf.high / (1 - conf.high)) / ref_odds
-    )
-
+  preds_male$odds <- preds_male$predicted / (1 - preds_male$predicted)
+  ref_row <- preds_male[which.min(preds_male$x), ]
+  ref_odds <- ref_row$odds
+  preds_male$or <- preds_male$odds / ref_odds
+  preds_male$or_low <- (preds_male$conf.low / (1 - preds_male$conf.low)) / ref_odds
+  preds_male$or_high <- (preds_male$conf.high / (1 - preds_male$conf.high)) / ref_odds
+ 
   # Female
   preds_female <- ggpredict(female_final_model, terms = var)
-  ref_row_f <- preds_female[which.min(preds_female$x), ]
-
-  preds_female <- preds_female %>%
-    mutate(
-      ref_odds = ref_row_f$predicted / (1 - ref_row_f$predicted),
-      odds = predicted / (1 - predicted),
-      or = odds / ref_odds,
-      or_low = (conf.low / (1 - conf.low)) / ref_odds,
-      or_high = (conf.high / (1 - conf.high)) / ref_odds
-    )
+  preds_female$odds <- preds_female$predicted / (1 - preds_female$predicted)
+  ref_row <- preds_female[which.min(preds_female$x), ]
+  ref_odds <- ref_row$odds
+  preds_female$or <- preds_female$odds / ref_odds
+  preds_female$or_low <- (preds_female$conf.low / (1 - preds_female$conf.low)) / ref_odds
+  preds_female$or_high <- (preds_female$conf.high / (1 - preds_female$conf.high)) / ref_odds
 
   # Male plot
   print(ggplot(preds_male, aes(x = x, y = or)) +
