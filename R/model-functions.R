@@ -238,10 +238,14 @@ bootstrap_function <- function(data, indices, model) {
   # Calculate Brier Score
   brier_score <- calculate_brier_score(boot_model, boot_data)
   
-  # Calculate AUC and its CI using custom function
+  # Calculate c-statistic and its CI using custom function on bootstrap sample
   auc_result <- calculate_auc(boot_model, boot_data)
   auc_value <- auc_result$AUC
   auc_ci <- auc_result$CI
+  
+  # Calculate c-statistic optimism
+  auc_original <- calculate_auc(boot_model, data)$AUC
+  auc_optimism <- auc_value - auc_original
   
   # Calibration Comparison (Relative Differences and Ratios)
   calibration_comparison <- compare_probs(boot_data, predicted_probs)
@@ -257,6 +261,7 @@ bootstrap_function <- function(data, indices, model) {
     auc_value = auc_value,
     auc_ci_lower = auc_ci[1],  # Lower bound of AUC CI
     auc_ci_upper = auc_ci[3],  # Upper bound of AUC CI
+    auc_optimism = auc_optimism,  # <<< Added this output
     relative_difference_overall = calibration_comparison$relative_difference_overall,
     ratio_90_10 = calibration_comparison$ratio_90_10,
     ratio_95_5 = calibration_comparison$ratio_95_5,
@@ -383,16 +388,32 @@ plot_age_int_or <- function(model, var, var_type = c("categorical", "continuous"
   
   if (var_type == "categorical") {
     
+    # preds <- ggpredict(model, terms = c("clc_age", var)) %>%
+    #   group_by(x) %>%
+    #   arrange(group) %>%
+    #   mutate(
+    #     predicted_ref = first(predicted),
+    #     odds = predicted / (1 - predicted),
+    #     odds_ref = predicted_ref / (1 - predicted_ref),
+    #     or = odds / odds_ref,
+    #     or_low = (conf.low / (1 - conf.low)) / odds_ref,
+    #     or_high = (conf.high / (1 - conf.high)) / odds_ref
+    #   ) %>%
+    #   ungroup() %>%
+    #   filter(group != first(group))  # Remove reference group
+    
     preds <- ggpredict(model, terms = c("clc_age", var)) %>%
       group_by(x) %>%
       arrange(group) %>%
       mutate(
-        predicted_ref = first(predicted),
-        odds = predicted / (1 - predicted),
-        odds_ref = predicted_ref / (1 - predicted_ref),
-        or = odds / odds_ref,
-        or_low = (conf.low / (1 - conf.low)) / odds_ref,
-        or_high = (conf.high / (1 - conf.high)) / odds_ref
+        log_odds = log(predicted / (1 - predicted)),
+        log_odds_ref = first(log_odds),
+        se_ref = first(std.error),
+        log_or = log_odds - log_odds_ref,
+        se_log_or = sqrt(std.error^2 + se_ref^2),
+        or = exp(log_or),
+        or_low = exp(log_or - 1.96 * se_log_or),
+        or_high = exp(log_or + 1.96 * se_log_or)
       ) %>%
       ungroup() %>%
       filter(group != first(group))  # Remove reference group
@@ -430,16 +451,32 @@ plot_age_int_or <- function(model, var, var_type = c("categorical", "continuous"
     comps <- comp_vals[[var]]
     terms_string <- paste0(var, " [", paste(c(ref_val, comps), collapse = ", "), "]")
     
+    # preds <- ggpredict(model, terms = c("clc_age", terms_string)) %>%
+    #   group_by(x) %>%
+    #   arrange(group) %>%
+    #   mutate(
+    #     predicted_ref = first(predicted),
+    #     odds = predicted / (1 - predicted),
+    #     odds_ref = predicted_ref / (1 - predicted_ref),
+    #     or = odds / odds_ref,
+    #     or_low = (conf.low / (1 - conf.low)) / odds_ref,
+    #     or_high = (conf.high / (1 - conf.high)) / odds_ref
+    #   ) %>%
+    #   ungroup() %>%
+    #   filter(group != first(group))  # Remove reference group
+    
     preds <- ggpredict(model, terms = c("clc_age", terms_string)) %>%
       group_by(x) %>%
       arrange(group) %>%
       mutate(
-        predicted_ref = first(predicted),
-        odds = predicted / (1 - predicted),
-        odds_ref = predicted_ref / (1 - predicted_ref),
-        or = odds / odds_ref,
-        or_low = (conf.low / (1 - conf.low)) / odds_ref,
-        or_high = (conf.high / (1 - conf.high)) / odds_ref
+        log_odds = log(predicted / (1 - predicted)),
+        log_odds_ref = first(log_odds),
+        se_ref = first(std.error),
+        log_or = log_odds - log_odds_ref,
+        se_log_or = sqrt(std.error^2 + se_ref^2),
+        or = exp(log_or),
+        or_low = exp(log_or - 1.96 * se_log_or),
+        or_high = exp(log_or + 1.96 * se_log_or)
       ) %>%
       ungroup() %>%
       filter(group != first(group))  # Remove reference group

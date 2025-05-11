@@ -315,6 +315,7 @@ plot(sort(female_predicted_probabilities), seq_along(female_predicted_probabilit
 ```{r, warning = FALSE, message = FALSE}
 # Perform bootstrapping for both male and female full models
 n_bootstrap <- 1000  # Number of bootstrap resamples
+set.seed(123)
 
 # For male full model
 bootstrap_results_male <- replicate(n_bootstrap, {
@@ -334,6 +335,7 @@ brier_score_male <- sapply(bootstrap_results_male, function(x) x$brier_score)
 auc_male <- sapply(bootstrap_results_male, function(x) x$auc_value)
 auc_male_ci_lower <- sapply(bootstrap_results_male, function(x) x$auc_ci_lower)
 auc_male_ci_upper <- sapply(bootstrap_results_male, function(x) x$auc_ci_upper)
+auc_male_optimism <- sapply(bootstrap_results_male, function(x) x$auc_optimism)
 ratio_90_10_male <- sapply(bootstrap_results_male, function(x) x$ratio_90_10)
 ratio_95_5_male <- sapply(bootstrap_results_male, function(x) x$ratio_95_5)
 relative_difference_overall_male <- sapply(bootstrap_results_male, function(x) x$relative_difference_overall)
@@ -345,6 +347,7 @@ brier_score_female <- sapply(bootstrap_results_female, function(x) x$brier_score
 auc_female <- sapply(bootstrap_results_female, function(x) x$auc_value)
 auc_female_ci_lower <- sapply(bootstrap_results_female, function(x) x$auc_ci_lower)
 auc_female_ci_upper <- sapply(bootstrap_results_female, function(x) x$auc_ci_upper)
+auc_female_optimism <- sapply(bootstrap_results_female, function(x) x$auc_optimism)
 ratio_90_10_female <- sapply(bootstrap_results_female, function(x) x$ratio_90_10)
 ratio_95_5_female <- sapply(bootstrap_results_female, function(x) x$ratio_95_5)
 relative_difference_overall_female <- sapply(bootstrap_results_female, function(x) x$relative_difference_overall)
@@ -352,12 +355,12 @@ calibration_slope_female <- sapply(bootstrap_results_female, function(x) x$calib
 
 # Combine into a data frame
 results_summary <- data.frame(
-  Metric = c("Mean Nagelkerke R²", "Mean Brier Score", "Mean AUC", "Mean AUC 95% CI Lower", "Mean AUC 95% CI Upper", "Mean 90:10 Predicted Ratio", "Mean 95:5 Predicted Ratio", "Mean Observed v. Predicted", "Mean Calibration Slope"),
+  Metric = c("Mean Nagelkerke R²", "Mean Brier Score", "Mean AUC", "Mean AUC 95% CI Lower", "Mean AUC 95% CI Upper", "Mean AUC Optimism", "Mean 90:10 Predicted Ratio", "Mean 95:5 Predicted Ratio", "Mean Observed v. Predicted", "Mean Calibration Slope"),
   Male = c(mean(nagelkerke_r2_male), mean(brier_score_male), mean(auc_male),
-           mean(auc_male_ci_lower), mean(auc_male_ci_upper),
+           mean(auc_male_ci_lower), mean(auc_male_ci_upper), mean(auc_male_optimism),
            mean(ratio_90_10_male), mean(ratio_95_5_male), mean(relative_difference_overall_male), mean(calibration_slope_male)),
   Female = c(mean(nagelkerke_r2_female), mean(brier_score_female), mean(auc_female),
-             mean(auc_female_ci_lower), mean(auc_female_ci_upper),
+             mean(auc_female_ci_lower), mean(auc_female_ci_upper), mean(auc_female_optimism),
              mean(ratio_90_10_female), mean(ratio_95_5_female), mean(relative_difference_overall_female), mean(calibration_slope_female))
 )
 
@@ -578,6 +581,7 @@ plot(sort(female_predicted_probabilities), seq_along(female_predicted_probabilit
 ```{r, warning = FALSE, message = FALSE}
 # Perform bootstrapping for both male and female reduced models
 n_bootstrap <- 1000  # Number of bootstrap resamples
+set.seed(123)
 
 # For male reduced model
 bootstrap_results_male <- replicate(n_bootstrap, {
@@ -597,6 +601,7 @@ brier_score_male <- sapply(bootstrap_results_male, function(x) x$brier_score)
 auc_male <- sapply(bootstrap_results_male, function(x) x$auc_value)
 auc_male_ci_lower <- sapply(bootstrap_results_male, function(x) x$auc_ci_lower)
 auc_male_ci_upper <- sapply(bootstrap_results_male, function(x) x$auc_ci_upper)
+auc_male_optimism <- sapply(bootstrap_results_male, function(x) x$auc_optimism)
 ratio_90_10_male <- sapply(bootstrap_results_male, function(x) x$ratio_90_10)
 ratio_95_5_male <- sapply(bootstrap_results_male, function(x) x$ratio_95_5)
 relative_difference_overall_male <- sapply(bootstrap_results_male, function(x) x$relative_difference_overall)
@@ -608,6 +613,7 @@ brier_score_female <- sapply(bootstrap_results_female, function(x) x$brier_score
 auc_female <- sapply(bootstrap_results_female, function(x) x$auc_value)
 auc_female_ci_lower <- sapply(bootstrap_results_female, function(x) x$auc_ci_lower)
 auc_female_ci_upper <- sapply(bootstrap_results_female, function(x) x$auc_ci_upper)
+auc_female_optimism <- sapply(bootstrap_results_female, function(x) x$auc_optimism)
 ratio_90_10_female <- sapply(bootstrap_results_female, function(x) x$ratio_90_10)
 ratio_95_5_female <- sapply(bootstrap_results_female, function(x) x$ratio_95_5)
 relative_difference_overall_female <- sapply(bootstrap_results_female, function(x) x$relative_difference_overall)
@@ -615,12 +621,12 @@ calibration_slope_female <- sapply(bootstrap_results_female, function(x) x$calib
 
 # Combine into a data frame
 results_summary <- data.frame(
-  Metric = c("Mean Nagelkerke R²", "Mean Brier Score", "Mean AUC", "Mean AUC 95% CI Lower", "Mean AUC 95% CI Upper", "Mean 90:10 Predicted Ratio", "Mean 95:5 Predicted Ratio", "Mean Observed v. Predicted", "Mean Calibration Slope"),
+  Metric = c("Mean Nagelkerke R²", "Mean Brier Score", "Mean AUC", "Mean AUC 95% CI Lower", "Mean AUC 95% CI Upper", "Mean AUC Optimism", "Mean 90:10 Predicted Ratio", "Mean 95:5 Predicted Ratio", "Mean Observed v. Predicted", "Mean Calibration Slope"),
   Male = c(mean(nagelkerke_r2_male), mean(brier_score_male), mean(auc_male),
-           mean(auc_male_ci_lower), mean(auc_male_ci_upper),
+           mean(auc_male_ci_lower), mean(auc_male_ci_upper), mean(auc_male_optimism),
            mean(ratio_90_10_male), mean(ratio_95_5_male), mean(relative_difference_overall_male), mean(calibration_slope_male)),
   Female = c(mean(nagelkerke_r2_female), mean(brier_score_female), mean(auc_female),
-             mean(auc_female_ci_lower), mean(auc_female_ci_upper),
+             mean(auc_female_ci_lower), mean(auc_female_ci_upper), mean(auc_female_optimism),
              mean(ratio_90_10_female), mean(ratio_95_5_female), mean(relative_difference_overall_female), mean(calibration_slope_female))
 )
 
@@ -760,7 +766,7 @@ female_calibration_results
 
 ### Beta coefficients for full and reduced models
 
-Beta coefficients for the full and reduced models can be seen below. 
+Beta coefficients for the full and reduced models can be seen below.
 
 ```{r, warning = FALSE, message = FALSE}
 # Get beta coefficients and their standard errors for full models
@@ -821,7 +827,7 @@ male_explainer <- iml::Predictor$new(
 )
 
 # Compute and plot SHAP values
-set.seed(456)
+set.seed(123)
 male_shap_values <- iml::Shapley$new(male_explainer, x.interest = observation)
 
 shap_df <- as.data.frame(male_shap_values$results) %>%

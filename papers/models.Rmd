@@ -421,6 +421,7 @@ plot(sort(female_predicted_probabilities), seq_along(female_predicted_probabilit
 ```{r, warning = FALSE, message = FALSE}
 # Perform bootstrapping for both male and female full models
 n_bootstrap <- 1000  # Number of bootstrap resamples
+set.seed(123)
 
 # For male full model
 bootstrap_results_male <- replicate(n_bootstrap, {
@@ -440,6 +441,7 @@ brier_score_male <- sapply(bootstrap_results_male, function(x) x$brier_score)
 auc_male <- sapply(bootstrap_results_male, function(x) x$auc_value)
 auc_male_ci_lower <- sapply(bootstrap_results_male, function(x) x$auc_ci_lower)
 auc_male_ci_upper <- sapply(bootstrap_results_male, function(x) x$auc_ci_upper)
+auc_male_optimism <- sapply(bootstrap_results_male, function(x) x$auc_optimism)
 ratio_90_10_male <- sapply(bootstrap_results_male, function(x) x$ratio_90_10)
 ratio_95_5_male <- sapply(bootstrap_results_male, function(x) x$ratio_95_5)
 relative_difference_overall_male <- sapply(bootstrap_results_male, function(x) x$relative_difference_overall)
@@ -451,6 +453,7 @@ brier_score_female <- sapply(bootstrap_results_female, function(x) x$brier_score
 auc_female <- sapply(bootstrap_results_female, function(x) x$auc_value)
 auc_female_ci_lower <- sapply(bootstrap_results_female, function(x) x$auc_ci_lower)
 auc_female_ci_upper <- sapply(bootstrap_results_female, function(x) x$auc_ci_upper)
+auc_female_optimism <- sapply(bootstrap_results_female, function(x) x$auc_optimism)
 ratio_90_10_female <- sapply(bootstrap_results_female, function(x) x$ratio_90_10)
 ratio_95_5_female <- sapply(bootstrap_results_female, function(x) x$ratio_95_5)
 relative_difference_overall_female <- sapply(bootstrap_results_female, function(x) x$relative_difference_overall)
@@ -458,12 +461,12 @@ calibration_slope_female <- sapply(bootstrap_results_female, function(x) x$calib
 
 # Combine into a data frame
 results_summary <- data.frame(
-  Metric = c("Mean Nagelkerke R²", "Mean Brier Score", "Mean AUC", "Mean AUC 95% CI Lower", "Mean AUC 95% CI Upper", "Mean 90:10 Predicted Ratio", "Mean 95:5 Predicted Ratio", "Mean Observed v. Predicted", "Mean Calibration Slope"),
+  Metric = c("Mean Nagelkerke R²", "Mean Brier Score", "Mean AUC", "Mean AUC 95% CI Lower", "Mean AUC 95% CI Upper", "Mean AUC Optimism", "Mean 90:10 Predicted Ratio", "Mean 95:5 Predicted Ratio", "Mean Observed v. Predicted", "Mean Calibration Slope"),
   Male = c(mean(nagelkerke_r2_male), mean(brier_score_male), mean(auc_male),
-           mean(auc_male_ci_lower), mean(auc_male_ci_upper),
+           mean(auc_male_ci_lower), mean(auc_male_ci_upper), mean(auc_male_optimism),
            mean(ratio_90_10_male), mean(ratio_95_5_male), mean(relative_difference_overall_male), mean(calibration_slope_male)),
   Female = c(mean(nagelkerke_r2_female), mean(brier_score_female), mean(auc_female),
-             mean(auc_female_ci_lower), mean(auc_female_ci_upper),
+             mean(auc_female_ci_lower), mean(auc_female_ci_upper), mean(auc_female_optimism),
              mean(ratio_90_10_female), mean(ratio_95_5_female), mean(relative_difference_overall_female), mean(calibration_slope_female))
 )
 
@@ -476,6 +479,7 @@ print(results_summary)
 ```{r, warning = FALSE, message = FALSE}
 # Perform bootstrapping for both male and female reduced models
 n_bootstrap <- 1000  # Number of bootstrap resamples
+set.seed(123)
 
 # For male reduced model
 bootstrap_results_male <- replicate(n_bootstrap, {
@@ -495,6 +499,7 @@ brier_score_male <- sapply(bootstrap_results_male, function(x) x$brier_score)
 auc_male <- sapply(bootstrap_results_male, function(x) x$auc_value)
 auc_male_ci_lower <- sapply(bootstrap_results_male, function(x) x$auc_ci_lower)
 auc_male_ci_upper <- sapply(bootstrap_results_male, function(x) x$auc_ci_upper)
+auc_male_optimism <- sapply(bootstrap_results_male, function(x) x$auc_optimism)
 ratio_90_10_male <- sapply(bootstrap_results_male, function(x) x$ratio_90_10)
 ratio_95_5_male <- sapply(bootstrap_results_male, function(x) x$ratio_95_5)
 relative_difference_overall_male <- sapply(bootstrap_results_male, function(x) x$relative_difference_overall)
@@ -506,6 +511,7 @@ brier_score_female <- sapply(bootstrap_results_female, function(x) x$brier_score
 auc_female <- sapply(bootstrap_results_female, function(x) x$auc_value)
 auc_female_ci_lower <- sapply(bootstrap_results_female, function(x) x$auc_ci_lower)
 auc_female_ci_upper <- sapply(bootstrap_results_female, function(x) x$auc_ci_upper)
+auc_female_optimism <- sapply(bootstrap_results_female, function(x) x$auc_optimism)
 ratio_90_10_female <- sapply(bootstrap_results_female, function(x) x$ratio_90_10)
 ratio_95_5_female <- sapply(bootstrap_results_female, function(x) x$ratio_95_5)
 relative_difference_overall_female <- sapply(bootstrap_results_female, function(x) x$relative_difference_overall)
@@ -513,12 +519,12 @@ calibration_slope_female <- sapply(bootstrap_results_female, function(x) x$calib
 
 # Combine into a data frame
 results_summary <- data.frame(
-  Metric = c("Mean Nagelkerke R²", "Mean Brier Score", "Mean AUC", "Mean AUC 95% CI Lower", "Mean AUC 95% CI Upper", "Mean 90:10 Predicted Ratio", "Mean 95:5 Predicted Ratio", "Mean Observed v. Predicted", "Mean Calibration Slope"),
+  Metric = c("Mean Nagelkerke R²", "Mean Brier Score", "Mean AUC", "Mean AUC 95% CI Lower", "Mean AUC 95% CI Upper", "Mean AUC Optimism", "Mean 90:10 Predicted Ratio", "Mean 95:5 Predicted Ratio", "Mean Observed v. Predicted", "Mean Calibration Slope"),
   Male = c(mean(nagelkerke_r2_male), mean(brier_score_male), mean(auc_male),
-           mean(auc_male_ci_lower), mean(auc_male_ci_upper),
+           mean(auc_male_ci_lower), mean(auc_male_ci_upper), mean(auc_male_optimism),
            mean(ratio_90_10_male), mean(ratio_95_5_male), mean(relative_difference_overall_male), mean(calibration_slope_male)),
   Female = c(mean(nagelkerke_r2_female), mean(brier_score_female), mean(auc_female),
-             mean(auc_female_ci_lower), mean(auc_female_ci_upper),
+             mean(auc_female_ci_lower), mean(auc_female_ci_upper), mean(auc_female_optimism),
              mean(ratio_90_10_female), mean(ratio_95_5_female), mean(relative_difference_overall_female), mean(calibration_slope_female))
 )
 
@@ -1064,7 +1070,7 @@ male_explainer <- iml::Predictor$new(
 )
 
 # Compute and plot SHAP values
-set.seed(456)
+set.seed(123)
 male_shap_values <- iml::Shapley$new(male_explainer, x.interest = observation)
 
 shap_df <- as.data.frame(male_shap_values$results) %>%
@@ -1136,7 +1142,7 @@ male_explainer <- iml::Predictor$new(
 )
 
 # Compute and plot SHAP values
-set.seed(456)
+set.seed(123)
 male_shap_values <- iml::Shapley$new(male_explainer, x.interest = observation)
 
 shap_df <- as.data.frame(male_shap_values$results) %>%
@@ -1310,23 +1316,49 @@ for (var in rcs_variables) {
   title_label <- ifelse(var %in% names(title_labels), title_labels[[var]], var)
   x_label <- ifelse(var %in% names(var_labels), var_labels[[var]], var)
 
+  # # Male
+  # preds_male <- ggpredict(male_final_model, terms = var)
+  # preds_male$odds <- preds_male$predicted / (1 - preds_male$predicted)
+  # ref_row <- preds_male[which.min(preds_male$x), ]
+  # ref_odds <- ref_row$odds
+  # preds_male$or <- preds_male$odds / ref_odds
+  # preds_male$or_low <- (preds_male$conf.low / (1 - preds_male$conf.low)) / ref_odds
+  # preds_male$or_high <- (preds_male$conf.high / (1 - preds_male$conf.high)) / ref_odds
+  # 
+  # # Female
+  # preds_female <- ggpredict(female_final_model, terms = var)
+  # preds_female$odds <- preds_female$predicted / (1 - preds_female$predicted)
+  # ref_row <- preds_female[which.min(preds_female$x), ]
+  # ref_odds <- ref_row$odds
+  # preds_female$or <- preds_female$odds / ref_odds
+  # preds_female$or_low <- (preds_female$conf.low / (1 - preds_female$conf.low)) / ref_odds
+  # preds_female$or_high <- (preds_female$conf.high / (1 - preds_female$conf.high)) / ref_odds
+  
   # Male
   preds_male <- ggpredict(male_final_model, terms = var)
-  preds_male$odds <- preds_male$predicted / (1 - preds_male$predicted)
+  preds_male$log_odds <- log(preds_male$predicted / (1 - preds_male$predicted))
   ref_row <- preds_male[which.min(preds_male$x), ]
-  ref_odds <- ref_row$odds
-  preds_male$or <- preds_male$odds / ref_odds
-  preds_male$or_low <- (preds_male$conf.low / (1 - preds_male$conf.low)) / ref_odds
-  preds_male$or_high <- (preds_male$conf.high / (1 - preds_male$conf.high)) / ref_odds
- 
+  ref_log_odds <- ref_row$log_odds
+  ref_se <- ref_row$std.error
+  
+  preds_male$log_or <- preds_male$log_odds - ref_log_odds
+  preds_male$se_log_or <- sqrt(preds_male$std.error^2 + ref_se^2)
+  preds_male$or <- exp(preds_male$log_or)
+  preds_male$or_low <- exp(preds_male$log_or - 1.96 * preds_male$se_log_or)
+  preds_male$or_high <- exp(preds_male$log_or + 1.96 * preds_male$se_log_or)
+  
   # Female
   preds_female <- ggpredict(female_final_model, terms = var)
-  preds_female$odds <- preds_female$predicted / (1 - preds_female$predicted)
+  preds_female$log_odds <- log(preds_female$predicted / (1 - preds_female$predicted))
   ref_row <- preds_female[which.min(preds_female$x), ]
-  ref_odds <- ref_row$odds
-  preds_female$or <- preds_female$odds / ref_odds
-  preds_female$or_low <- (preds_female$conf.low / (1 - preds_female$conf.low)) / ref_odds
-  preds_female$or_high <- (preds_female$conf.high / (1 - preds_female$conf.high)) / ref_odds
+  ref_log_odds <- ref_row$log_odds
+  ref_se <- ref_row$std.error
+  
+  preds_female$log_or <- preds_female$log_odds - ref_log_odds
+  preds_female$se_log_or <- sqrt(preds_female$std.error^2 + ref_se^2)
+  preds_female$or <- exp(preds_female$log_or)
+  preds_female$or_low <- exp(preds_female$log_or - 1.96 * preds_female$se_log_or)
+  preds_female$or_high <- exp(preds_female$log_or + 1.96 * preds_female$se_log_or)
 
   # Male plot
   print(ggplot(preds_male, aes(x = x, y = or)) +
@@ -1362,7 +1394,7 @@ for (var in age_cat_int_variables) {
     legend_labels = legend_labels,
     level_labels = level_labels
   ))
-  
+
   print(plot_age_int_or(
     model = female_final_model,
     var = var,
