@@ -1075,8 +1075,8 @@ male_shap_values <- iml::Shapley$new(male_explainer, x.interest = observation)
 
 shap_df <- as.data.frame(male_shap_values$results) %>%
   mutate(
-    std.err = sqrt(phi.var),                         # Compute standard error (individual)
-    feature = reorder(feature, phi)                  # Reorder for plotting
+    std.err = sqrt(phi.var) / sqrt(100),  # Individual SE based on MC sampling
+    feature = reorder(feature, phi)       # Reorder for plotting
   )
 
 shap_df %>%
@@ -1147,8 +1147,8 @@ male_shap_values <- iml::Shapley$new(male_explainer, x.interest = observation)
 
 shap_df <- as.data.frame(male_shap_values$results) %>%
   mutate(
-    std.err = sqrt(phi.var),                         # Compute standard error (individual)
-    feature = reorder(feature, phi)                  # Reorder for plotting
+    std.err = sqrt(phi.var) / sqrt(100),  # Individual SE based on MC sampling
+    feature = reorder(feature, phi)       # Reorder for plotting
   )
 
 shap_df %>%

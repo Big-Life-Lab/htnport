@@ -316,14 +316,17 @@ calculate_shap_or_ci <- function(shap_values_df, predictor) {
     
     ref_shap <- shap_filtered %>% filter(shap_category == ref_category)
     ref_mean <- mean(ref_shap$phi)
-    ref_se <- sd(ref_shap$phi) / sqrt(nrow(ref_shap)) # Standard error formula for population
+    
+    # Standard error: includes both between-person variance and mean MC variance
+    ref_se <- sqrt(var(ref_shap$phi) + mean(ref_shap$phi.var)) / sqrt(nrow(ref_shap))
     
     results <- list()
     
     for (cat in sort(unique(shap_filtered$shap_category)[unique(shap_filtered$shap_category) != ref_category])) {
       cat_shap <- shap_filtered %>% filter(shap_category == cat)
       cat_mean <- mean(cat_shap$phi)
-      cat_se <- sd(cat_shap$phi) / sqrt(nrow(cat_shap))
+      
+      cat_se <- sqrt(var(cat_shap$phi) + mean(cat_shap$phi.var)) / sqrt(nrow(cat_shap))
       
       mean_diff <- cat_mean - ref_mean
       se_diff <- sqrt(ref_se^2 + cat_se^2)
@@ -341,14 +344,14 @@ calculate_shap_or_ci <- function(shap_values_df, predictor) {
     ref_category <- min(unique_values)
     ref_shap <- shap_filtered %>% filter(feature.value == ref_category)
     ref_mean <- mean(ref_shap$phi)
-    ref_se <- sd(ref_shap$phi) / sqrt(nrow(ref_shap))
+    ref_se <- sqrt(var(ref_shap$phi) + mean(ref_shap$phi.var)) / sqrt(nrow(ref_shap))
     
     results <- list()
     
     for (cat in unique_values[unique_values != ref_category]) {
       cat_shap <- shap_filtered %>% filter(feature.value == cat)
       cat_mean <- mean(cat_shap$phi)
-      cat_se <- sd(cat_shap$phi) / sqrt(nrow(cat_shap))
+      cat_se <- sqrt(var(cat_shap$phi) + mean(cat_shap$phi.var)) / sqrt(nrow(cat_shap))
       
       mean_diff <- cat_mean - ref_mean
       se_diff <- sqrt(ref_se^2 + cat_se^2)
@@ -364,7 +367,7 @@ calculate_shap_or_ci <- function(shap_values_df, predictor) {
     # Case 3: Continuous variable without specified cutoffs
   } else {
     mean_shap <- mean(shap_filtered$phi)
-    se_shap <- sd(shap_filtered$phi) / sqrt(nrow(shap_filtered))
+    se_shap <- sqrt(var(shap_filtered$phi) + mean(shap_filtered$phi.var)) / sqrt(nrow(shap_filtered))
     
     S_OR <- exp(mean_shap)
     CI <- exp(c(mean_shap - 1.96 * se_shap, mean_shap + 1.96 * se_shap))
