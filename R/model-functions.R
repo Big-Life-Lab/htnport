@@ -14,6 +14,31 @@ calculate_simplified_vif <- function(design) {
   return(vif_values)
 }
 
+# # Save ANOVA table
+# male_simple_model <- glm(formula = simplified_formula, data = male_data, weights = wgt_full)
+# anova_table <- car::Anova(male_simple_model)
+# 
+# # Get row names (predictor names)
+# names <- rownames(anova_table)
+# 
+# # Extract LR Chisq and Df columns
+# chi_sq <- anova_table[, "LR Chisq"]
+# df <- anova_table[, "Df"]
+# 
+# # Compute partial chi-squared minus degrees of freedom
+# partial_chi_sq <- chi_sq - df
+# 
+# # Combine into a new data frame
+# importance_df <- data.frame(
+#   Predictor = names,
+#   ChiSq = chi_sq,
+#   Df = df,
+#   ChiSq_minus_Df = partial_chi_sq
+# )
+# 
+# # Order by importance
+# importance_df <- importance_df[order(-importance_df$ChiSq_minus_Df), ]
+
 # Function for stepdown procedure by Harrell and Ambler
 stepdown <- function(full_model, data, threshold = 0.95) {
   # Predict full model's predicted values
@@ -239,9 +264,8 @@ bootstrap_function <- function(data, indices, model) {
   brier_score <- calculate_brier_score(boot_model, boot_data)
   
   # Calculate c-statistic and its CI using custom function on bootstrap sample
-  auc_result <- calculate_auc(boot_model, boot_data)
-  auc_value <- auc_result$AUC
-  auc_ci <- auc_result$CI
+  auc_value <- calculate_auc(boot_model, boot_data)$AUC
+  auc_ci <- calculate_auc(boot_model, boot_data)$CI
   
   # Calculate c-statistic optimism
   auc_original <- calculate_auc(boot_model, data)$AUC

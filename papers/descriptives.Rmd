@@ -32,7 +32,6 @@ source("R/income.R")
 source("R/kidney.R")
 source("R/medications.R")
 source("R/sample.R")
-source("R/smoking.R")
 
 source("R/descriptive-functions.R")
 source("R/get-descriptive-data.R")
