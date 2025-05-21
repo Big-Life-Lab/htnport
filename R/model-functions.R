@@ -179,7 +179,7 @@ calculate_brier_score <- function(model, data) {
 # c-statistic via ROC
 calculate_auc <- function(model, data) {
   # Generate predicted probabilities
-  predicted_probabilities <- predict(model, type = "response")
+  predicted_probabilities <- predict(model, newdata = data, type = "response")
   
   # Calculate ROC curve
   roc_curve <- pROC::roc(data$highbp14090_adj, predicted_probabilities)
