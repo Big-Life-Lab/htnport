@@ -6,9 +6,13 @@ editor: visual
 
 ### Introduction
 
-Hypertension affects about 1 in 4 Canadians. Reducing the hypertension burden has emphasized treatment rather than prevention through reducing the prevalence of modifiable risk factors. Making diagnostic prediction models derived from population data and robust risk factor epidemiology can support hypertension prevention by allowing people to assess their risk profile and address potentially modifiable risk factors. Furthermore, diagnostic prediction models support population health assessment by identifying high-risk subpopulations, and informing the evaluation and design of preventive interventions tailored to population needs. Models predicting hypertension in Canada have only been derived from Albertan data without considering risk factor dose-responses and Canadians aged 35 and under.
+Hypertension affects about 1 in 4 Canadians. Reducing the hypertension burden has emphasized treatment rather than prevention through reducing the prevalence of modifiable risk factors. Making diagnostic prediction models derived from population data and robust risk factor epidemiology can support hypertension prevention by allowing people to assess their risk profile and address potentially modifiable risk factors. Furthermore, diagnostic prediction models support population health assessment by identifying high-risk subpopulations, and informing the evaluation and design of preventive interventions tailored to population needs.
 
-This study aims (1) to describe the associations between various risk factors and hypertension in Canada and (2) to develop and validate a model to describe hypertension risk profiles for use by individual Canadians or for population health assessment.
+Most existing models predicting hypertension are designed for clinical settings, but neither for the purpose of population health planning nor for the purpose of providing individuals simple lifestyle advice. Models fulfilling these purposes must have predictors which are available to the public, representative of the population, and regularly collected to update estimates if needed. Additionally, these models must also be developed from large representative datasets and have a variety of sociodemographics as predictors to facilitate risk assessment and equity evaluation across important subpopulations such as age, ethnicity, and education. Furthermore, including modifiable risk factors as predictors allows for the evaluation of preventative strategies. Most existing hypertension prediction models include predictors which are not ideal for population health planning and difficult to collect from individuals wanting simple lifestyle advice. These include models which have genetic factors, biomarkers, and clinically obtained measures (like blood pressure itself) as predictors. Moreover, many existing prediction models are also limited to people of only one ethnicity and there has been no model developed to predict hypertension which is representative of the Canadian population.
+
+Therefore, a survey-based and generalizable model, with easy-to-collect and modifiable risk factors as predictors (whose dose-responses and interactions are pre-specified) and a multiethnic derivation population, can form the basis of tools which can readily predict and understand hypertension risk at individual or population levels, helping reduce the burden of hypertension.
+
+This study aims (1) to describe the association between sociodemographic, behavioral and disease risk factors and the prevalence of hypertension, and (2) to develop and validate a model - the Hypertension Population Risk Tool (HTNPoRT) - that can be used by members of the public to assess their hypertension risk profile, and to identify their most influential risk factors for hypertension.
 
 ```{r, include = FALSE, warning = FALSE, message = FALSE}
 # Set working directory at RDC
@@ -290,7 +294,7 @@ female_reduced_model <- survey::svyglm(highbp14090_adj ~ rcs(clc_age, 4) + fmh_1
 
 ### Full model assessment for original sample
 
-Both the full male and female models are discriminating, indicating good ability to separate those who have hypertension and those who do not (men c-statistic: 0.87, 95% confidence interval (CI): 0.86-0.87; women c-statistic: 0.88, 95% CI: 0.87-0.89 across whole and bootstrap samples). Additionally, predicted probabilities of hypertension closely approximate observed proportions of hypertension within the overall population (men observed v. predicted relative difference of 1.94% and women relative difference of 1.20% across whole sample; men observed v. predicted relative difference of 1.92% and women relative difference of 1.20% across bootstrap samples). Below are the calibration plots of the observed proportions regressed on the full models’ predicted probabilities for both men and women. Calibration slopes were 0.91 in men and 0.93 in women across the whole sample, and 0.95 in men and 0.96 in women across bootstrap samples.
+Both the full male and female models are discriminating, indicating excellent ability to separate those who have hypertension and those who do not (men c-statistic: 0.87, 95% confidence interval (CI): 0.86-0.87; women c-statistic: 0.88, 95% CI: 0.87-0.89 across derivation and bootstrap samples). C-statistics were virtually unchanged upon optimism correction. Also, predicted probabilities of hypertension closely approximate observed proportions of hypertension within the overall population (men observed v. predicted relative difference of 1.94% and women relative difference of 1.20% across derivation sample; men observed v. predicted relative difference of 1.92% and women relative difference of 1.20% across bootstrap samples). Below are the calibration plots of the observed proportions regressed on the full models’ predicted probabilities for both men and women. Calibration slopes were close to perfect as they were 0.91 in men and 0.93 in women across the derivation sample, and 0.95 in men and 0.96 in women across bootstrap samples.
 
 ```{r, warning = FALSE, message = FALSE}
 # Generate predicted probabilities for full models
@@ -366,6 +370,19 @@ results_summary <- data.frame(
 
 # Print the summary data frame
 print(results_summary)
+
+# Optimism-corrected AUCs and their 95% CIs
+auc_male_corrected <- auc_male - auc_male_optimism
+auc_female_corrected <- auc_female - auc_female_optimism
+
+auc_male_corrected_ci <- quantile(auc_male_corrected, probs = c(0.025, 0.975))
+auc_female_corrected_ci <- quantile(auc_female_corrected, probs = c(0.025, 0.975))
+
+cat("Male Optimism-Corrected AUC:", round(mean(auc_male_corrected), 3),
+    "\n95% CI:", round(auc_male_corrected_ci[1], 3), "-", round(auc_male_corrected_ci[2], 3), "\n\n")
+
+cat("Female Optimism-Corrected AUC:", round(mean(auc_female_corrected), 3),
+    "\n95% CI:", round(auc_female_corrected_ci[1], 3), "-", round(auc_female_corrected_ci[2], 3))
 ```
 
 ### Calibration across subgroups for full models
@@ -556,7 +573,7 @@ female_calibration_results
 
 ### Reduced model assessment for original sample
 
-In the reduced models, overall discriminative performance was similar in men (c-statistic: 0.86, 95% confidence interval: 0.85-0.87) and women (c-statistic: 0.88, 95% confidence interval: 0.87-0.88) across both whole and bootstrap samples. As expected, discrimination across the 90:10 and 95:5 predicted probability percentiles decreased from full to reduced models in both men and women.Additionally, calibration slopes increased in both men (0.98 across whole and bootstrap samples) and women (0.95 across whole sample and 0.99 across bootstrap sample), while relative differences between observed proportions and predicted probabilities decreased in men (0.90% across whole sample and 0.88% across bootstrap samples) and increased in women (1.52% across whole sample and 1.47% across bootstrap samples). Below are the calibration plots of the observed proportions regressed on the reduced models’ predicted probabilities for both men and women.
+In the reduced models, overall discriminative performance was similar in men (c-statistic: 0.86, 95% CI: 0.85-0.87) and women (c-statistic: 0.88, 95% CI: 0.87-0.88) across both derivation and bootstrap samples, with c-statistics remaining virtually unchanged upon optimism correction. As expected, discrimination across the 90:10 and 95:5 predicted probability percentiles degraded from full to reduced models in both men and women, demonstrating that the difference between individuals in the highest risk percentiles and those in the lowest risk percentiles has shrunk a bit with the reduced models. Additionally, calibration slopes improved to near perfect in both men (0.98 across derivation and bootstrap samples) and women (0.95 across derivation sample and 0.99 across bootstrap sample), while relative differences between observed proportions and predicted probabilities improved in men (0.90% across derivation sample and 0.88% across bootstrap samples) yet degraded in women (1.52% across derivation sample and 1.47% across bootstrap samples). Below are the calibration plots of the observed proportions regressed on the reduced models’ predicted probabilities for both men and women.
 
 ```{r, warning = FALSE, message = FALSE}
 # Generate predicted probabilities for reduced models
@@ -632,6 +649,19 @@ results_summary <- data.frame(
 
 # Print the summary data frame
 print(results_summary)
+
+# Optimism-corrected AUCs and their 95% CIs
+auc_male_corrected <- auc_male - auc_male_optimism
+auc_female_corrected <- auc_female - auc_female_optimism
+
+auc_male_corrected_ci <- quantile(auc_male_corrected, probs = c(0.025, 0.975))
+auc_female_corrected_ci <- quantile(auc_female_corrected, probs = c(0.025, 0.975))
+
+cat("Male Optimism-Corrected AUC:", round(mean(auc_male_corrected), 3),
+    "\n95% CI:", round(auc_male_corrected_ci[1], 3), "-", round(auc_male_corrected_ci[2], 3), "\n\n")
+
+cat("Female Optimism-Corrected AUC:", round(mean(auc_female_corrected), 3),
+    "\n95% CI:", round(auc_female_corrected_ci[1], 3), "-", round(auc_female_corrected_ci[2], 3))
 ```
 
 ### Calibration across subgroups for reduced models
@@ -858,7 +888,7 @@ as.data.frame(shap_df) %>%
 
 SHAP-adjusted odds ratios obtained from the full models, along with their 95% confidence intervals, are available below and describe the association between model predictors and hypertension while accounting for non-linearity and interactions. These adjusted odds ratios were calculated by exponentiating the difference between the mean SHAP value (i.e., log odds) for the risk category and the mean SHAP value for the reference category.
 
-The SHAP-adjusted odds ratios presented below are mostly in line with associations between risk factors and hypertension in literature, but there are a few anomalies. Current smoking seems to have a protective effect against hypertension as compared to never smoking in both men (OR: 0.84, 95% CI: 0.84-0.85) and women (OR: 0.86, 95% CI: 0.85-0.86). The association between smoking and hypertension appears to be inconsistent across published literature, with some studies reporting insignificant and even inverse relationships. One study postulated that the association between smoking and the development of hypertension is diverse in different urban settings. Moreover, the inverse associations can be attributed to current smokers having lower body mass indices compared to former and never smokers. Meanwhile, being a low-risk drinker seems to have a protective effect in women only (OR: 0.79, 95% CI: 0.79-0.79), though this has been observed in a few other studies which stated that light alcohol consumption may reduce hypertension risk in women through favourable changes in high-density lipoprotein cholesterol. Another contradictory inverse association seen below includes that between insufficient sleep duration and hypertension in both men (OR: 0.92. 95% CI: 0.92-0.92) and women (OR: 0.88, 95% CI: 0.87-0.88). Additionally, contradictory inverse associations were even seen between having poor or fair mental health and hypertension in both men (OR: 0.93, 95% CI: 0.93-0.93) and women (OR: 0.98, 95% CI: 0.98-0.98), as well as between stress and hypertension in both men (OR: 0.93, 95% CI: 0.93-0.93) and women (OR: 0.85, 95% CI: 0.85-0.85). Regarding a potential reason for these associations, men and women with shorter sleep durations, poorer mental health, and higher perceived stress levels tend to be younger in age.
+The SHAP-adjusted odds ratios presented below are mostly in line with associations between risk factors and hypertension in literature, but there are a few anomalies. Current smoking seems to have a protective effect against hypertension as compared to never smoking in both men (OR: 0.84, 95% CI: 0.84-0.85) and women (OR: 0.86, 95% CI: 0.85-0.86). The association between smoking and hypertension appears to be inconsistent across published literature, with some studies reporting insignificant and even inverse relationships. One study postulated that the association between smoking and the development of hypertension is diverse in different urban settings. Moreover, the inverse associations can be attributed to current smokers having lower body mass indices compared to former and never smokers. Meanwhile, being a low-risk drinker seems to have a protective effect in women only (OR: 0.79, 95% CI: 0.79-0.79), though this has been observed in a few other studies which stated that light alcohol consumption may reduce hypertension risk in women through favourable changes in high-density lipoprotein cholesterol. Another contradictory inverse association seen below includes that between insufficient sleep duration and hypertension in both men (OR: 0.92. 95% CI: 0.92-0.92) and women (OR: 0.88, 95% CI: 0.87-0.88). Additionally, contradictory inverse associations were even seen between having poor or fair mental health and hypertension in both men (OR: 0.93, 95% CI: 0.93-0.93) and women (OR: 0.98, 95% CI: 0.98-0.98), as well as between stress and hypertension in both men (OR: 0.93, 95% CI: 0.93-0.93) and women (OR: 0.85, 95% CI: 0.85-0.85). Regarding a potential reason for these associations, men and women with shorter sleep durations, poorer mental health, and higher perceived stress levels tend to be younger in age. These inverse associations are weak in magnitude, nonetheless.
 
 As hinted above, most of these inverse associations are all likely due to the individuals in certain risk categories also having highly protective features from stronger predictors (i.e., young age or low body mass index), causing the average SHAP value for these risk categories to dip below the average SHAP value for their respective reference categories and thus cause the mean difference (i.e., log(OR)) to become negative across the study populations. Again, SHAP values for a given individual are relative to the model’s average prediction and sum to the difference between the individual and average predictions. This means that a risk factor like current smoking could have a negative SHAP value (or a protective factor like never smoking could have a positive SHAP value) at the individual and/or population levels if the model primarily predicts hypertension through heavily stronger predictors like age, body mass index, and diabetes.
 

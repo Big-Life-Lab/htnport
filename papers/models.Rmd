@@ -471,6 +471,19 @@ results_summary <- data.frame(
 
 # Print the summary data frame
 print(results_summary)
+
+# Optimism-corrected AUCs and their 95% CIs
+auc_male_corrected <- auc_male - auc_male_optimism
+auc_female_corrected <- auc_female - auc_female_optimism
+
+auc_male_corrected_ci <- quantile(auc_male_corrected, probs = c(0.025, 0.975))
+auc_female_corrected_ci <- quantile(auc_female_corrected, probs = c(0.025, 0.975))
+
+cat("Male Optimism-Corrected AUC:", round(mean(auc_male_corrected), 3),
+    "\n95% CI:", round(auc_male_corrected_ci[1], 3), "-", round(auc_male_corrected_ci[2], 3), "\n\n")
+
+cat("Female Optimism-Corrected AUC:", round(mean(auc_female_corrected), 3),
+    "\n95% CI:", round(auc_female_corrected_ci[1], 3), "-", round(auc_female_corrected_ci[2], 3))
 ```
 
 ### Reduced model assessment for bootstrap samples - BOOTSTRAP VALIDATION 2/2
@@ -529,6 +542,19 @@ results_summary <- data.frame(
 
 # Print the summary data frame
 print(results_summary)
+
+# Optimism-corrected AUCs and their 95% CIs
+auc_male_corrected <- auc_male - auc_male_optimism
+auc_female_corrected <- auc_female - auc_female_optimism
+
+auc_male_corrected_ci <- quantile(auc_male_corrected, probs = c(0.025, 0.975))
+auc_female_corrected_ci <- quantile(auc_female_corrected, probs = c(0.025, 0.975))
+
+cat("Male Optimism-Corrected AUC:", round(mean(auc_male_corrected), 3),
+    "\n95% CI:", round(auc_male_corrected_ci[1], 3), "-", round(auc_male_corrected_ci[2], 3), "\n\n")
+
+cat("Female Optimism-Corrected AUC:", round(mean(auc_female_corrected), 3),
+    "\n95% CI:", round(auc_female_corrected_ci[1], 3), "-", round(auc_female_corrected_ci[2], 3))
 ```
 
 ### Calibration across subgroups for full models
