@@ -2029,3 +2029,39 @@ for (var in age_cont_int_variables) {
   ))
 }
 ```
+
+### Save and export all model objects
+
+```{r}
+# svyglm models
+# male_model$model <- NULL
+# female_model$model <- NULL
+# male_reduced_model$model <- NULL
+# female_reduced_model$model <- NULL
+# 
+# male_model$data <- NULL
+# female_model$data <- NULL
+# male_reduced_model$data <- NULL
+# female_reduced_model$data <- NULL
+
+saveRDS(male_model, file = "P:/10619/Dropbox/htnport/vignettes/Model Objects/svyglm/male_model.rds")
+saveRDS(female_model, file = "P:/10619/Dropbox/htnport/vignettes/Model Objects/svyglm/female_model.rds")
+saveRDS(male_reduced_model, file = "P:/10619/Dropbox/htnport/vignettes/Model Objects/svyglm/male_reduced_model.rds")
+saveRDS(female_reduced_model, file = "P:/10619/Dropbox/htnport/vignettes/Model Objects/svyglm/female_reduced_model.rds")
+
+# glm models
+# male_final_model$model <- NULL
+# female_final_model$model <- NULL
+# male_final_reduced_model$model <- NULL
+# female_final_reduced_model$model <- NULL
+# 
+# male_final_model$data <- NULL
+# female_final_model$data <- NULL
+# male_final_reduced_model$data <- NULL
+# female_final_reduced_model$data <- NULL
+
+saveRDS(male_final_model, file = "P:/10619/Dropbox/htnport/vignettes/Model Objects/glm/male_final_model.rds")
+saveRDS(female_final_model, file = "P:/10619/Dropbox/htnport/vignettes/Model Objects/glm/female_final_model.rds")
+saveRDS(male_final_reduced_model, file = "P:/10619/Dropbox/htnport/vignettes/Model Objects/glm/male_final_reduced_model.rds")
+saveRDS(female_final_reduced_model, file = "P:/10619/Dropbox/htnport/vignettes/Model Objects/glm/female_final_reduced_model.rds")
+```
