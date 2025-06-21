@@ -1,7 +1,7 @@
 impute_variables <- function(
-  imputation_dataset,
-  outcomes,
-  predictors
+    imputation_dataset,
+    outcomes,
+    predictors
 ) {
   num_multiple_imputations <- 1
   

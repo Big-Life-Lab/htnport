@@ -1,6 +1,6 @@
 #' @title Calculate the average minutes of exercise per day for week-long accelerometer data. 
 #' 
-#' This function calculates the average minutes of exercise per day across a week of accelerometer data. It takes seven
+#' @description This function calculates the average minutes of exercise per day across a week of accelerometer data. It takes seven
 #' parameters, each representing the minutes of exercise on a specific day (Day 1 to Day 7) of accelerometer measurement.
 #' The function computes the average of these values to obtain the average minutes of exercise per day.
 #'
@@ -36,7 +36,7 @@ find_week_accelerometer_average <- function(AMMDMVA1, AMMDMVA2, AMMDMVA3, AMMDMV
 
 #' @title Convert minutes per day to minutes per week. 
 #' 
-#' This function takes the average minutes of exercise per day across a week of accelerometer use as an input (`MVPA_min`) and
+#' @description This function takes the average minutes of exercise per day across a week of accelerometer use as an input (`MVPA_min`) and
 #' calculates the equivalent minutes of exercise per one week of accelerometer use. The result is returned as a numeric value.
 #'
 #' @param MVPA_min A numeric representing the average minutes of exercise per day across a week of accelerometer use. 
@@ -60,7 +60,7 @@ minperday_to_minperweek <- function(MVPA_min) {
     minperweek <- haven::tagged_na("b")
   }
   return(minperweek)
-
+  
 }
 
 #' Categorize Weekly Physical Activity

@@ -1,10 +1,6 @@
-#' @file
-#' Load packages
-library(logger)
-
 #' @title Calculate the number of occurrences of a specific drug class based on given conditions.
 #' 
-#' This function calculates the number of occurrences of a specific drug class in the data frame.
+#' @description This function calculates the number of occurrences of a specific drug class in the data frame.
 #' The calculation is based on custom conditions specified by the user.
 #' 
 #' @param df The data frame containing medication and last taken information.
@@ -31,50 +27,50 @@ library(logger)
 is_taking_drug_class <- function(df, class_var_name, med_vars, last_taken_vars, class_condition_fun, log_level = "INFO", overwrite = FALSE) {
   # Validate input parameters
   if (!is.character(class_var_name) || class_var_name == "") {
-    log_fatal("The 'class_var_name' must be a non-empty character string.")
+    logger::log_fatal("The 'class_var_name' must be a non-empty character string.")
     stop()
   }
   
   if (!is.logical(overwrite)) {
-    log_fatal("'overwrite' must be a logical value (TRUE or FALSE).")
+    logger::log_fatal("'overwrite' must be a logical value (TRUE or FALSE).")
     stop()
   }
   
   if (!all(med_vars %in% names(df))) {
     missing_vars <- med_vars[!(med_vars %in% names(df))]
     error_msg <- paste0("The following medication variables are not in the data frame: ", paste(missing_vars, collapse = ", "))
-    log_error(error_msg)
+    logger::log_error(error_msg)
     stop()
   }
   
   if (!all(last_taken_vars %in% names(df))) {
     missing_vars <- last_taken_vars[!(last_taken_vars %in% names(df))]
     error_msg <- paste0("The following 'last_taken' variables are not in the data frame: ", paste(missing_vars, collapse = ", "))
-    log_error(error_msg)
+    logger::log_error(error_msg)
     stop()
   }
   
   if (length(med_vars) != length(last_taken_vars)) {
     error_msg <- "The lists of medication variables and 'last_taken' variables are not of the same length."
-    log_warn(error_msg)
+    logger::log_warn(error_msg)
     stop()
   }
   
   # Set the log level
-  log_threshold(log_level)
+  logger::log_threshold(log_level)
   
   # Check if class_var_name already exists in the data frame
   if (class_var_name %in% names(df)) {
     error_msg <- paste0("Variable '", class_var_name, "' already exists in the data frame.")
     if (overwrite) {
-      log_warn(paste0(error_msg, " The variable will be overwritten."))
+      logger::log_warn(paste0(error_msg, " The variable will be overwritten."))
     } else {
-      log_fatal(paste0(error_msg, " Use a new variable name or change 'overwrite=TRUE'."))
+      logger::log_fatal(paste0(error_msg, " Use a new variable name or change 'overwrite=TRUE'."))
       stop()
     }
   }
   
-  log_info(paste0("Adding variable '", class_var_name, "' to the data frame."))
+  logger::log_info(paste0("Adding variable '", class_var_name, "' to the data frame."))
   
   # Initialize the class variable column
   df[[class_var_name]] <- 0 
@@ -97,7 +93,7 @@ is_taking_drug_class <- function(df, class_var_name, med_vars, last_taken_vars, 
 
 #' @title Determine if a CHMS respondent's medication belongs to the beta blocker class.
 #' 
-#' This function determines whether a given medication, taken by a CHMS respondent,
+#' @description This function determines whether a given medication, taken by a CHMS respondent,
 #' is classified as a beta blocker. The identification is based on Anatomical Therapeutic Chemical (ATC) codes and the
 #' timing of the last medication intake.
 #' 
@@ -111,20 +107,15 @@ is_taking_drug_class <- function(df, class_var_name, med_vars, last_taken_vars, 
 #' @details This function identifies whether a medication is a beta blocker based on their ATC codes, which
 #'          typically start with "C07". Additionally, specific sub-codes 'C07AA07', 'C07AA12', and 'C07AG02' are excluded 
 #'          from the beta blocker class. A respondent is classified as taking a beta blocker (return = 1) if the ATC code matches the pattern and is not in the exclusion list, and the 
-#'          medication was taken within the last month (NPI_25B <= 4), otherwise the respondent is not taking a betablocker (return = 0)
+#'          medication was taken within the last month (NPI_25B <= 4), otherwise the respondent is not taking a beta blocker (return = 0)
+#'
+#' @examples 
 #' 
-#' @examples
-#' 
-#' Suppose a CHMS respondent's medication has the ATC code 'C07AA13', and they took it within the last week. By
-#' passing the code and the integer time response (3 in this case) into the function, you can check whether the medication
-#' is classified as a beta blocker (1 = TRUE) or not (0 = FALSE).
-#' 
-#' Example 1: Medication ATC code is 'C07AA13', and it was taken within the last week (NPI_25B = 3)
-#' is_beta_blocker('C07AA13', 3) # Should return 1 (TRUE)
-#' 
-#' Example 2: Medication ATC code is 'C07AA07' (excluded code), and it was taken within the last month (NPI_25B = 4)
-#' is_beta_blocker('C07AA07', 4) # Should return 0 (FALSE)
-#' 
+#' # Example 1: Medication ATC code is "C07AA13", and it was taken within the last week
+#' is_beta_blocker("C07AA13", 3) # Should return 1 (TRUE)
+#'
+#' # Example 2: Medication ATC code is "C07AA07" (excluded code), and it was taken within last month
+#' is_beta_blocker("C07AA07", 4) # Should return 0 (FALSE)
 #' 
 #' @export
 is_beta_blocker <- function(MEUCATC, NPI_25B) {
@@ -143,7 +134,7 @@ is_beta_blocker <- function(MEUCATC, NPI_25B) {
 
 #' @title Determine if a CHMS respondent's medication is an ACE inhibitor.
 #' 
-#' This function checks if a given medication for a CHMS respondent belongs to the ACE inhibitor drug class.
+#' @description This function checks if a given medication for a CHMS respondent belongs to the ACE inhibitor drug class.
 #' The identification is based on the Anatomical Therapeutic Chemical (ATC) code of the medication and the time when the
 #' medication was last taken.
 #' 
@@ -161,11 +152,9 @@ is_beta_blocker <- function(MEUCATC, NPI_25B) {
 #' 
 #' @examples
 #' 
-#' Let's say a for one respondent's medication, the ATC code is C09AB03 and the time they last took it was yesterday. By 
-#' passing in the code and integer time response (2 in this case) into the function, it can be checked if the given 
-#' respondent's medication is an ACE inhibitor (1) or not (0).
+#' # Let's say the ATC code is "C09AB03" and the time last taken was yesterday (2). 
 #' 
-#' is_ace_inhibitor('C09AB03', 2)
+#' is_ace_inhibitor("C09AB03", 2) # Should return 1 (TRUE)
 #' 
 #' @export
 is_ace_inhibitor <- function(MEUCATC, NPI_25B) {
@@ -179,7 +168,7 @@ is_ace_inhibitor <- function(MEUCATC, NPI_25B) {
 
 #' @title Determine if a CHMS respondent's medication is a diuretic.
 #' 
-#' This function checks if a given medication for a CHMS respondent belongs to the diuretic drug class.
+#' @description This function checks if a given medication for a CHMS respondent belongs to the diuretic drug class.
 #' The identification is based on the Anatomical Therapeutic Chemical (ATC) code of the medication and the time when the
 #' medication was last taken.
 #' 
@@ -198,11 +187,9 @@ is_ace_inhibitor <- function(MEUCATC, NPI_25B) {
 #' 
 #' @examples
 #' 
-#' Let's say a for one respondent's medication, the ATC code is C03AA03 and the time they last took it was within the last 
-#' week. By passing in the code and integer time response (3 in this case) into the function, it can be checked if the 
-#' given respondent's medication is a diuretic (1) or not (0).
+#' # Let's say the ATC code is "C03AA03" and the time last taken was within last week (3). 
 #' 
-#' is_diuretic('C03AA03', 3)
+#' is_diuretic("C03AA03", 3) # Should return 1 (TRUE)
 #' 
 #' @export
 is_diuretic <- function(MEUCATC, NPI_25B) {
@@ -216,7 +203,7 @@ is_diuretic <- function(MEUCATC, NPI_25B) {
 
 #' @title Determine if a CHMS respondent's medication is a calcium channel blocker.
 #' 
-#' This function checks if a given medication for a CHMS respondent belongs to the calcium channel blocker drug class.
+#' @description This function checks if a given medication for a CHMS respondent belongs to the calcium channel blocker drug class.
 #' The identification is based on the Anatomical Therapeutic Chemical (ATC) code of the medication and the time when the
 #' medication was last taken.
 #' 
@@ -234,11 +221,9 @@ is_diuretic <- function(MEUCATC, NPI_25B) {
 #' 
 #' @examples
 #' 
-#' Let's say a for one respondent's medication, the ATC code is C08CA05 and the time they last took it was today. By 
-#' passing in the code and integer time response (1 in this case) into the function, it can be checked if the given 
-#' respondent's medication is a calcium channel blocker (1) or not (0).
+#' # Let's say the ATC code is "C08CA05" and the time last taken was today (1).
 #' 
-#' is_calcium_channel_blocker('C08CA05', 1)
+#' is_calcium_channel_blocker("C08CA05", 1) # Should return 1 (TRUE)
 #' 
 #' @export
 is_calcium_channel_blocker <- function(MEUCATC, NPI_25B) {
@@ -252,7 +237,7 @@ is_calcium_channel_blocker <- function(MEUCATC, NPI_25B) {
 
 #' @title Determine if a CHMS respondent's medication is another anti-hypertensive drug.
 #' 
-#' This function checks if a given medication for a CHMS respondent belongs to another anti-hypertensive drug class.
+#' @description This function checks if a given medication for a CHMS respondent belongs to another anti-hypertensive drug class.
 #' The identification is based on the Anatomical Therapeutic Chemical (ATC) code of the medication and the time when the
 #' medication was last taken.
 #' 
@@ -271,11 +256,9 @@ is_calcium_channel_blocker <- function(MEUCATC, NPI_25B) {
 #' 
 #' @examples
 #' 
-#' Let's say a for one respondent's medication, the ATC code is C02AC04 and the time they last took it was within the last 
-#' week. By passing in the code and integer time response (3 in this case) into the function, it can be checked if the 
-#' given respondent's medication is another anti-hypertensive drug (1) or not (0).
+#' # Let's say the ATC code is "C02AC04" and the time last taken was within last week (3).
 #' 
-#' is_other_antiHTN_med('C02AC04', 3)
+#' is_other_antiHTN_med("C02AC04", 3) # Should return 1 (TRUE)
 #' 
 #' @export
 is_other_antiHTN_med <- function(MEUCATC, NPI_25B) {
@@ -289,7 +272,7 @@ is_other_antiHTN_med <- function(MEUCATC, NPI_25B) {
 
 #' @title Determine if a CHMS respondent's medication is any anti-hypertensive drug.
 #' 
-#' This function checks if a given medication for a CHMS respondent belongs to any anti-hypertensive drug class.
+#' @description This function checks if a given medication for a CHMS respondent belongs to any anti-hypertensive drug class.
 #' The identification is based on the Anatomical Therapeutic Chemical (ATC) code of the medication and the time when the
 #' medication was last taken.
 #' 
@@ -300,8 +283,8 @@ is_other_antiHTN_med <- function(MEUCATC, NPI_25B) {
 #' 
 #' @return A numeric, 1 if medication is in any anti-hypertensive drug class and 0 if it is not.
 #' 
-#' @details This function first identifies any anti-hypertensive drugs based on their ATC codesm using the regular expression 
-#'          'C0[2, 3, 7, 8, 9]' which matches ATC codes that start with "C02", "C03", "C07", "C08", and "C09". Specific sub-codes 
+#' @details This function first identifies any anti-hypertensive drugs based on their ATC codes using the regular expression 
+#'          "C02-3" and "CO7-9" which matches ATC codes that start with "C02", "C03", "C07", "C08", and "C09". Specific sub-codes 
 #'          'C07AA07', 'C07AA12', 'C07AG02', 'C03BA08', 'C03CA01', and 'C02KX01' are excluded from the class. If the ATC 
 #'          code matches the pattern and is not in the exclusion list, and the medication was taken within the last month 
 #'          (NPI_25B <= 4), the medication is considered an anti-hypertensive drug, and the function returns TRUE. 
@@ -309,11 +292,9 @@ is_other_antiHTN_med <- function(MEUCATC, NPI_25B) {
 #' 
 #' @examples
 #' 
-#' Let's say a for one respondent's medication, the ATC code is C07AB02 and the time they last took it was within the last 
-#' month. By passing in the code and integer time response (4 in this case) into the function, it can be checked if the 
-#' given respondent's medication is an anti-hypertensive drug (1) or not (0).
+#' # Let's say the ATC code is "C07AB02" and the time last taken was within last month (4).
 #' 
-#' is_any_antiHTN_med('C07AB02', 4)
+#' is_any_antiHTN_med("C07AB02", 4) # Should return 1 (TRUE)
 #' 
 #' @export
 is_any_antiHTN_med <- function(MEUCATC, NPI_25B) {
@@ -327,7 +308,7 @@ is_any_antiHTN_med <- function(MEUCATC, NPI_25B) {
 
 #' @title Determine if a CHMS respondent's medication is a non-steroidal anti-inflammatory drug (NSAID).
 #' 
-#' This function checks if a given medication for a CHMS respondent belongs to the non-steroidal anti-inflammatory drug
+#' @description This function checks if a given medication for a CHMS respondent belongs to the non-steroidal anti-inflammatory drug
 #' (NSAID) class. The identification is based on the Anatomical Therapeutic Chemical (ATC) code of the medication and the
 #' time when the medication was last taken.
 #' 
@@ -345,11 +326,9 @@ is_any_antiHTN_med <- function(MEUCATC, NPI_25B) {
 #' 
 #' @examples
 #' 
-#' Let's say a for one respondent's medication, the ATC code is M01AB05 and the time they last took it was today. By
-#' passing in the code and integer time response (1 in this case) into the function, it can be checked if the given
-#' respondent's medication is an NSAID (1) or not (0).
+#' # Let's say the ATC code is "M01AB05" and the time last taken was today (1).
 #' 
-#' is_NSAID('M01AB05', 1)
+#' is_NSAID("M01AB05", 1) # Should return 1 (TRUE)
 #' 
 #' @export
 is_NSAID <- function(MEUCATC, NPI_25B) {
@@ -363,7 +342,7 @@ is_NSAID <- function(MEUCATC, NPI_25B) {
 
 #' @title Determine if a CHMS respondent's medication is a diabetes drug.
 #' 
-#' This function checks if a given medication for a CHMS respondent belongs to the diabetes drug class.
+#' @description This function checks if a given medication for a CHMS respondent belongs to the diabetes drug class.
 #' The identification is based on the Anatomical Therapeutic Chemical (ATC) code of the medication and the time when the
 #' medication was last taken.
 #' 
@@ -381,11 +360,9 @@ is_NSAID <- function(MEUCATC, NPI_25B) {
 #' 
 #' @examples
 #' 
-#' Let's say a for one respondent's medication, the ATC code is A10BB09 and the time they last took it was within the last 
-#' week. By passing in the code and integer time response (3 in this case) into the function, it can be checked if the 
-#' given respondent's medication is a diabetes drug (1) or not (0).
+#' # Let's say the ATC code is "A10BB09" and the time last taken was within last week (3).
 #' 
-#' is_diabetes_drug('A10BB09', 3)
+#' is_diabetes_drug("A10BB09", 3) # Should return 1 (TRUE)
 #' 
 #' @export
 is_diabetes_drug <- function(MEUCATC, NPI_25B) {
@@ -397,21 +374,177 @@ is_diabetes_drug <- function(MEUCATC, NPI_25B) {
   as.numeric(startsWith(MEUCATC, "A10") && NPI_25B <= 4)
 }
 
-#' @title Determine if a person is taking beta-blockers in CHMS cycles 1 to 2.
+#' @title Determine if a person is taking beta-blockers in CHMS cycles 1 to 2
 #' 
-#' This function checks if a given medication for a CHMS respondent belongs to the beta blocker drug class.
-#' The specific conditions for identifying a beta blocker are based on Anatomical Therapeutic Chemical (ATC) codes
+#' @description This function checks if a given medication for a CHMS respondent belongs to the beta-blocker drug class.
+#' The specific conditions for identifying a beta-blocker are based on Anatomical Therapeutic Chemical (ATC) codes
 #' and the time when the medication was last taken.
 #'
-#' @param atc_101a to atc_235a Each a character vector representing the Anatomical Therapeutic Chemical (ATC) code of the medication.
-#' @param mhr_101b to mhr_235b Each an integer representing the CHMS response for the time when the medication was last taken.
-#'                        1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
-#'                        5 = More than a month ago, 6 = Never taken
-#'
+#' @param atc_101a Character vector representing the ATC code of respondent's first prescription medication.
+#' @param atc_102a Character vector representing the ATC code of respondent's second prescription medication.
+#' @param atc_103a Character vector representing the ATC code of respondent's third  prescription medication.
+#' @param atc_104a Character vector representing the ATC code of respondent's fourth prescription medication.
+#' @param atc_105a Character vector representing the ATC code of respondent's fifth prescription medication.
+#' @param atc_106a Character vector representing the ATC code of respondent's sixth prescription medication.
+#' @param atc_107a Character vector representing the ATC code of respondent's seventh prescription medication.
+#' @param atc_108a Character vector representing the ATC code of respondent's eighth prescription medication.
+#' @param atc_109a Character vector representing the ATC code of respondent's ninth prescription medication.
+#' @param atc_110a Character vector representing the ATC code of respondent's tenth prescription medication.
+#' @param atc_111a Character vector representing the ATC code of respondent's eleventh prescription medication.
+#' @param atc_112a Character vector representing the ATC code of respondent's twelfth prescription medication.
+#' @param atc_113a Character vector representing the ATC code of respondent's thirteenth prescription medication.
+#' @param atc_114a Character vector representing the ATC code of respondent's fourteenth prescription medication.
+#' @param atc_115a Character vector representing the ATC code of respondent's fifteenth prescription medication.
+#' @param atc_201a Character vector representing the ATC code of respondent's first over-the-counter medication.
+#' @param atc_202a Character vector representing the ATC code of respondent's second over-the-counter medication.
+#' @param atc_203a Character vector representing the ATC code of respondent's third over-the-counter medication.
+#' @param atc_204a Character vector representing the ATC code of respondent's fourth over-the-counter medication.
+#' @param atc_205a Character vector representing the ATC code of respondent's fifth over-the-counter medication.
+#' @param atc_206a Character vector representing the ATC code of respondent's sixth over-the-counter medication.
+#' @param atc_207a Character vector representing the ATC code of respondent's seventh over-the-counter medication.
+#' @param atc_208a Character vector representing the ATC code of respondent's eighth over-the-counter medication.
+#' @param atc_209a Character vector representing the ATC code of respondent's ninth over-the-counter medication.
+#' @param atc_210a Character vector representing the ATC code of respondent's tenth over-the-counter medication.
+#' @param atc_211a Character vector representing the ATC code of respondent's eleventh over-the-counter medication.
+#' @param atc_212a Character vector representing the ATC code of respondent's twelfth over-the-counter medication.
+#' @param atc_213a Character vector representing the ATC code of respondent's thirteenth over-the-counter medication.
+#' @param atc_214a Character vector representing the ATC code of respondent's fourteenth over-the-counter medication.
+#' @param atc_215a Character vector representing the ATC code of respondent's fifteenth over-the-counter medication.
+#' @param atc_131a Character vector representing the ATC code of respondent's first new prescription medication.
+#' @param atc_132a Character vector representing the ATC code of respondent's second new prescription medication.
+#' @param atc_133a Character vector representing the ATC code of respondent's third new prescription medication.
+#' @param atc_134a Character vector representing the ATC code of respondent's fourth new prescription medication.
+#' @param atc_135a Character vector representing the ATC code of respondent's fifth new prescription medication.
+#' @param atc_231a Character vector representing the ATC code of respondent's first new over-the-counter medication.
+#' @param atc_232a Character vector representing the ATC code of respondent's second new over-the-counter medication.
+#' @param atc_233a Character vector representing the ATC code of respondent's third new over-the-counter medication.
+#' @param atc_234a Character vector representing the ATC code of respondent's fourth new over-the-counter medication.
+#' @param atc_235a Character vector representing the ATC code of respondent's fifth new over-the-counter medication.
+#' @param mhr_101b Integer representing the response for when the first prescription medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_102b Integer representing the response for when the second prescription medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_103b Integer representing the response for when the third prescription medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_104b Integer representing the response for when the fourth prescription medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_105b Integer representing the response for when the fifth prescription medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_106b Integer representing the response for when the sixth prescription medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_107b Integer representing the response for when the seventh prescription medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_108b Integer representing the response for when the eighth prescription medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_109b Integer representing the response for when the ninth prescription medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_110b Integer representing the response for when the tenth prescription medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_111b Integer representing the response for when the eleventh prescription medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_112b Integer representing the response for when the twelfth prescription medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_113b Integer representing the response for when the thirteenth prescription medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_114b Integer representing the response for when the fourteenth prescription medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_115b Integer representing the response for when the fifteenth prescription medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_201b Integer representing the response for when the first over-the-counter medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_202b Integer representing the response for when the second over-the-counter medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_203b Integer representing the response for when the third over-the-counter medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_204b Integer representing the response for when the fourth over-the-counter medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_205b Integer representing the response for when the fifth over-the-counter medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_206b Integer representing the response for when the sixth over-the-counter medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_207b Integer representing the response for when the seventh over-the-counter medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_208b Integer representing the response for when the eighth over-the-counter medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_209b Integer representing the response for when the ninth over-the-counter medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_210b Integer representing the response for when the tenth over-the-counter medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_211b Integer representing the response for when the eleventh over-the-counter medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_212b Integer representing the response for when the twelfth over-the-counter medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_213b Integer representing the response for when the thirteenth over-the-counter medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_214b Integer representing the response for when the fourteenth over-the-counter medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_215b Integer representing the response for when the fifteenth over-the-counter medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_131b Integer representing the response for when the first new prescription medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_132b Integer representing the response for when the second new prescription medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_133b Integer representing the response for when the third new prescription medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_134b Integer representing the response for when the fourth new prescription medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_135b Integer representing the response for when the fifth new prescription medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_231b Integer representing the response for when the first new over-the-counter medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_232b Integer representing the response for when the second new over-the-counter medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_233b Integer representing the response for when the third new over-the-counter medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_234b Integer representing the response for when the fourth new over-the-counter medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_235b Integer representing the response for when the fifth new over-the-counter medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' 
 #' @return bbmed, a numeric set to 1 if the person is taking beta-blockers, NA if no information is available, 0 otherwise.
-#' 
+#'
 #' @seealso `is_beta_blocker`
-#' 
+#'
 #' @export
 cycles1to2_beta_blockers <- function(
     atc_101a = NULL, atc_102a = NULL, atc_103a = NULL, atc_104a = NULL, atc_105a = NULL,
@@ -456,13 +589,169 @@ cycles1to2_beta_blockers <- function(
 
 #' @title Determine if a person is taking ACE inhibitors in CHMS cycles 1 to 2.
 #'
-#' This function checks if a person is taking ACE inhibitors based on the provided Anatomical Therapeutic Chemical (ATC) codes for medications 
+#' @description This function checks if a person is taking ACE inhibitors based on the provided Anatomical Therapeutic Chemical (ATC) codes for medications 
 #' and the Canadian Health Measures Survey (CHMS) response for the time when the medication was last taken.
 #'
-#' @param atc_101a to atc_235a Each a character vector representing the ATC code of the medication.
-#' @param mhr_101b to mhr_235b Each an integer representing the CHMS response for the time when the medication was last taken.
-#'                        1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
-#'                        5 = More than a month ago, 6 = Never taken
+#' @param atc_101a Character vector representing the ATC code of respondent's first prescription medication.
+#' @param atc_102a Character vector representing the ATC code of respondent's second prescription medication.
+#' @param atc_103a Character vector representing the ATC code of respondent's third  prescription medication.
+#' @param atc_104a Character vector representing the ATC code of respondent's fourth prescription medication.
+#' @param atc_105a Character vector representing the ATC code of respondent's fifth prescription medication.
+#' @param atc_106a Character vector representing the ATC code of respondent's sixth prescription medication.
+#' @param atc_107a Character vector representing the ATC code of respondent's seventh prescription medication.
+#' @param atc_108a Character vector representing the ATC code of respondent's eighth prescription medication.
+#' @param atc_109a Character vector representing the ATC code of respondent's ninth prescription medication.
+#' @param atc_110a Character vector representing the ATC code of respondent's tenth prescription medication.
+#' @param atc_111a Character vector representing the ATC code of respondent's eleventh prescription medication.
+#' @param atc_112a Character vector representing the ATC code of respondent's twelfth prescription medication.
+#' @param atc_113a Character vector representing the ATC code of respondent's thirteenth prescription medication.
+#' @param atc_114a Character vector representing the ATC code of respondent's fourteenth prescription medication.
+#' @param atc_115a Character vector representing the ATC code of respondent's fifteenth prescription medication.
+#' @param atc_201a Character vector representing the ATC code of respondent's first over-the-counter medication.
+#' @param atc_202a Character vector representing the ATC code of respondent's second over-the-counter medication.
+#' @param atc_203a Character vector representing the ATC code of respondent's third over-the-counter medication.
+#' @param atc_204a Character vector representing the ATC code of respondent's fourth over-the-counter medication.
+#' @param atc_205a Character vector representing the ATC code of respondent's fifth over-the-counter medication.
+#' @param atc_206a Character vector representing the ATC code of respondent's sixth over-the-counter medication.
+#' @param atc_207a Character vector representing the ATC code of respondent's seventh over-the-counter medication.
+#' @param atc_208a Character vector representing the ATC code of respondent's eighth over-the-counter medication.
+#' @param atc_209a Character vector representing the ATC code of respondent's ninth over-the-counter medication.
+#' @param atc_210a Character vector representing the ATC code of respondent's tenth over-the-counter medication.
+#' @param atc_211a Character vector representing the ATC code of respondent's eleventh over-the-counter medication.
+#' @param atc_212a Character vector representing the ATC code of respondent's twelfth over-the-counter medication.
+#' @param atc_213a Character vector representing the ATC code of respondent's thirteenth over-the-counter medication.
+#' @param atc_214a Character vector representing the ATC code of respondent's fourteenth over-the-counter medication.
+#' @param atc_215a Character vector representing the ATC code of respondent's fifteenth over-the-counter medication.
+#' @param atc_131a Character vector representing the ATC code of respondent's first new prescription medication.
+#' @param atc_132a Character vector representing the ATC code of respondent's second new prescription medication.
+#' @param atc_133a Character vector representing the ATC code of respondent's third new prescription medication.
+#' @param atc_134a Character vector representing the ATC code of respondent's fourth new prescription medication.
+#' @param atc_135a Character vector representing the ATC code of respondent's fifth new prescription medication.
+#' @param atc_231a Character vector representing the ATC code of respondent's first new over-the-counter medication.
+#' @param atc_232a Character vector representing the ATC code of respondent's second new over-the-counter medication.
+#' @param atc_233a Character vector representing the ATC code of respondent's third new over-the-counter medication.
+#' @param atc_234a Character vector representing the ATC code of respondent's fourth new over-the-counter medication.
+#' @param atc_235a Character vector representing the ATC code of respondent's fifth new over-the-counter medication.
+#' @param mhr_101b Integer representing the response for when the first prescription medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_102b Integer representing the response for when the second prescription medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_103b Integer representing the response for when the third prescription medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_104b Integer representing the response for when the fourth prescription medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_105b Integer representing the response for when the fifth prescription medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_106b Integer representing the response for when the sixth prescription medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_107b Integer representing the response for when the seventh prescription medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_108b Integer representing the response for when the eighth prescription medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_109b Integer representing the response for when the ninth prescription medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_110b Integer representing the response for when the tenth prescription medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_111b Integer representing the response for when the eleventh prescription medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_112b Integer representing the response for when the twelfth prescription medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_113b Integer representing the response for when the thirteenth prescription medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_114b Integer representing the response for when the fourteenth prescription medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_115b Integer representing the response for when the fifteenth prescription medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_201b Integer representing the response for when the first over-the-counter medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_202b Integer representing the response for when the second over-the-counter medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_203b Integer representing the response for when the third over-the-counter medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_204b Integer representing the response for when the fourth over-the-counter medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_205b Integer representing the response for when the fifth over-the-counter medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_206b Integer representing the response for when the sixth over-the-counter medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_207b Integer representing the response for when the seventh over-the-counter medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_208b Integer representing the response for when the eighth over-the-counter medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_209b Integer representing the response for when the ninth over-the-counter medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_210b Integer representing the response for when the tenth over-the-counter medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_211b Integer representing the response for when the eleventh over-the-counter medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_212b Integer representing the response for when the twelfth over-the-counter medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_213b Integer representing the response for when the thirteenth over-the-counter medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_214b Integer representing the response for when the fourteenth over-the-counter medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_215b Integer representing the response for when the fifteenth over-the-counter medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_131b Integer representing the response for when the first new prescription medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_132b Integer representing the response for when the second new prescription medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_133b Integer representing the response for when the third new prescription medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_134b Integer representing the response for when the fourth new prescription medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_135b Integer representing the response for when the fifth new prescription medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_231b Integer representing the response for when the first new over-the-counter medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_232b Integer representing the response for when the second new over-the-counter medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_233b Integer representing the response for when the third new over-the-counter medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_234b Integer representing the response for when the fourth new over-the-counter medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_235b Integer representing the response for when the fifth new over-the-counter medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
 #'
 #' @return acemed, a numeric set to 1 if the person is taking ACE inhibitors, NA if no information is available, 0 otherwise.
 #'
@@ -512,13 +801,169 @@ cycles1to2_ace_inhibitors <- function(
 
 #' @title Determine if a person is taking diuretics in CHMS cycles 1 to 2.
 #'
-#' This function checks if a person is taking diuretics based on the provided Anatomical Therapeutic Chemical (ATC) codes for medications 
+#' @description This function checks if a person is taking diuretics based on the provided Anatomical Therapeutic Chemical (ATC) codes for medications 
 #' and the Canadian Health Measures Survey (CHMS) response for the time when the medication was last taken.
 #'
-#' @param atc_101a to atc_235a Each a character vector representing the ATC code of the medication.
-#' @param mhr_101b to mhr_235b Each an integer representing the CHMS response for the time when the medication was last taken.
-#'                        1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
-#'                        5 = More than a month ago, 6 = Never taken
+#' @param atc_101a Character vector representing the ATC code of respondent's first prescription medication.
+#' @param atc_102a Character vector representing the ATC code of respondent's second prescription medication.
+#' @param atc_103a Character vector representing the ATC code of respondent's third  prescription medication.
+#' @param atc_104a Character vector representing the ATC code of respondent's fourth prescription medication.
+#' @param atc_105a Character vector representing the ATC code of respondent's fifth prescription medication.
+#' @param atc_106a Character vector representing the ATC code of respondent's sixth prescription medication.
+#' @param atc_107a Character vector representing the ATC code of respondent's seventh prescription medication.
+#' @param atc_108a Character vector representing the ATC code of respondent's eighth prescription medication.
+#' @param atc_109a Character vector representing the ATC code of respondent's ninth prescription medication.
+#' @param atc_110a Character vector representing the ATC code of respondent's tenth prescription medication.
+#' @param atc_111a Character vector representing the ATC code of respondent's eleventh prescription medication.
+#' @param atc_112a Character vector representing the ATC code of respondent's twelfth prescription medication.
+#' @param atc_113a Character vector representing the ATC code of respondent's thirteenth prescription medication.
+#' @param atc_114a Character vector representing the ATC code of respondent's fourteenth prescription medication.
+#' @param atc_115a Character vector representing the ATC code of respondent's fifteenth prescription medication.
+#' @param atc_201a Character vector representing the ATC code of respondent's first over-the-counter medication.
+#' @param atc_202a Character vector representing the ATC code of respondent's second over-the-counter medication.
+#' @param atc_203a Character vector representing the ATC code of respondent's third over-the-counter medication.
+#' @param atc_204a Character vector representing the ATC code of respondent's fourth over-the-counter medication.
+#' @param atc_205a Character vector representing the ATC code of respondent's fifth over-the-counter medication.
+#' @param atc_206a Character vector representing the ATC code of respondent's sixth over-the-counter medication.
+#' @param atc_207a Character vector representing the ATC code of respondent's seventh over-the-counter medication.
+#' @param atc_208a Character vector representing the ATC code of respondent's eighth over-the-counter medication.
+#' @param atc_209a Character vector representing the ATC code of respondent's ninth over-the-counter medication.
+#' @param atc_210a Character vector representing the ATC code of respondent's tenth over-the-counter medication.
+#' @param atc_211a Character vector representing the ATC code of respondent's eleventh over-the-counter medication.
+#' @param atc_212a Character vector representing the ATC code of respondent's twelfth over-the-counter medication.
+#' @param atc_213a Character vector representing the ATC code of respondent's thirteenth over-the-counter medication.
+#' @param atc_214a Character vector representing the ATC code of respondent's fourteenth over-the-counter medication.
+#' @param atc_215a Character vector representing the ATC code of respondent's fifteenth over-the-counter medication.
+#' @param atc_131a Character vector representing the ATC code of respondent's first new prescription medication.
+#' @param atc_132a Character vector representing the ATC code of respondent's second new prescription medication.
+#' @param atc_133a Character vector representing the ATC code of respondent's third new prescription medication.
+#' @param atc_134a Character vector representing the ATC code of respondent's fourth new prescription medication.
+#' @param atc_135a Character vector representing the ATC code of respondent's fifth new prescription medication.
+#' @param atc_231a Character vector representing the ATC code of respondent's first new over-the-counter medication.
+#' @param atc_232a Character vector representing the ATC code of respondent's second new over-the-counter medication.
+#' @param atc_233a Character vector representing the ATC code of respondent's third new over-the-counter medication.
+#' @param atc_234a Character vector representing the ATC code of respondent's fourth new over-the-counter medication.
+#' @param atc_235a Character vector representing the ATC code of respondent's fifth new over-the-counter medication.
+#' @param mhr_101b Integer representing the response for when the first prescription medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_102b Integer representing the response for when the second prescription medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_103b Integer representing the response for when the third prescription medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_104b Integer representing the response for when the fourth prescription medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_105b Integer representing the response for when the fifth prescription medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_106b Integer representing the response for when the sixth prescription medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_107b Integer representing the response for when the seventh prescription medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_108b Integer representing the response for when the eighth prescription medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_109b Integer representing the response for when the ninth prescription medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_110b Integer representing the response for when the tenth prescription medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_111b Integer representing the response for when the eleventh prescription medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_112b Integer representing the response for when the twelfth prescription medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_113b Integer representing the response for when the thirteenth prescription medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_114b Integer representing the response for when the fourteenth prescription medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_115b Integer representing the response for when the fifteenth prescription medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_201b Integer representing the response for when the first over-the-counter medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_202b Integer representing the response for when the second over-the-counter medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_203b Integer representing the response for when the third over-the-counter medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_204b Integer representing the response for when the fourth over-the-counter medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_205b Integer representing the response for when the fifth over-the-counter medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_206b Integer representing the response for when the sixth over-the-counter medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_207b Integer representing the response for when the seventh over-the-counter medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_208b Integer representing the response for when the eighth over-the-counter medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_209b Integer representing the response for when the ninth over-the-counter medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_210b Integer representing the response for when the tenth over-the-counter medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_211b Integer representing the response for when the eleventh over-the-counter medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_212b Integer representing the response for when the twelfth over-the-counter medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_213b Integer representing the response for when the thirteenth over-the-counter medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_214b Integer representing the response for when the fourteenth over-the-counter medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_215b Integer representing the response for when the fifteenth over-the-counter medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_131b Integer representing the response for when the first new prescription medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_132b Integer representing the response for when the second new prescription medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_133b Integer representing the response for when the third new prescription medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_134b Integer representing the response for when the fourth new prescription medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_135b Integer representing the response for when the fifth new prescription medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_231b Integer representing the response for when the first new over-the-counter medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_232b Integer representing the response for when the second new over-the-counter medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_233b Integer representing the response for when the third new over-the-counter medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_234b Integer representing the response for when the fourth new over-the-counter medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_235b Integer representing the response for when the fifth new over-the-counter medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
 #'
 #' @return diurmed, a numeric set to 1 if the person is taking diuretics, NA if no information is available, 0 otherwise.
 #'
@@ -568,13 +1013,169 @@ cycles1to2_diuretics <- function(
 
 #' @title Determine if a person is taking calcium channel blockers in CHMS cycles 1 to 2.
 #'
-#' This function checks if a person is taking calcium channel blockers based on the provided Anatomical Therapeutic Chemical (ATC) codes for medications 
+#' @description This function checks if a person is taking calcium channel blockers based on the provided Anatomical Therapeutic Chemical (ATC) codes for medications 
 #' and the Canadian Health Measures Survey (CHMS) response for the time when the medication was last taken.
 #'
-#' @param atc_101a to atc_235a Each a character vector representing the ATC code of the medication.
-#' @param mhr_101b to mhr_235b Each an integer representing the CHMS response for the time when the medication was last taken.
-#'                        1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
-#'                        5 = More than a month ago, 6 = Never taken
+#' @param atc_101a Character vector representing the ATC code of respondent's first prescription medication.
+#' @param atc_102a Character vector representing the ATC code of respondent's second prescription medication.
+#' @param atc_103a Character vector representing the ATC code of respondent's third  prescription medication.
+#' @param atc_104a Character vector representing the ATC code of respondent's fourth prescription medication.
+#' @param atc_105a Character vector representing the ATC code of respondent's fifth prescription medication.
+#' @param atc_106a Character vector representing the ATC code of respondent's sixth prescription medication.
+#' @param atc_107a Character vector representing the ATC code of respondent's seventh prescription medication.
+#' @param atc_108a Character vector representing the ATC code of respondent's eighth prescription medication.
+#' @param atc_109a Character vector representing the ATC code of respondent's ninth prescription medication.
+#' @param atc_110a Character vector representing the ATC code of respondent's tenth prescription medication.
+#' @param atc_111a Character vector representing the ATC code of respondent's eleventh prescription medication.
+#' @param atc_112a Character vector representing the ATC code of respondent's twelfth prescription medication.
+#' @param atc_113a Character vector representing the ATC code of respondent's thirteenth prescription medication.
+#' @param atc_114a Character vector representing the ATC code of respondent's fourteenth prescription medication.
+#' @param atc_115a Character vector representing the ATC code of respondent's fifteenth prescription medication.
+#' @param atc_201a Character vector representing the ATC code of respondent's first over-the-counter medication.
+#' @param atc_202a Character vector representing the ATC code of respondent's second over-the-counter medication.
+#' @param atc_203a Character vector representing the ATC code of respondent's third over-the-counter medication.
+#' @param atc_204a Character vector representing the ATC code of respondent's fourth over-the-counter medication.
+#' @param atc_205a Character vector representing the ATC code of respondent's fifth over-the-counter medication.
+#' @param atc_206a Character vector representing the ATC code of respondent's sixth over-the-counter medication.
+#' @param atc_207a Character vector representing the ATC code of respondent's seventh over-the-counter medication.
+#' @param atc_208a Character vector representing the ATC code of respondent's eighth over-the-counter medication.
+#' @param atc_209a Character vector representing the ATC code of respondent's ninth over-the-counter medication.
+#' @param atc_210a Character vector representing the ATC code of respondent's tenth over-the-counter medication.
+#' @param atc_211a Character vector representing the ATC code of respondent's eleventh over-the-counter medication.
+#' @param atc_212a Character vector representing the ATC code of respondent's twelfth over-the-counter medication.
+#' @param atc_213a Character vector representing the ATC code of respondent's thirteenth over-the-counter medication.
+#' @param atc_214a Character vector representing the ATC code of respondent's fourteenth over-the-counter medication.
+#' @param atc_215a Character vector representing the ATC code of respondent's fifteenth over-the-counter medication.
+#' @param atc_131a Character vector representing the ATC code of respondent's first new prescription medication.
+#' @param atc_132a Character vector representing the ATC code of respondent's second new prescription medication.
+#' @param atc_133a Character vector representing the ATC code of respondent's third new prescription medication.
+#' @param atc_134a Character vector representing the ATC code of respondent's fourth new prescription medication.
+#' @param atc_135a Character vector representing the ATC code of respondent's fifth new prescription medication.
+#' @param atc_231a Character vector representing the ATC code of respondent's first new over-the-counter medication.
+#' @param atc_232a Character vector representing the ATC code of respondent's second new over-the-counter medication.
+#' @param atc_233a Character vector representing the ATC code of respondent's third new over-the-counter medication.
+#' @param atc_234a Character vector representing the ATC code of respondent's fourth new over-the-counter medication.
+#' @param atc_235a Character vector representing the ATC code of respondent's fifth new over-the-counter medication.
+#' @param mhr_101b Integer representing the response for when the first prescription medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_102b Integer representing the response for when the second prescription medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_103b Integer representing the response for when the third prescription medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_104b Integer representing the response for when the fourth prescription medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_105b Integer representing the response for when the fifth prescription medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_106b Integer representing the response for when the sixth prescription medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_107b Integer representing the response for when the seventh prescription medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_108b Integer representing the response for when the eighth prescription medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_109b Integer representing the response for when the ninth prescription medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_110b Integer representing the response for when the tenth prescription medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_111b Integer representing the response for when the eleventh prescription medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_112b Integer representing the response for when the twelfth prescription medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_113b Integer representing the response for when the thirteenth prescription medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_114b Integer representing the response for when the fourteenth prescription medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_115b Integer representing the response for when the fifteenth prescription medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_201b Integer representing the response for when the first over-the-counter medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_202b Integer representing the response for when the second over-the-counter medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_203b Integer representing the response for when the third over-the-counter medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_204b Integer representing the response for when the fourth over-the-counter medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_205b Integer representing the response for when the fifth over-the-counter medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_206b Integer representing the response for when the sixth over-the-counter medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_207b Integer representing the response for when the seventh over-the-counter medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_208b Integer representing the response for when the eighth over-the-counter medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_209b Integer representing the response for when the ninth over-the-counter medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_210b Integer representing the response for when the tenth over-the-counter medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_211b Integer representing the response for when the eleventh over-the-counter medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_212b Integer representing the response for when the twelfth over-the-counter medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_213b Integer representing the response for when the thirteenth over-the-counter medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_214b Integer representing the response for when the fourteenth over-the-counter medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_215b Integer representing the response for when the fifteenth over-the-counter medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_131b Integer representing the response for when the first new prescription medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_132b Integer representing the response for when the second new prescription medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_133b Integer representing the response for when the third new prescription medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_134b Integer representing the response for when the fourth new prescription medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_135b Integer representing the response for when the fifth new prescription medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_231b Integer representing the response for when the first new over-the-counter medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_232b Integer representing the response for when the second new over-the-counter medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_233b Integer representing the response for when the third new over-the-counter medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_234b Integer representing the response for when the fourth new over-the-counter medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_235b Integer representing the response for when the fifth new over-the-counter medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
 #'
 #' @return ccbmed, a numeric set to 1 if the person is taking calcium channel blockers, NA if no information is available, 0 otherwise.
 #'
@@ -626,13 +1227,169 @@ cycles1to2_calcium_channel_blockers <- function(
 
 #' @title Determine if a person is taking another type of anti-hypertensive medication in CHMS cycles 1 to 2.
 #'
-#' This function checks if a person is taking another type of anti-hypertensive medication based on the provided Anatomical Therapeutic Chemical (ATC) codes for medications 
+#' @description This function checks if a person is taking another type of anti-hypertensive medication based on the provided Anatomical Therapeutic Chemical (ATC) codes for medications 
 #' and the Canadian Health Measures Survey (CHMS) response for the time when the medication was last taken.
 #'
-#' @param atc_101a to atc_235a Each a character vector representing the ATC code of the medication.
-#' @param mhr_101b to mhr_235b Each an integer representing the CHMS response for the time when the medication was last taken.
-#'                        1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
-#'                        5 = More than a month ago, 6 = Never taken
+#' @param atc_101a Character vector representing the ATC code of respondent's first prescription medication.
+#' @param atc_102a Character vector representing the ATC code of respondent's second prescription medication.
+#' @param atc_103a Character vector representing the ATC code of respondent's third  prescription medication.
+#' @param atc_104a Character vector representing the ATC code of respondent's fourth prescription medication.
+#' @param atc_105a Character vector representing the ATC code of respondent's fifth prescription medication.
+#' @param atc_106a Character vector representing the ATC code of respondent's sixth prescription medication.
+#' @param atc_107a Character vector representing the ATC code of respondent's seventh prescription medication.
+#' @param atc_108a Character vector representing the ATC code of respondent's eighth prescription medication.
+#' @param atc_109a Character vector representing the ATC code of respondent's ninth prescription medication.
+#' @param atc_110a Character vector representing the ATC code of respondent's tenth prescription medication.
+#' @param atc_111a Character vector representing the ATC code of respondent's eleventh prescription medication.
+#' @param atc_112a Character vector representing the ATC code of respondent's twelfth prescription medication.
+#' @param atc_113a Character vector representing the ATC code of respondent's thirteenth prescription medication.
+#' @param atc_114a Character vector representing the ATC code of respondent's fourteenth prescription medication.
+#' @param atc_115a Character vector representing the ATC code of respondent's fifteenth prescription medication.
+#' @param atc_201a Character vector representing the ATC code of respondent's first over-the-counter medication.
+#' @param atc_202a Character vector representing the ATC code of respondent's second over-the-counter medication.
+#' @param atc_203a Character vector representing the ATC code of respondent's third over-the-counter medication.
+#' @param atc_204a Character vector representing the ATC code of respondent's fourth over-the-counter medication.
+#' @param atc_205a Character vector representing the ATC code of respondent's fifth over-the-counter medication.
+#' @param atc_206a Character vector representing the ATC code of respondent's sixth over-the-counter medication.
+#' @param atc_207a Character vector representing the ATC code of respondent's seventh over-the-counter medication.
+#' @param atc_208a Character vector representing the ATC code of respondent's eighth over-the-counter medication.
+#' @param atc_209a Character vector representing the ATC code of respondent's ninth over-the-counter medication.
+#' @param atc_210a Character vector representing the ATC code of respondent's tenth over-the-counter medication.
+#' @param atc_211a Character vector representing the ATC code of respondent's eleventh over-the-counter medication.
+#' @param atc_212a Character vector representing the ATC code of respondent's twelfth over-the-counter medication.
+#' @param atc_213a Character vector representing the ATC code of respondent's thirteenth over-the-counter medication.
+#' @param atc_214a Character vector representing the ATC code of respondent's fourteenth over-the-counter medication.
+#' @param atc_215a Character vector representing the ATC code of respondent's fifteenth over-the-counter medication.
+#' @param atc_131a Character vector representing the ATC code of respondent's first new prescription medication.
+#' @param atc_132a Character vector representing the ATC code of respondent's second new prescription medication.
+#' @param atc_133a Character vector representing the ATC code of respondent's third new prescription medication.
+#' @param atc_134a Character vector representing the ATC code of respondent's fourth new prescription medication.
+#' @param atc_135a Character vector representing the ATC code of respondent's fifth new prescription medication.
+#' @param atc_231a Character vector representing the ATC code of respondent's first new over-the-counter medication.
+#' @param atc_232a Character vector representing the ATC code of respondent's second new over-the-counter medication.
+#' @param atc_233a Character vector representing the ATC code of respondent's third new over-the-counter medication.
+#' @param atc_234a Character vector representing the ATC code of respondent's fourth new over-the-counter medication.
+#' @param atc_235a Character vector representing the ATC code of respondent's fifth new over-the-counter medication.
+#' @param mhr_101b Integer representing the response for when the first prescription medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_102b Integer representing the response for when the second prescription medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_103b Integer representing the response for when the third prescription medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_104b Integer representing the response for when the fourth prescription medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_105b Integer representing the response for when the fifth prescription medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_106b Integer representing the response for when the sixth prescription medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_107b Integer representing the response for when the seventh prescription medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_108b Integer representing the response for when the eighth prescription medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_109b Integer representing the response for when the ninth prescription medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_110b Integer representing the response for when the tenth prescription medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_111b Integer representing the response for when the eleventh prescription medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_112b Integer representing the response for when the twelfth prescription medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_113b Integer representing the response for when the thirteenth prescription medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_114b Integer representing the response for when the fourteenth prescription medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_115b Integer representing the response for when the fifteenth prescription medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_201b Integer representing the response for when the first over-the-counter medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_202b Integer representing the response for when the second over-the-counter medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_203b Integer representing the response for when the third over-the-counter medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_204b Integer representing the response for when the fourth over-the-counter medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_205b Integer representing the response for when the fifth over-the-counter medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_206b Integer representing the response for when the sixth over-the-counter medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_207b Integer representing the response for when the seventh over-the-counter medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_208b Integer representing the response for when the eighth over-the-counter medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_209b Integer representing the response for when the ninth over-the-counter medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_210b Integer representing the response for when the tenth over-the-counter medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_211b Integer representing the response for when the eleventh over-the-counter medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_212b Integer representing the response for when the twelfth over-the-counter medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_213b Integer representing the response for when the thirteenth over-the-counter medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_214b Integer representing the response for when the fourteenth over-the-counter medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_215b Integer representing the response for when the fifteenth over-the-counter medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_131b Integer representing the response for when the first new prescription medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_132b Integer representing the response for when the second new prescription medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_133b Integer representing the response for when the third new prescription medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_134b Integer representing the response for when the fourth new prescription medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_135b Integer representing the response for when the fifth new prescription medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_231b Integer representing the response for when the first new over-the-counter medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_232b Integer representing the response for when the second new over-the-counter medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_233b Integer representing the response for when the third new over-the-counter medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_234b Integer representing the response for when the fourth new over-the-counter medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_235b Integer representing the response for when the fifth new over-the-counter medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
 #'
 #' @return miscmed, a numeric set to 1 if the person is taking another type of anti-hypertensive medication, NA if no information is available, 0 otherwise.
 #'
@@ -683,13 +1440,169 @@ cycles1to2_other_antiHTN_meds <- function(
 
 #' @title Determine if a person is taking any anti-hypertensive medication in CHMS cycles 1 to 2.
 #'
-#' This function checks if a person is taking any anti-hypertensive medication based on the provided Anatomical Therapeutic Chemical (ATC) codes for medications 
+#' @description This function checks if a person is taking any anti-hypertensive medication based on the provided Anatomical Therapeutic Chemical (ATC) codes for medications 
 #' and the Canadian Health Measures Survey (CHMS) response for the time when the medication was last taken.
 #'
-#' @param atc_101a to atc_235a Each a character vector representing the ATC code of the medication.
-#' @param mhr_101b to mhr_235b Each an integer representing the CHMS response for the time when the medication was last taken.
-#'                        1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
-#'                        5 = More than a month ago, 6 = Never taken
+#' @param atc_101a Character vector representing the ATC code of respondent's first prescription medication.
+#' @param atc_102a Character vector representing the ATC code of respondent's second prescription medication.
+#' @param atc_103a Character vector representing the ATC code of respondent's third  prescription medication.
+#' @param atc_104a Character vector representing the ATC code of respondent's fourth prescription medication.
+#' @param atc_105a Character vector representing the ATC code of respondent's fifth prescription medication.
+#' @param atc_106a Character vector representing the ATC code of respondent's sixth prescription medication.
+#' @param atc_107a Character vector representing the ATC code of respondent's seventh prescription medication.
+#' @param atc_108a Character vector representing the ATC code of respondent's eighth prescription medication.
+#' @param atc_109a Character vector representing the ATC code of respondent's ninth prescription medication.
+#' @param atc_110a Character vector representing the ATC code of respondent's tenth prescription medication.
+#' @param atc_111a Character vector representing the ATC code of respondent's eleventh prescription medication.
+#' @param atc_112a Character vector representing the ATC code of respondent's twelfth prescription medication.
+#' @param atc_113a Character vector representing the ATC code of respondent's thirteenth prescription medication.
+#' @param atc_114a Character vector representing the ATC code of respondent's fourteenth prescription medication.
+#' @param atc_115a Character vector representing the ATC code of respondent's fifteenth prescription medication.
+#' @param atc_201a Character vector representing the ATC code of respondent's first over-the-counter medication.
+#' @param atc_202a Character vector representing the ATC code of respondent's second over-the-counter medication.
+#' @param atc_203a Character vector representing the ATC code of respondent's third over-the-counter medication.
+#' @param atc_204a Character vector representing the ATC code of respondent's fourth over-the-counter medication.
+#' @param atc_205a Character vector representing the ATC code of respondent's fifth over-the-counter medication.
+#' @param atc_206a Character vector representing the ATC code of respondent's sixth over-the-counter medication.
+#' @param atc_207a Character vector representing the ATC code of respondent's seventh over-the-counter medication.
+#' @param atc_208a Character vector representing the ATC code of respondent's eighth over-the-counter medication.
+#' @param atc_209a Character vector representing the ATC code of respondent's ninth over-the-counter medication.
+#' @param atc_210a Character vector representing the ATC code of respondent's tenth over-the-counter medication.
+#' @param atc_211a Character vector representing the ATC code of respondent's eleventh over-the-counter medication.
+#' @param atc_212a Character vector representing the ATC code of respondent's twelfth over-the-counter medication.
+#' @param atc_213a Character vector representing the ATC code of respondent's thirteenth over-the-counter medication.
+#' @param atc_214a Character vector representing the ATC code of respondent's fourteenth over-the-counter medication.
+#' @param atc_215a Character vector representing the ATC code of respondent's fifteenth over-the-counter medication.
+#' @param atc_131a Character vector representing the ATC code of respondent's first new prescription medication.
+#' @param atc_132a Character vector representing the ATC code of respondent's second new prescription medication.
+#' @param atc_133a Character vector representing the ATC code of respondent's third new prescription medication.
+#' @param atc_134a Character vector representing the ATC code of respondent's fourth new prescription medication.
+#' @param atc_135a Character vector representing the ATC code of respondent's fifth new prescription medication.
+#' @param atc_231a Character vector representing the ATC code of respondent's first new over-the-counter medication.
+#' @param atc_232a Character vector representing the ATC code of respondent's second new over-the-counter medication.
+#' @param atc_233a Character vector representing the ATC code of respondent's third new over-the-counter medication.
+#' @param atc_234a Character vector representing the ATC code of respondent's fourth new over-the-counter medication.
+#' @param atc_235a Character vector representing the ATC code of respondent's fifth new over-the-counter medication.
+#' @param mhr_101b Integer representing the response for when the first prescription medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_102b Integer representing the response for when the second prescription medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_103b Integer representing the response for when the third prescription medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_104b Integer representing the response for when the fourth prescription medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_105b Integer representing the response for when the fifth prescription medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_106b Integer representing the response for when the sixth prescription medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_107b Integer representing the response for when the seventh prescription medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_108b Integer representing the response for when the eighth prescription medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_109b Integer representing the response for when the ninth prescription medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_110b Integer representing the response for when the tenth prescription medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_111b Integer representing the response for when the eleventh prescription medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_112b Integer representing the response for when the twelfth prescription medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_113b Integer representing the response for when the thirteenth prescription medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_114b Integer representing the response for when the fourteenth prescription medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_115b Integer representing the response for when the fifteenth prescription medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_201b Integer representing the response for when the first over-the-counter medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_202b Integer representing the response for when the second over-the-counter medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_203b Integer representing the response for when the third over-the-counter medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_204b Integer representing the response for when the fourth over-the-counter medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_205b Integer representing the response for when the fifth over-the-counter medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_206b Integer representing the response for when the sixth over-the-counter medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_207b Integer representing the response for when the seventh over-the-counter medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_208b Integer representing the response for when the eighth over-the-counter medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_209b Integer representing the response for when the ninth over-the-counter medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_210b Integer representing the response for when the tenth over-the-counter medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_211b Integer representing the response for when the eleventh over-the-counter medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_212b Integer representing the response for when the twelfth over-the-counter medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_213b Integer representing the response for when the thirteenth over-the-counter medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_214b Integer representing the response for when the fourteenth over-the-counter medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_215b Integer representing the response for when the fifteenth over-the-counter medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_131b Integer representing the response for when the first new prescription medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_132b Integer representing the response for when the second new prescription medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_133b Integer representing the response for when the third new prescription medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_134b Integer representing the response for when the fourth new prescription medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_135b Integer representing the response for when the fifth new prescription medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_231b Integer representing the response for when the first new over-the-counter medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_232b Integer representing the response for when the second new over-the-counter medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_233b Integer representing the response for when the third new over-the-counter medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_234b Integer representing the response for when the fourth new over-the-counter medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_235b Integer representing the response for when the fifth new over-the-counter medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
 #'
 #' @return anymed, a numeric set to 1 if the person is taking any anti-hypertensive medication, NA if no information is available, 0 otherwise.
 #'
@@ -739,13 +1652,169 @@ cycles1to2_any_antiHTN_meds <- function(
 
 #' @title Determine if a person is taking non-steroidal anti-inflammatory drugs (NSAID) in CHMS cycles 1 to 2.
 #' 
-#' This function checks if a person is taking any NSAIDs based on the provided Anatomical Therapeutic Chemical (ATC) codes for medications 
+#' @description This function checks if a person is taking any NSAIDs based on the provided Anatomical Therapeutic Chemical (ATC) codes for medications 
 #' and the Canadian Health Measures Survey (CHMS) response for the time when the medication was last taken.
 #' 
-#' @param atc_101a to atc_235a Each a character vector representing the ATC code of the medication.
-#' @param mhr_101b to mhr_235b Each an integer representing the CHMS response for the time when the medication was last taken.
-#'                        1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
-#'                        5 = More than a month ago, 6 = Never taken
+#' @param atc_101a Character vector representing the ATC code of respondent's first prescription medication.
+#' @param atc_102a Character vector representing the ATC code of respondent's second prescription medication.
+#' @param atc_103a Character vector representing the ATC code of respondent's third  prescription medication.
+#' @param atc_104a Character vector representing the ATC code of respondent's fourth prescription medication.
+#' @param atc_105a Character vector representing the ATC code of respondent's fifth prescription medication.
+#' @param atc_106a Character vector representing the ATC code of respondent's sixth prescription medication.
+#' @param atc_107a Character vector representing the ATC code of respondent's seventh prescription medication.
+#' @param atc_108a Character vector representing the ATC code of respondent's eighth prescription medication.
+#' @param atc_109a Character vector representing the ATC code of respondent's ninth prescription medication.
+#' @param atc_110a Character vector representing the ATC code of respondent's tenth prescription medication.
+#' @param atc_111a Character vector representing the ATC code of respondent's eleventh prescription medication.
+#' @param atc_112a Character vector representing the ATC code of respondent's twelfth prescription medication.
+#' @param atc_113a Character vector representing the ATC code of respondent's thirteenth prescription medication.
+#' @param atc_114a Character vector representing the ATC code of respondent's fourteenth prescription medication.
+#' @param atc_115a Character vector representing the ATC code of respondent's fifteenth prescription medication.
+#' @param atc_201a Character vector representing the ATC code of respondent's first over-the-counter medication.
+#' @param atc_202a Character vector representing the ATC code of respondent's second over-the-counter medication.
+#' @param atc_203a Character vector representing the ATC code of respondent's third over-the-counter medication.
+#' @param atc_204a Character vector representing the ATC code of respondent's fourth over-the-counter medication.
+#' @param atc_205a Character vector representing the ATC code of respondent's fifth over-the-counter medication.
+#' @param atc_206a Character vector representing the ATC code of respondent's sixth over-the-counter medication.
+#' @param atc_207a Character vector representing the ATC code of respondent's seventh over-the-counter medication.
+#' @param atc_208a Character vector representing the ATC code of respondent's eighth over-the-counter medication.
+#' @param atc_209a Character vector representing the ATC code of respondent's ninth over-the-counter medication.
+#' @param atc_210a Character vector representing the ATC code of respondent's tenth over-the-counter medication.
+#' @param atc_211a Character vector representing the ATC code of respondent's eleventh over-the-counter medication.
+#' @param atc_212a Character vector representing the ATC code of respondent's twelfth over-the-counter medication.
+#' @param atc_213a Character vector representing the ATC code of respondent's thirteenth over-the-counter medication.
+#' @param atc_214a Character vector representing the ATC code of respondent's fourteenth over-the-counter medication.
+#' @param atc_215a Character vector representing the ATC code of respondent's fifteenth over-the-counter medication.
+#' @param atc_131a Character vector representing the ATC code of respondent's first new prescription medication.
+#' @param atc_132a Character vector representing the ATC code of respondent's second new prescription medication.
+#' @param atc_133a Character vector representing the ATC code of respondent's third new prescription medication.
+#' @param atc_134a Character vector representing the ATC code of respondent's fourth new prescription medication.
+#' @param atc_135a Character vector representing the ATC code of respondent's fifth new prescription medication.
+#' @param atc_231a Character vector representing the ATC code of respondent's first new over-the-counter medication.
+#' @param atc_232a Character vector representing the ATC code of respondent's second new over-the-counter medication.
+#' @param atc_233a Character vector representing the ATC code of respondent's third new over-the-counter medication.
+#' @param atc_234a Character vector representing the ATC code of respondent's fourth new over-the-counter medication.
+#' @param atc_235a Character vector representing the ATC code of respondent's fifth new over-the-counter medication.
+#' @param mhr_101b Integer representing the response for when the first prescription medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_102b Integer representing the response for when the second prescription medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_103b Integer representing the response for when the third prescription medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_104b Integer representing the response for when the fourth prescription medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_105b Integer representing the response for when the fifth prescription medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_106b Integer representing the response for when the sixth prescription medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_107b Integer representing the response for when the seventh prescription medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_108b Integer representing the response for when the eighth prescription medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_109b Integer representing the response for when the ninth prescription medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_110b Integer representing the response for when the tenth prescription medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_111b Integer representing the response for when the eleventh prescription medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_112b Integer representing the response for when the twelfth prescription medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_113b Integer representing the response for when the thirteenth prescription medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_114b Integer representing the response for when the fourteenth prescription medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_115b Integer representing the response for when the fifteenth prescription medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_201b Integer representing the response for when the first over-the-counter medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_202b Integer representing the response for when the second over-the-counter medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_203b Integer representing the response for when the third over-the-counter medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_204b Integer representing the response for when the fourth over-the-counter medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_205b Integer representing the response for when the fifth over-the-counter medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_206b Integer representing the response for when the sixth over-the-counter medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_207b Integer representing the response for when the seventh over-the-counter medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_208b Integer representing the response for when the eighth over-the-counter medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_209b Integer representing the response for when the ninth over-the-counter medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_210b Integer representing the response for when the tenth over-the-counter medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_211b Integer representing the response for when the eleventh over-the-counter medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_212b Integer representing the response for when the twelfth over-the-counter medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_213b Integer representing the response for when the thirteenth over-the-counter medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_214b Integer representing the response for when the fourteenth over-the-counter medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_215b Integer representing the response for when the fifteenth over-the-counter medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_131b Integer representing the response for when the first new prescription medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_132b Integer representing the response for when the second new prescription medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_133b Integer representing the response for when the third new prescription medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_134b Integer representing the response for when the fourth new prescription medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_135b Integer representing the response for when the fifth new prescription medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_231b Integer representing the response for when the first new over-the-counter medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_232b Integer representing the response for when the second new over-the-counter medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_233b Integer representing the response for when the third new over-the-counter medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_234b Integer representing the response for when the fourth new over-the-counter medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_235b Integer representing the response for when the fifth new over-the-counter medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
 #'
 #' @return nsaid, a numeric set to 1 if the person is taking any NSAIDs, NA if no information is available, 0 otherwise.
 #'
@@ -796,13 +1865,169 @@ cycles1to2_nsaid <- function(
 
 #' @title Determine if a person is taking diabetes drugs in CHMS cycles 1 to 2.
 #' 
-#' This function checks if a person is taking diabetes drugs based on the provided Anatomical Therapeutic Chemical (ATC) codes for medications 
+#' @description This function checks if a person is taking diabetes drugs based on the provided Anatomical Therapeutic Chemical (ATC) codes for medications 
 #' and the Canadian Health Measures Survey (CHMS) response for the time when the medication was last taken.
 #' 
-#' @param atc_101a to atc_235a Each a character vector representing the ATC code of the medication.
-#' @param mhr_101b to mhr_235b Each an integer representing the CHMS response for the time when the medication was last taken.
-#'                        1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
-#'                        5 = More than a month ago, 6 = Never taken
+#' @param atc_101a Character vector representing the ATC code of respondent's first prescription medication.
+#' @param atc_102a Character vector representing the ATC code of respondent's second prescription medication.
+#' @param atc_103a Character vector representing the ATC code of respondent's third  prescription medication.
+#' @param atc_104a Character vector representing the ATC code of respondent's fourth prescription medication.
+#' @param atc_105a Character vector representing the ATC code of respondent's fifth prescription medication.
+#' @param atc_106a Character vector representing the ATC code of respondent's sixth prescription medication.
+#' @param atc_107a Character vector representing the ATC code of respondent's seventh prescription medication.
+#' @param atc_108a Character vector representing the ATC code of respondent's eighth prescription medication.
+#' @param atc_109a Character vector representing the ATC code of respondent's ninth prescription medication.
+#' @param atc_110a Character vector representing the ATC code of respondent's tenth prescription medication.
+#' @param atc_111a Character vector representing the ATC code of respondent's eleventh prescription medication.
+#' @param atc_112a Character vector representing the ATC code of respondent's twelfth prescription medication.
+#' @param atc_113a Character vector representing the ATC code of respondent's thirteenth prescription medication.
+#' @param atc_114a Character vector representing the ATC code of respondent's fourteenth prescription medication.
+#' @param atc_115a Character vector representing the ATC code of respondent's fifteenth prescription medication.
+#' @param atc_201a Character vector representing the ATC code of respondent's first over-the-counter medication.
+#' @param atc_202a Character vector representing the ATC code of respondent's second over-the-counter medication.
+#' @param atc_203a Character vector representing the ATC code of respondent's third over-the-counter medication.
+#' @param atc_204a Character vector representing the ATC code of respondent's fourth over-the-counter medication.
+#' @param atc_205a Character vector representing the ATC code of respondent's fifth over-the-counter medication.
+#' @param atc_206a Character vector representing the ATC code of respondent's sixth over-the-counter medication.
+#' @param atc_207a Character vector representing the ATC code of respondent's seventh over-the-counter medication.
+#' @param atc_208a Character vector representing the ATC code of respondent's eighth over-the-counter medication.
+#' @param atc_209a Character vector representing the ATC code of respondent's ninth over-the-counter medication.
+#' @param atc_210a Character vector representing the ATC code of respondent's tenth over-the-counter medication.
+#' @param atc_211a Character vector representing the ATC code of respondent's eleventh over-the-counter medication.
+#' @param atc_212a Character vector representing the ATC code of respondent's twelfth over-the-counter medication.
+#' @param atc_213a Character vector representing the ATC code of respondent's thirteenth over-the-counter medication.
+#' @param atc_214a Character vector representing the ATC code of respondent's fourteenth over-the-counter medication.
+#' @param atc_215a Character vector representing the ATC code of respondent's fifteenth over-the-counter medication.
+#' @param atc_131a Character vector representing the ATC code of respondent's first new prescription medication.
+#' @param atc_132a Character vector representing the ATC code of respondent's second new prescription medication.
+#' @param atc_133a Character vector representing the ATC code of respondent's third new prescription medication.
+#' @param atc_134a Character vector representing the ATC code of respondent's fourth new prescription medication.
+#' @param atc_135a Character vector representing the ATC code of respondent's fifth new prescription medication.
+#' @param atc_231a Character vector representing the ATC code of respondent's first new over-the-counter medication.
+#' @param atc_232a Character vector representing the ATC code of respondent's second new over-the-counter medication.
+#' @param atc_233a Character vector representing the ATC code of respondent's third new over-the-counter medication.
+#' @param atc_234a Character vector representing the ATC code of respondent's fourth new over-the-counter medication.
+#' @param atc_235a Character vector representing the ATC code of respondent's fifth new over-the-counter medication.
+#' @param mhr_101b Integer representing the response for when the first prescription medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_102b Integer representing the response for when the second prescription medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_103b Integer representing the response for when the third prescription medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_104b Integer representing the response for when the fourth prescription medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_105b Integer representing the response for when the fifth prescription medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_106b Integer representing the response for when the sixth prescription medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_107b Integer representing the response for when the seventh prescription medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_108b Integer representing the response for when the eighth prescription medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_109b Integer representing the response for when the ninth prescription medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_110b Integer representing the response for when the tenth prescription medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_111b Integer representing the response for when the eleventh prescription medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_112b Integer representing the response for when the twelfth prescription medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_113b Integer representing the response for when the thirteenth prescription medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_114b Integer representing the response for when the fourteenth prescription medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_115b Integer representing the response for when the fifteenth prescription medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_201b Integer representing the response for when the first over-the-counter medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_202b Integer representing the response for when the second over-the-counter medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_203b Integer representing the response for when the third over-the-counter medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_204b Integer representing the response for when the fourth over-the-counter medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_205b Integer representing the response for when the fifth over-the-counter medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_206b Integer representing the response for when the sixth over-the-counter medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_207b Integer representing the response for when the seventh over-the-counter medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_208b Integer representing the response for when the eighth over-the-counter medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_209b Integer representing the response for when the ninth over-the-counter medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_210b Integer representing the response for when the tenth over-the-counter medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_211b Integer representing the response for when the eleventh over-the-counter medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_212b Integer representing the response for when the twelfth over-the-counter medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_213b Integer representing the response for when the thirteenth over-the-counter medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_214b Integer representing the response for when the fourteenth over-the-counter medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_215b Integer representing the response for when the fifteenth over-the-counter medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_131b Integer representing the response for when the first new prescription medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_132b Integer representing the response for when the second new prescription medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_133b Integer representing the response for when the third new prescription medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_134b Integer representing the response for when the fourth new prescription medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_135b Integer representing the response for when the fifth new prescription medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_231b Integer representing the response for when the first new over-the-counter medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_232b Integer representing the response for when the second new over-the-counter medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_233b Integer representing the response for when the third new over-the-counter medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_234b Integer representing the response for when the fourth new over-the-counter medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
+#' @param mhr_235b Integer representing the response for when the fifth new over-the-counter medication was last taken.
+#'                 1 = Today, 2 = Yesterday, 3 = Within the last week, 4 = Within the last month, 
+#'                 5 = More than a month ago, 6 = Never taken
 #'
 #' @return diab_drug, a numeric set to 1 if the person is taking any diabetes drugs, NA if no information is available, 0 otherwise.
 #'

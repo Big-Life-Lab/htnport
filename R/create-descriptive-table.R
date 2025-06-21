@@ -2,19 +2,19 @@ source("R/get-descriptive-data.R")
 source("R/variables-sheet-utils.R")
 
 create_descriptive_table <- function(
-  descriptive_data,
-  variables_sheet,
-  variable_details_sheet,
-  variables,
-  column_stratifier = NULL,
-  row_stratifiers = list(),
-  subjects_order = NULL
+    descriptive_data,
+    variables_sheet,
+    variable_details_sheet,
+    variables,
+    column_stratifier = NULL,
+    row_stratifiers = list(),
+    subjects_order = NULL
 ) {
   stratify_config <- row_stratifiers
   if(!is.null(column_stratifier)) {
     stratify_config[["all"]] <- c(column_stratifier)
   }
-
+  
   formatted_descriptive_data <- descriptive_data %>%
     dplyr::mutate(dplyr::across(where(is.numeric), ~ signif(.x, digits = 4)))
   
@@ -139,7 +139,7 @@ create_descriptive_table <- function(
               stratify_by_stats[[stratifier_rows[stratifier_row_index, "catLabel"]]],
               format_cat_descriptive_data(data_for_current_stratifier_val)
             )
-
+            
             for(stratifier_for_index in seq_len(length(stratifier_fors))) {
               stratifier_for <- stratifier_fors[stratifier_for_index]
               
@@ -199,7 +199,7 @@ create_descriptive_table <- function(
           variable,
           TRUE
         ) %>%
-        dplyr::filter(recEnd %in% c("NA::a", "NA::b", "NA::c"))
+          dplyr::filter(recEnd %in% c("NA::a", "NA::b", "NA::c"))
         for(missing_categories_index in seq_len(nrow(missing_categories))) {
           descriptive_table_variables <- c(descriptive_table_variables, missing_categories[missing_categories_index, "catLabel"])
           descriptive_table_type <- c(descriptive_table_type, "")

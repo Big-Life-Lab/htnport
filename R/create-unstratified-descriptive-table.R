@@ -6,10 +6,10 @@ source("R/variables-sheet-utils.R")
 source("R/variable-details-sheet-utils.R")
 
 create_unstratified_descriptive_table <- function(
-  descriptive_data,
-  variables_sheet,
-  variable_details_sheet,
-  subjects_order = NULL
+    descriptive_data,
+    variables_sheet,
+    variable_details_sheet,
+    subjects_order = NULL
 ) {
   descriptive_data <- descriptive_data %>%
     dplyr::mutate(dplyr::across(where(is.numeric), ~ signif(.x, digits = 4)))
@@ -181,11 +181,11 @@ create_unstratified_descriptive_table <- function(
               group_by_variable_descriptive_data_row <- descriptive_data[
                 descriptive_data$variable == group_by_variable &
                   descriptive_data$groupBy_1 == variable &
-                    descriptive_data$groupByValue == variable_category,
+                  descriptive_data$groupByValue == variable_category,
               ][1, ]
               if(group_by_variable == "pack_years_der") {
                 if(!is.na(group_by_variable_descriptive_data_row[1, "min"]) & 
-                          group_by_variable_descriptive_data_row[1, "min"] < 0) {
+                   group_by_variable_descriptive_data_row[1, "min"] < 0) {
                   group_by_variable_descriptive_data_row[1, "min"] <- 0
                 }
               }

@@ -4,11 +4,11 @@ source("R/variables-sheet-utils.R")
 source("R/variable-details-sheet-utils.R")
 
 get_descriptive_data <- function(
-  data,
-  variables_sheet,
-  variables_details_sheet,
-  variables,
-  stratify_config
+    data,
+    variables_sheet,
+    variables_details_sheet,
+    variables,
+    stratify_config
 ) {
   descriptive_data <- data.frame(
     variable = c(),
@@ -186,7 +186,7 @@ get_descriptive_data <- function(
               tagged_na_type
             ) | .data[[variable]] == paste("NA(", tagged_na_type, ")", sep = "")
           )
-                    
+          
           new_descriptive_data_row$n <- c(
             nrow(data_for_new_descriptive_data_row)
           )
@@ -285,12 +285,12 @@ get_descriptive_data <- function(
 }
 
 map_stratifier_data <- function(
-  data,
-  variables_sheet,
-  variables_details_sheet,
-  variable,
-  stratify_config,
-  iterator
+    data,
+    variables_sheet,
+    variables_details_sheet,
+    variable,
+    stratify_config,
+    iterator
 ) {
   stratifier_config_for_variable <- NA
   if(!is.null(stratify_config[[variable]])) {
@@ -362,13 +362,13 @@ map_stratifier_data <- function(
         } else if(stratifier_category == "NA::b") {
           formatted_stratifier_category <- "NA(b)"
         }
-      
+        
         data_for_current_stratifier_combination <- dplyr::filter(
           data_for_current_stratifier_combination,
           !!as.symbol(stratifier) == formatted_stratifier_category
         )
       }
-    
+      
       iterator(
         list(
           data = data_for_current_stratifier_combination,

@@ -1,0 +1,989 @@
+---
+title: "HTNPoRT Paper - Results Summary"
+format: html
+editor: visual
+---
+
+### Introduction
+
+Hypertension affects about 1 in 4 Canadians. Reducing the hypertension burden has emphasized treatment rather than prevention through reducing the prevalence of modifiable risk factors. Making diagnostic prediction models derived from population data and robust risk factor epidemiology can support hypertension prevention by allowing people to assess their risk profile and address potentially modifiable risk factors. Furthermore, diagnostic prediction models support population health assessment by identifying high-risk subpopulations, and informing the evaluation and design of preventive interventions tailored to population needs.
+
+Most existing models predicting hypertension are designed for clinical settings, but neither for the purpose of population health planning nor for the purpose of providing individuals simple lifestyle advice. Models fulfilling these purposes must have predictors which are available to the public, representative of the population, and regularly collected to update estimates if needed. Additionally, these models must also be developed from large representative datasets and have a variety of sociodemographics as predictors to facilitate risk assessment and equity evaluation across important subpopulations such as age, ethnicity, and education. Furthermore, including modifiable risk factors as predictors allows for the evaluation of preventative strategies. Most existing hypertension prediction models include predictors which are not ideal for population health planning and difficult to collect from individuals wanting simple lifestyle advice. These include models which have genetic factors, biomarkers, and clinically obtained measures (like blood pressure itself) as predictors. Moreover, many existing prediction models are also limited to people of only one ethnicity and there has been no model developed to predict hypertension which is representative of the Canadian population.
+
+Therefore, a survey-based and generalizable model, with easy-to-collect and modifiable risk factors as predictors (whose dose-responses and interactions are pre-specified) and a multiethnic derivation population, can form the basis of tools which can readily predict and understand hypertension risk at individual or population levels, helping reduce the burden of hypertension.
+
+This study aims (1) to describe the association between sociodemographic, behavioral and disease risk factors and the prevalence of hypertension, and (2) to develop and validate a model - the Hypertension Population Risk Tool (HTNPoRT) - that can be used by members of the public to assess their hypertension risk profile, and to identify their most influential risk factors for hypertension.
+
+```{r, include = FALSE, warning = FALSE, message = FALSE}
+# Set working directory at RDC
+setwd("P:/10619/Dropbox/htnport")
+
+# Load packages, functions, and metadata
+.libPaths("P:/10619/Rpackages")
+library(haven)
+library(dplyr)
+library(survey)
+library(srvyr)
+library(gtsummary)
+library(e1071)
+library(rms)
+library(ggplot2)
+library(iml)
+library(ggeffects)
+library(scales)
+
+source("R/descriptive-functions.R")
+source("R/model-functions.R")
+source("R/calibration.R")
+source("R/impute-variables.R")
+
+my_variables <- read.csv("P:/10619/Dropbox/htnport/worksheets/variables.csv")
+```
+
+### Population characteristics of predictors pre-specified in full model
+
+The population under study was community-dwelling adult Canadians aged between 20 and 79 in the first six cycles of the Canadian Health Measures Survey (CHMS). Respondents were excluded if they were under 20 or over 79, pregnant at the time of the CHMS interview, or had missing outcome values. Upon deriving the study population, a total sample size of 19,643 respondents (9,633 males and 10,010 females) was obtained, with 5,152 of those respondents (2,681 males and 2,471 females) having hypertension. The crude weighted prevalence of hypertension in the population was 25% among men and 22% among women. Median age among men was 46 years (IQR: 33-58) and among women was 47 years (IQR: 34-59).
+
+```{r, warning = FALSE, message = FALSE}
+# Load recoded cycles 1-6 data
+load("P:/10619/Dropbox/htnport/data/pood2.rda")
+
+# Rename variables for table
+imputed_cycles1to6_data <- imputed_cycles1to6_data %>%
+  dplyr::rename(
+    'Age' = clc_age,
+    `Marital status` = married,
+    `Highest education level` = edudr04,
+    `Working status` = working,
+    `Hypertension family history` = fmh_15,
+    `Minutes of exercise per week` = minperweek,
+    `Daily fruit and vegetable consumption` = totalfv,
+    `Body mass index` = hwmdbmi,
+    `Chronic kidney disease` = ckd,
+    'Diabetes' = diabx,
+    `Alcohol consumption level` = low_drink_score1,
+    `Smoking status` = smoke,
+    `Hours of sleep per day` = slp_11,
+    `Self-rated mental health` = gendmhi,
+    'Stress' = gen_025,
+    `Sense of belonging` = gen_045
+  )
+
+# Apply weights to data
+weighted_imputed_data <- survey::svydesign(
+  id = ~1,
+  weights = ~wgt_full,
+  data = imputed_cycles1to6_data 
+)
+
+# Generate table itself
+gtsummary::tbl_svysummary(
+  data = weighted_imputed_data, 
+  by = clc_sex,
+  include = c(
+    'Age',
+    `Marital status`,
+    `Highest education level`,
+    `Working status`,
+    `Hypertension family history`,
+    `Minutes of exercise per week`,
+    `Daily fruit and vegetable consumption`,
+    `Body mass index`,
+    `Chronic kidney disease`,
+    'Diabetes',
+    `Alcohol consumption level`,
+    `Smoking status`,
+    `Hours of sleep per day`,
+    `Self-rated mental health`,
+    'Stress',
+    `Sense of belonging`
+  ),
+  statistic = list(
+    all_continuous() ~ "{median} ({p25}, {p75})",
+    all_categorical() ~ "{n_unweighted} ({p}%)"
+  ),
+  missing = "no"
+) %>%
+  # Rename columns
+  gtsummary::modify_header(label = "**Characteristic**") %>%
+  gtsummary::modify_spanning_header(
+    all_stat_cols() ~ "**Sex**"
+  ) %>%
+  gtsummary::modify_header(
+    stat_1 = "**Male**",
+    stat_2 = "**Female**"
+  ) %>%
+  # Rename variable names and category labels
+  gtsummary::modify_table_body(
+    ~ .x %>%
+      dplyr::mutate(
+        label = dplyr::case_when(
+          variable == "Marital status" & label == "1" ~ "Married or common-law",
+          variable == "Marital status" & label == "2" ~ "Widowed, separated, or divorced",
+          variable == "Marital status" & label == "3" ~ "Single",
+          variable == "Highest education level" & label == "1" ~ "No high school",
+          variable == "Highest education level" & label == "2" ~ "Secondary",
+          variable == "Highest education level" & label == "3" ~ "Post-secondary",
+          variable == "Working status" & label == "1" ~ "Has a job",
+          variable == "Working status" & label == "2" ~ "Does not have a job",
+          variable == "Hypertension family history" & label == "1" ~ "Yes",
+          variable == "Hypertension family history" & label == "2" ~ "No",
+          variable == "Chronic kidney disease" & label == "1" ~ "Yes",
+          variable == "Chronic kidney disease" & label == "2" ~ "No",
+          variable == "Diabetes" & label == "1" ~ "Yes",
+          variable == "Diabetes" & label == "2" ~ "No",
+          variable == "Alcohol consumption level" & label == "1" ~ "Never drank",
+          variable == "Alcohol consumption level" & label == "2" ~ "Low-risk drinker",
+          variable == "Alcohol consumption level" & label == "3" ~ "Moderate drinker",
+          variable == "Alcohol consumption level" & label == "4" ~ "Heavy drinker",
+          variable == "Smoking status" & label == "1" ~ "Current smoker",
+          variable == "Smoking status" & label == "2" ~ "Former smoker",
+          variable == "Smoking status" & label == "3" ~ "Never smoker",
+          variable == "Self-rated mental health" & label == "1" ~ "Poor or fair",
+          variable == "Self-rated mental health" & label == "2" ~ "Good, very good, or excellent",
+          variable == "Stress" & label == "1" ~ "Not at all to a bit",
+          variable == "Stress" & label == "2" ~ "Quite a bit or extremely",
+          variable == "Sense of belonging" & label == "1" ~ "Strong",
+          variable == "Sense of belonging" & label == "2" ~ "Weak",
+          TRUE ~ label
+        )
+      )
+  )
+
+# Revert the names in the data frame
+original_names <- c(
+  "Hypertension" = "highbp14090_adj",
+  "Age" = "clc_age",
+  "Marital status" = "married",
+  "Highest education level" = "edudr04",
+  "Working status" = "working",
+  "Hypertension family history" = "fmh_15",
+  "Minutes of exercise per week" = "minperweek",
+  "Daily fruit and vegetable consumption" = "totalfv",
+  "Body mass index" = "hwmdbmi",
+  "Chronic kidney disease" = "ckd",
+  "Diabetes" = "diabx",
+  "Alcohol consumption level" = "low_drink_score1",
+  "Smoking status" = "smoke",
+  "Hours of sleep per day" = "slp_11",
+  "Self-rated mental health" = "gendmhi",
+  "Stress" = "gen_025",
+  "Sense of belonging" = "gen_045"
+)
+
+names(imputed_cycles1to6_data) <- dplyr::recode(names(imputed_cycles1to6_data), !!!original_names)
+```
+
+### Prepare imputed dataset for modelling
+
+All independent variables with missing data were imputed once to create one imputed dataset, using a model derived from the multiple imputation using chained equations method (MICE). MICE uses predictive mean matching to impute continuous variables, logistic regression for dichotomous variables and polytomous logistic regression for unordered multicategory variables. The imputation model included the study outcome, all predictor variables in their pre-specified form, and the cycle of the CHMS. Respondents with missing outcome values were excluded from the study. Variables missing from more than two cycles of the CHMS were not included. Continuous variables with skewed variation were truncated to the 99.5th percentile. All measures were centered on their weighted means prior to modelling, while combined survey and bootstrap weights for the six cycles were incorporated into the models for variance estimation and population inferences.
+
+```{r, include = FALSE, warning = FALSE, message = FALSE}
+# Load recoded, imputed cycles 1-6 data
+load("P:/10619/Dropbox/htnport/data/pood2.rda")
+
+# Truncate skewed continuous variables if necessary
+imputed_cycles1to6_data <- truncate_skewed(imputed_cycles1to6_data)
+
+# Recode 2s as 0s in binary predictors and factorize all categorical predictors
+imputed_cycles1to6_data <- imputed_cycles1to6_data %>%
+  dplyr::mutate(highbp14090_adj = ifelse(highbp14090_adj == 2, 0, highbp14090_adj),
+                ckd = ifelse(ckd == 2, 0, ckd),
+                diabx = ifelse(diabx == 2, 0, diabx),
+                fmh_15 = ifelse(fmh_15 == 2, 0, fmh_15),
+                gendmhi = ifelse(gendmhi == 2, 0, gendmhi),
+                edudr04 = case_when(
+                  edudr04 == 1 ~ 2,
+                  edudr04 == 2 ~ 1,
+                  edudr04 == 3 ~ 0
+                ),
+                smoke = case_when(
+                  smoke == 1 ~ 2,
+                  smoke == 2 ~ 1,
+                  smoke == 3 ~ 0
+                ))
+
+# Factor categorical predictors
+cat_variables <- c("ckd", "diabx", "edudr04", "fmh_15", "gendmhi", "gen_025", "gen_045", "low_drink_score1", "married", "smoke", "working")
+imputed_cycles1to6_data <- imputed_cycles1to6_data %>%
+  dplyr::mutate(across(all_of(cat_variables), as.factor))
+
+# Separate male and female data
+male_data <- dplyr::filter(imputed_cycles1to6_data, clc_sex == 1)
+female_data <- dplyr::filter(imputed_cycles1to6_data, clc_sex == 2)
+
+# Apply survey weights to male and female data
+male_data <- male_data %>%
+  dplyr::mutate(wgt_full = wgt_full / mean(wgt_full))
+
+male_replicate_weights <- male_data %>%
+  dplyr::select(dplyr::starts_with("bsw")) %>%
+  names()
+
+weighted_male <- male_data %>%
+  srvyr::as_survey_rep(
+    weights = wgt_full,
+    repweights = all_of(male_replicate_weights),
+    type = "bootstrap"
+  )
+
+weighted_male$degf <- 68
+
+female_data <- female_data %>%
+  dplyr::mutate(wgt_full = wgt_full / mean(wgt_full))
+
+female_replicate_weights <- female_data %>%
+  dplyr::select(dplyr::starts_with("bsw")) %>%
+  names()
+
+weighted_female <- female_data %>%
+  srvyr::as_survey_rep(
+    weights = wgt_full,
+    repweights = all_of(female_replicate_weights),
+    type = "bootstrap"
+  )
+
+weighted_female$degf <- 68
+
+# Center continious variables
+cont_variables <- c("clc_age", "hwmdbmi", "minperweek", "totalfv", "slp_11")
+
+for (var in cont_variables) {
+  weighted_male$variables[[var]] <- center_cont_variable(var, weighted_male)
+}
+for (var in cont_variables) {
+  weighted_female$variables[[var]] <- center_cont_variable(var, weighted_female)
+}
+
+# Center categorical variables
+cat_variables <- c("ckd", "diabx", "edudr04", "fmh_15", "gendmhi", "gen_025", "gen_045", "low_drink_score1", "married", "smoke", "working")
+
+for (var in cat_variables) {
+  weighted_male$variables[[var]] <- center_cat_variable(var, weighted_male)
+}
+for (var in cat_variables) {
+  weighted_female$variables[[var]] <- center_cat_variable(var, weighted_female)
+}
+```
+
+### Fit full and reduced male and female models
+
+The relationship between the candidate risk factors and the hypertension outcome in each sex stratum was examined using multiple logistic regression, which incorporated any two-way interactions between age and clinically relevant variables identified in the literature. Approximating the full model with a reduced model employed the stepdown approach described by Harrell and Ambler.
+
+Presence of hypertension was the outcome for this study and was derived from blood pressure readings and antihypertensive medication status. Respondents were considered hypertensive if their mean adjusted SBP was 140 mm Hg or higher or mean adjusted DBP was 90 mm Hg or higher, or if they had been taking a medication for hypertension in the month before the measurement being taken. Respondents with diabetes or chronic kidney disease were considered hypertensive if their mean adjusted SBP was 130 mm Hg or higher or mean adjusted DBP was 80 mm Hg or higher, or if they had been taking a medication for hypertension in the month before the measurement being taken.
+
+A total of 17 risk factors were selected as candidate variables, including four sociodemographic variables (age, marital status, education, and working status), three psychosocial measures (mental health, stress, and community belonging), three health status variables (hypertension family history, body mass index, and waist-to-height ratio), five health behaviours (alcohol consumption, cigarette smoking, physical activity, fruit and vegetable consumption, and sleep duration), and two chronic condition variables (diabetes and chronic kidney disease).
+
+The male and female full models have 56 degrees of freedom with 16 predictors (5 continuous) and 7 age interactions. The final male and female reduced models have 17 degrees of freedom with 4 predictors (2 continuous) and 2 age interactions. Continuous predictors not modeled with splines do not violate the linearity assumption for logistic regression, while waist-to-height ratio was excluded due to being significantly collinear with body mass index (VIF \> 2.5).
+
+```{r, warning = FALSE, message = FALSE}
+# Fit full male and female models
+weighted_male$degf <- 68
+male_model <- survey::svyglm(highbp14090_adj ~ rcs(clc_age, 4) + married + edudr04 + working + gendmhi + gen_025 + gen_045 + fmh_15 + rcs(hwmdbmi, 3) + low_drink_score1 + rcs(minperweek, 3) + smoke + slp_11 + totalfv + diabx + ckd + rcs(clc_age, 4)*gen_045 + rcs(clc_age, 4)*rcs(hwmdbmi, 3) + rcs(clc_age, 4)*rcs(minperweek, 3) + rcs(clc_age, 4)*smoke + rcs(clc_age, 4)*slp_11 + rcs(clc_age, 4)*diabx + rcs(clc_age, 4)*ckd, design = weighted_male, family = quasibinomial())
+
+weighted_female$degf <- 68
+female_model <- survey::svyglm(highbp14090_adj ~ rcs(clc_age, 4) + married + edudr04 + working + gendmhi + gen_025 + gen_045 + fmh_15 + rcs(hwmdbmi, 3) + low_drink_score1 + rcs(minperweek, 3) + smoke + slp_11 + totalfv + diabx + ckd + rcs(clc_age, 4)*gen_045 + rcs(clc_age, 4)*rcs(hwmdbmi, 3) + rcs(clc_age, 4)*rcs(minperweek, 3) + rcs(clc_age, 4)*smoke + rcs(clc_age, 4)*slp_11 + rcs(clc_age, 4)*diabx + rcs(clc_age, 4)*ckd, design = weighted_female, family = quasibinomial())
+
+# Fit reduced male and female models (from stepdown function which takes too long to run)
+weighted_male$degf <- 68
+male_reduced_model <- survey::svyglm(highbp14090_adj ~ rcs(clc_age, 4) + fmh_15 + rcs(clc_age, 4)*rcs(hwmdbmi, 3) + rcs(clc_age, 4)*diabx, design = weighted_male, family = quasibinomial())
+
+weighted_female$degf <- 68
+female_reduced_model <- survey::svyglm(highbp14090_adj ~ rcs(clc_age, 4) + fmh_15 + rcs(clc_age, 4)*rcs(hwmdbmi, 3) + rcs(clc_age, 4)*diabx, design = weighted_female, family = quasibinomial())
+```
+
+### Full model assessment for original sample
+
+Both the full male and female models are discriminating, indicating excellent ability to separate those who have hypertension and those who do not (men c-statistic: 0.87, 95% confidence interval (CI): 0.86-0.87; women c-statistic: 0.88, 95% CI: 0.87-0.89 across derivation and bootstrap samples). C-statistics were virtually unchanged upon optimism correction. Also, predicted probabilities of hypertension closely approximate observed proportions of hypertension within the overall population (men observed v. predicted relative difference of 1.94% and women relative difference of 1.20% across derivation sample; men observed v. predicted relative difference of 1.92% and women relative difference of 1.20% across bootstrap samples). Below are the calibration plots of the observed proportions regressed on the full models’ predicted probabilities for both men and women. Calibration slopes were close to perfect as they were 0.91 in men and 0.93 in women across the derivation sample, and 0.95 in men and 0.96 in women across bootstrap samples.
+
+```{r, warning = FALSE, message = FALSE}
+# Generate predicted probabilities for full models
+male_predicted_probabilities <- generate_predicted_probabilities(male_model)
+female_predicted_probabilities <- generate_predicted_probabilities(female_model)
+
+# Calibration plots with performance metrics
+calibration(male_predicted_probabilities, male_data$highbp14090_adj)
+calibration(female_predicted_probabilities, female_data$highbp14090_adj)
+
+# Calibration in-the-whole and across percentiles
+compare_probs(male_data, male_predicted_probabilities)
+compare_probs(female_data, female_predicted_probabilities)
+
+# Plot cumulative frequency of predicted probabilities
+plot(sort(male_predicted_probabilities), seq_along(male_predicted_probabilities), type = "s", col = "blue", lwd = 2, xlab = "Predicted probability", ylab = "Cumulative frequency")
+plot(sort(female_predicted_probabilities), seq_along(female_predicted_probabilities), type = "s", col = "red", lwd = 2, xlab = "Predicted probability", ylab = "Cumulative frequency")
+```
+
+### Full model assessment for bootstrap samples - BOOTSTRAP VALIDATION 1/2
+
+```{r, warning = FALSE, message = FALSE}
+# Perform bootstrapping for both male and female full models
+n_bootstrap <- 1000  # Number of bootstrap resamples
+set.seed(123)
+
+# For male full model
+bootstrap_results_male <- replicate(n_bootstrap, {
+  boot_indices <- sample(1:nrow(male_data), replace = TRUE)
+  bootstrap_function(male_data, boot_indices, male_model)
+}, simplify = FALSE)
+
+# For female full model
+bootstrap_results_female <- replicate(n_bootstrap, {
+  boot_indices <- sample(1:nrow(female_data), replace = TRUE)
+  bootstrap_function(female_data, boot_indices, female_model)
+}, simplify = FALSE)
+
+# Aggregate and summarize results for male
+nagelkerke_r2_male <- sapply(bootstrap_results_male, function(x) x$nagelkerke_r2)
+brier_score_male <- sapply(bootstrap_results_male, function(x) x$brier_score)
+auc_male <- sapply(bootstrap_results_male, function(x) x$auc_value)
+auc_male_ci_lower <- sapply(bootstrap_results_male, function(x) x$auc_ci_lower)
+auc_male_ci_upper <- sapply(bootstrap_results_male, function(x) x$auc_ci_upper)
+auc_male_optimism <- sapply(bootstrap_results_male, function(x) x$auc_optimism)
+ratio_90_10_male <- sapply(bootstrap_results_male, function(x) x$ratio_90_10)
+ratio_95_5_male <- sapply(bootstrap_results_male, function(x) x$ratio_95_5)
+relative_difference_overall_male <- sapply(bootstrap_results_male, function(x) x$relative_difference_overall)
+calibration_slope_male <- sapply(bootstrap_results_male, function(x) x$calibration_slope)
+
+# Aggregate and summarize results for female
+nagelkerke_r2_female <- sapply(bootstrap_results_female, function(x) x$nagelkerke_r2)
+brier_score_female <- sapply(bootstrap_results_female, function(x) x$brier_score)
+auc_female <- sapply(bootstrap_results_female, function(x) x$auc_value)
+auc_female_ci_lower <- sapply(bootstrap_results_female, function(x) x$auc_ci_lower)
+auc_female_ci_upper <- sapply(bootstrap_results_female, function(x) x$auc_ci_upper)
+auc_female_optimism <- sapply(bootstrap_results_female, function(x) x$auc_optimism)
+ratio_90_10_female <- sapply(bootstrap_results_female, function(x) x$ratio_90_10)
+ratio_95_5_female <- sapply(bootstrap_results_female, function(x) x$ratio_95_5)
+relative_difference_overall_female <- sapply(bootstrap_results_female, function(x) x$relative_difference_overall)
+calibration_slope_female <- sapply(bootstrap_results_female, function(x) x$calibration_slope)
+
+# Combine into a data frame
+results_summary <- data.frame(
+  Metric = c("Mean Nagelkerke R²", "Mean Brier Score", "Mean AUC", "Mean AUC 95% CI Lower", "Mean AUC 95% CI Upper", "Mean AUC Optimism", "Mean 90:10 Predicted Ratio", "Mean 95:5 Predicted Ratio", "Mean Observed v. Predicted", "Mean Calibration Slope"),
+  Male = c(mean(nagelkerke_r2_male), mean(brier_score_male), mean(auc_male),
+           mean(auc_male_ci_lower), mean(auc_male_ci_upper), mean(auc_male_optimism),
+           mean(ratio_90_10_male), mean(ratio_95_5_male), mean(relative_difference_overall_male), mean(calibration_slope_male)),
+  Female = c(mean(nagelkerke_r2_female), mean(brier_score_female), mean(auc_female),
+             mean(auc_female_ci_lower), mean(auc_female_ci_upper), mean(auc_female_optimism),
+             mean(ratio_90_10_female), mean(ratio_95_5_female), mean(relative_difference_overall_female), mean(calibration_slope_female))
+)
+
+# Print the summary data frame
+print(results_summary)
+
+# Optimism-corrected AUCs and their 95% CIs
+auc_male_corrected <- auc_male - auc_male_optimism
+auc_female_corrected <- auc_female - auc_female_optimism
+
+auc_male_corrected_ci <- quantile(auc_male_corrected, probs = c(0.025, 0.975))
+auc_female_corrected_ci <- quantile(auc_female_corrected, probs = c(0.025, 0.975))
+
+cat("Male Optimism-Corrected AUC:", round(mean(auc_male_corrected), 3),
+    "\n95% CI:", round(auc_male_corrected_ci[1], 3), "-", round(auc_male_corrected_ci[2], 3), "\n\n")
+
+cat("Female Optimism-Corrected AUC:", round(mean(auc_female_corrected), 3),
+    "\n95% CI:", round(auc_female_corrected_ci[1], 3), "-", round(auc_female_corrected_ci[2], 3))
+```
+
+### Calibration across subgroups for full models
+
+Among men, the full model was well-calibrated in all 89 predefined policy-relevant subgroups as there was no more than a 20% difference between observed and predicted estimates within eligible subgroups where at least 5% of individuals were hypertensive. Likewise, among women, the full model was well-calibrated in all 88 predefined policy-relevant subgroups.
+
+```{r, warning = FALSE, message = FALSE}
+# Generate predicted probabilities for full models
+male_predicted_probabilities <- generate_predicted_probabilities(male_model)
+female_predicted_probabilities <- generate_predicted_probabilities(female_model)
+
+# Obtain calibration subgroups
+subgroups <- recodeflow:::select_vars_by_role(c("Predictor", "cali-subgroup"), my_variables)
+subgroups <- subgroups[subgroups != "clc_age"]
+
+# Initialize an empty list to store calibration results
+male_calibration_results <- list()
+
+# Define x-axis labels
+subgroup_labels <- list(
+  "adj_hh_inc" = "Adjusted household income ($)",
+  "agegroup4" = "Age group",
+  "alcdwky" = "Weekly alcohol consumption (drinks/week)",
+  "ckd" = "Chronic kidney disease",
+  "diabx" = "Diabetes",
+  "edudr04" = "Highest education level",
+  "fmh_15" = "Hypertension family history",
+  "gendhdi" = "Self-rated health",
+  "gendmhi" = "Self-rated mental health",
+  "gen_025" = "Self-perceived stress",
+  "gen_045" = "Sense of belonging",
+  "gfr" = "Glomerular filtration rate (mL/min/1.73 m²)",
+  "gooddiet" = "Diet level",
+  "hwm_13kg" = "Weight (kg)",
+  "hwm_14cx" = "Waist circumference (cm)",
+  "hwmdbmi" = "Body mass index (kg/m²)",
+  "img_03" = "Immigrant",
+  "lab_bpb" = "Blood lead (µmol/L)",
+  "lab_hba1" = "HbA1c",
+  "low_drink_score1" = "Alcohol consumption level",
+  "married" = "Marital status",
+  "minperweek" = "Physical activity minutes (min/week)",
+  "mvpa150wk" = "Physical activity level",
+  "nonhdltodd" = "High cholesterol",
+  "pgdcgt" = "Ethnicity",
+  "slp_11" = "Sleep duration (hrs/night)",
+  "smoke" = "Smoking status",
+  "totalfv" = "Daily fruit and vegetable consumption (times/day)",
+  "whr" = "Waist-to-height ratio (%)",
+  "working" = "Working status"
+)
+
+# Define level labels for categorical variables
+level_labels <- list(
+  "agegroup4" = c("1" = "20-39 years", "2" = "40-59 years", "3" = "60-69 years", "4" = "70-79 years"),
+  "married" = c("1" = "Married or common-law", "2" = "Widowed, separated, or divorced", "3" = "Single and never married"),
+  "edudr04" = c("0" = "Post-secondary school", "1" = "Secondary school", "2" = "Less than secondary school"),
+  "pgdcgt" = c("1" = "White", "2" = "Not white"),
+  "img_03" = c("1" = "Yes", "2" = "No"),
+  "working" = c("1" = "Has a job", "2" = "Does not have a job"),
+  "gendhdi" = c("1" = "Poor or fair", "2" = "Good, very good, or excellent"),
+  "gendmhi" = c("1" = "Poor or fair", "0" = "Good, very good, or excellent"),
+  "gen_025" = c("1" = "Not at all to a bit", "2" = "Quite a bit or extremely"),
+  "gen_045" = c("1" = "Strong", "2" = "Weak"),
+  "fmh_15" = c("1" = "Yes", "0" = "No"),
+  "diabx" = c("1" = "Yes", "0" = "No"),
+  "ckd" = c("1" = "Yes", "0" = "No"),
+  "low_drink_score1" = c("1" = "Never drank", "2" = "Low-risk drinker", "3" = "Moderate drinker", "4" = "Heavy drinker"),
+  "smoke" = c("0" = "Never smoker", "1" = "Former smoker", "2" = "Current smoker"),
+  "mvpa150wk" = c("1" = "Physically active", "2" = "Physically inactive"),
+  "gooddiet" = c("1" = "Eats fruits/veg ≥5 times per day", "2" = "Eats fruits/veg <5 times per day"),
+  "nonhdltodd" = c("1" = "Yes", "2" = "No")
+)
+
+for (subgroup in subgroups) {
+  if (all(!is.na(male_data[[subgroup]]))) {
+    male_calibration_results[[subgroup]] <- calibration(
+      male_predicted_probabilities,
+      male_data$highbp14090_adj,
+      group = male_data[[subgroup]]
+    )
+
+    cal_result <- male_calibration_results[[subgroup]]
+    cal_result <- as.data.frame(cal_result[["stats"]])
+    
+    if (!is.null(cal_result) && "n" %in% names(cal_result) && "Pavg" %in% names(cal_result) && "Obs" %in% names(cal_result)) {
+      cal_df <- data.frame(
+        Subgroup = factor(rownames(cal_result), levels = rownames(cal_result)),
+        n = cal_result$n,
+        Pavg = cal_result$Pavg,
+        Obs = cal_result$Obs
+      )
+      cal_df <- cal_df[1:(nrow(cal_df) - 1), ]
+
+      # Set x-axis label dynamically
+      x_label <- ifelse(subgroup %in% names(subgroup_labels), subgroup_labels[[subgroup]], subgroup)
+
+      # Assign level labels for bars if available
+      if (subgroup %in% names(level_labels)) {
+        cal_df$Subgroup <- factor(cal_df$Subgroup, levels = names(level_labels[[subgroup]]), labels = level_labels[[subgroup]])
+      }
+
+      # Identify symbols for bars
+      cal_df$asterisk <- ifelse(abs(cal_df$Obs - cal_df$Pavg) / cal_df$Obs > 0.20, "*", "")
+      cal_df$X_mark <- ifelse(cal_df$Obs < 0.05, "X", "")
+
+      # Merge symbols if both conditions are met
+      cal_df$symbol <- paste0(cal_df$asterisk, cal_df$X_mark)
+
+      # Plot with symbols for significant differences and low observations
+      print(ggplot(cal_df, aes(x = Subgroup)) +
+        geom_bar(aes(y = Obs, fill = "Observed"), stat = "identity", width = 0.6, alpha = 0.7) +
+        geom_point(aes(y = Pavg, color = "Predicted"), size = 4) +
+        geom_text(aes(y = Obs + 0.05, label = symbol), color = "black", size = 6, vjust = -0.5) + # Add symbols
+        scale_fill_manual(name = "", values = c("Observed" = "steelblue")) +
+        scale_color_manual(name = "", values = c("Predicted" = "red")) +
+        labs(y = "Estimate", x = x_label) + ylim(0,1) +
+        theme_minimal())
+    } else {
+      warning(paste("Skipping subgroup:", subgroup, "due to missing required columns in calibration output."))
+    }
+  } else {
+    warning(paste("Skipping subgroup:", subgroup, "due to missing values in data."))
+  }
+}
+
+# Inspect the results for each subgroup
+male_calibration_results
+
+# Initialize an empty list to store calibration results
+female_calibration_results <- list()
+
+for (subgroup in subgroups) {
+  if (all(!is.na(female_data[[subgroup]]))) {
+    female_calibration_results[[subgroup]] <- calibration(
+      female_predicted_probabilities,
+      female_data$highbp14090_adj,
+      group = female_data[[subgroup]]
+    )
+
+    cal_result <- female_calibration_results[[subgroup]]
+    cal_result <- as.data.frame(cal_result[["stats"]])
+    
+    if (!is.null(cal_result) && "n" %in% names(cal_result) && "Pavg" %in% names(cal_result) && "Obs" %in% names(cal_result)) {
+      cal_df <- data.frame(
+        Subgroup = factor(rownames(cal_result), levels = rownames(cal_result)),
+        n = cal_result$n,
+        Pavg = cal_result$Pavg,
+        Obs = cal_result$Obs
+      )
+      cal_df <- cal_df[1:(nrow(cal_df) - 1), ]
+
+      # Set x-axis label dynamically
+      x_label <- ifelse(subgroup %in% names(subgroup_labels), subgroup_labels[[subgroup]], subgroup)
+
+      # Assign level labels for bars if available
+      if (subgroup %in% names(level_labels)) {
+        cal_df$Subgroup <- factor(cal_df$Subgroup, levels = names(level_labels[[subgroup]]), labels = level_labels[[subgroup]])
+      }
+
+      # Identify symbols for bars
+      cal_df$asterisk <- ifelse(abs(cal_df$Obs - cal_df$Pavg) / cal_df$Obs > 0.20, "*", "")
+      cal_df$X_mark <- ifelse(cal_df$Obs < 0.05, "X", "")
+
+      # Merge symbols if both conditions are met
+      cal_df$symbol <- paste0(cal_df$asterisk, cal_df$X_mark)
+
+      # Plot with symbols for significant differences and low observations
+      print(ggplot(cal_df, aes(x = Subgroup)) +
+        geom_bar(aes(y = Obs, fill = "Observed"), stat = "identity", width = 0.6, alpha = 0.7) +
+        geom_point(aes(y = Pavg, color = "Predicted"), size = 4) +
+        geom_text(aes(y = Obs + 0.05, label = symbol), color = "black", size = 6, vjust = -0.5) + # Add symbols
+        scale_fill_manual(name = "", values = c("Observed" = "steelblue")) +
+        scale_color_manual(name = "", values = c("Predicted" = "red")) +
+        labs(y = "Estimate", x = x_label) + ylim(0,1) +
+        theme_minimal())
+    } else {
+      warning(paste("Skipping subgroup:", subgroup, "due to missing required columns in calibration output."))
+    }
+  } else {
+    warning(paste("Skipping subgroup:", subgroup, "due to missing values in data."))
+  }
+}
+
+# Inspect the results for each subgroup
+female_calibration_results
+```
+
+### Reduced model assessment for original sample
+
+In the reduced models, overall discriminative performance was similar in men (c-statistic: 0.86, 95% CI: 0.85-0.87) and women (c-statistic: 0.88, 95% CI: 0.87-0.88) across both derivation and bootstrap samples, with c-statistics remaining virtually unchanged upon optimism correction. As expected, discrimination across the 90:10 and 95:5 predicted probability percentiles degraded from full to reduced models in both men and women, demonstrating that the difference between individuals in the highest risk percentiles and those in the lowest risk percentiles has shrunk a bit with the reduced models. Additionally, calibration slopes improved to near perfect in both men (0.98 across derivation and bootstrap samples) and women (0.95 across derivation sample and 0.99 across bootstrap sample), while relative differences between observed proportions and predicted probabilities improved in men (0.90% across derivation sample and 0.88% across bootstrap samples) yet degraded in women (1.52% across derivation sample and 1.47% across bootstrap samples). Below are the calibration plots of the observed proportions regressed on the reduced models’ predicted probabilities for both men and women.
+
+```{r, warning = FALSE, message = FALSE}
+# Generate predicted probabilities for reduced models
+male_predicted_probabilities <- generate_predicted_probabilities(male_reduced_model)
+female_predicted_probabilities <- generate_predicted_probabilities(female_reduced_model)
+
+# Calibration plots with performance metrics
+calibration(male_predicted_probabilities, male_data$highbp14090_adj)
+calibration(female_predicted_probabilities, female_data$highbp14090_adj)
+
+# Calibration in-the-whole and across percentiles
+compare_probs(male_data, male_predicted_probabilities)
+compare_probs(female_data, female_predicted_probabilities)
+
+# Plot cumulative frequency of predicted probabilities
+plot(sort(male_predicted_probabilities), seq_along(male_predicted_probabilities), type = "s", col = "blue", lwd = 2, xlab = "Predicted probability", ylab = "Cumulative frequency")
+plot(sort(female_predicted_probabilities), seq_along(female_predicted_probabilities), type = "s", col = "red", lwd = 2, xlab = "Predicted probability", ylab = "Cumulative frequency")
+```
+
+### Reduced model assessment for bootstrap samples - BOOTSTRAP VALIDATION 2/2
+
+```{r, warning = FALSE, message = FALSE}
+# Perform bootstrapping for both male and female reduced models
+n_bootstrap <- 1000  # Number of bootstrap resamples
+set.seed(123)
+
+# For male reduced model
+bootstrap_results_male <- replicate(n_bootstrap, {
+  boot_indices <- sample(1:nrow(male_data), replace = TRUE)
+  bootstrap_function(male_data, boot_indices, male_reduced_model)
+}, simplify = FALSE)
+
+# For female reduced model
+bootstrap_results_female <- replicate(n_bootstrap, {
+  boot_indices <- sample(1:nrow(female_data), replace = TRUE)
+  bootstrap_function(female_data, boot_indices, female_reduced_model)
+}, simplify = FALSE)
+
+# Aggregate and summarize results for male
+nagelkerke_r2_male <- sapply(bootstrap_results_male, function(x) x$nagelkerke_r2)
+brier_score_male <- sapply(bootstrap_results_male, function(x) x$brier_score)
+auc_male <- sapply(bootstrap_results_male, function(x) x$auc_value)
+auc_male_ci_lower <- sapply(bootstrap_results_male, function(x) x$auc_ci_lower)
+auc_male_ci_upper <- sapply(bootstrap_results_male, function(x) x$auc_ci_upper)
+auc_male_optimism <- sapply(bootstrap_results_male, function(x) x$auc_optimism)
+ratio_90_10_male <- sapply(bootstrap_results_male, function(x) x$ratio_90_10)
+ratio_95_5_male <- sapply(bootstrap_results_male, function(x) x$ratio_95_5)
+relative_difference_overall_male <- sapply(bootstrap_results_male, function(x) x$relative_difference_overall)
+calibration_slope_male <- sapply(bootstrap_results_male, function(x) x$calibration_slope)
+
+# Aggregate and summarize results for female
+nagelkerke_r2_female <- sapply(bootstrap_results_female, function(x) x$nagelkerke_r2)
+brier_score_female <- sapply(bootstrap_results_female, function(x) x$brier_score)
+auc_female <- sapply(bootstrap_results_female, function(x) x$auc_value)
+auc_female_ci_lower <- sapply(bootstrap_results_female, function(x) x$auc_ci_lower)
+auc_female_ci_upper <- sapply(bootstrap_results_female, function(x) x$auc_ci_upper)
+auc_female_optimism <- sapply(bootstrap_results_female, function(x) x$auc_optimism)
+ratio_90_10_female <- sapply(bootstrap_results_female, function(x) x$ratio_90_10)
+ratio_95_5_female <- sapply(bootstrap_results_female, function(x) x$ratio_95_5)
+relative_difference_overall_female <- sapply(bootstrap_results_female, function(x) x$relative_difference_overall)
+calibration_slope_female <- sapply(bootstrap_results_female, function(x) x$calibration_slope)
+
+# Combine into a data frame
+results_summary <- data.frame(
+  Metric = c("Mean Nagelkerke R²", "Mean Brier Score", "Mean AUC", "Mean AUC 95% CI Lower", "Mean AUC 95% CI Upper", "Mean AUC Optimism", "Mean 90:10 Predicted Ratio", "Mean 95:5 Predicted Ratio", "Mean Observed v. Predicted", "Mean Calibration Slope"),
+  Male = c(mean(nagelkerke_r2_male), mean(brier_score_male), mean(auc_male),
+           mean(auc_male_ci_lower), mean(auc_male_ci_upper), mean(auc_male_optimism),
+           mean(ratio_90_10_male), mean(ratio_95_5_male), mean(relative_difference_overall_male), mean(calibration_slope_male)),
+  Female = c(mean(nagelkerke_r2_female), mean(brier_score_female), mean(auc_female),
+             mean(auc_female_ci_lower), mean(auc_female_ci_upper), mean(auc_female_optimism),
+             mean(ratio_90_10_female), mean(ratio_95_5_female), mean(relative_difference_overall_female), mean(calibration_slope_female))
+)
+
+# Print the summary data frame
+print(results_summary)
+
+# Optimism-corrected AUCs and their 95% CIs
+auc_male_corrected <- auc_male - auc_male_optimism
+auc_female_corrected <- auc_female - auc_female_optimism
+
+auc_male_corrected_ci <- quantile(auc_male_corrected, probs = c(0.025, 0.975))
+auc_female_corrected_ci <- quantile(auc_female_corrected, probs = c(0.025, 0.975))
+
+cat("Male Optimism-Corrected AUC:", round(mean(auc_male_corrected), 3),
+    "\n95% CI:", round(auc_male_corrected_ci[1], 3), "-", round(auc_male_corrected_ci[2], 3), "\n\n")
+
+cat("Female Optimism-Corrected AUC:", round(mean(auc_female_corrected), 3),
+    "\n95% CI:", round(auc_female_corrected_ci[1], 3), "-", round(auc_female_corrected_ci[2], 3))
+```
+
+### Calibration across subgroups for reduced models
+
+Calibration across policy-relevant subgroups degraded in men only from full to reduced models. The difference between observed proportion and predicted probability for the reduced models was greater than the predefined difference of 20% for men with chronic kidney disease and men who are heavy alcohol drinkers.
+
+```{r, warning = FALSE, message = FALSE}
+# Generate predicted probabilities for reduced models
+male_predicted_probabilities <- generate_predicted_probabilities(male_reduced_model)
+female_predicted_probabilities <- generate_predicted_probabilities(female_reduced_model)
+
+# Obtain calibration subgroups
+subgroups <- recodeflow:::select_vars_by_role(c("Predictor", "cali-subgroup"), my_variables)
+subgroups <- subgroups[subgroups != "clc_age"]
+
+# Initialize an empty list to store calibration results
+male_calibration_results <- list()
+
+for (subgroup in subgroups) {
+  if (all(!is.na(male_data[[subgroup]]))) {
+    male_calibration_results[[subgroup]] <- calibration(
+      male_predicted_probabilities,
+      male_data$highbp14090_adj,
+      group = male_data[[subgroup]]
+    )
+
+    cal_result <- male_calibration_results[[subgroup]]
+    cal_result <- as.data.frame(cal_result[["stats"]])
+    
+    if (!is.null(cal_result) && "n" %in% names(cal_result) && "Pavg" %in% names(cal_result) && "Obs" %in% names(cal_result)) {
+      cal_df <- data.frame(
+        Subgroup = factor(rownames(cal_result), levels = rownames(cal_result)),
+        n = cal_result$n,
+        Pavg = cal_result$Pavg,
+        Obs = cal_result$Obs
+      )
+      cal_df <- cal_df[1:(nrow(cal_df) - 1), ]
+
+      # Set x-axis label dynamically
+      x_label <- ifelse(subgroup %in% names(subgroup_labels), subgroup_labels[[subgroup]], subgroup)
+
+      # Assign level labels for bars if available
+      if (subgroup %in% names(level_labels)) {
+        cal_df$Subgroup <- factor(cal_df$Subgroup, levels = names(level_labels[[subgroup]]), labels = level_labels[[subgroup]])
+      }
+
+      # Identify symbols for bars
+      cal_df$asterisk <- ifelse(abs(cal_df$Obs - cal_df$Pavg) / cal_df$Obs > 0.20, "*", "")
+      cal_df$X_mark <- ifelse(cal_df$Obs < 0.05, "X", "")
+
+      # Merge symbols if both conditions are met
+      cal_df$symbol <- paste0(cal_df$asterisk, cal_df$X_mark)
+
+      # Plot with symbols for significant differences and low observations
+      print(ggplot(cal_df, aes(x = Subgroup)) +
+        geom_bar(aes(y = Obs, fill = "Observed"), stat = "identity", width = 0.6, alpha = 0.7) +
+        geom_point(aes(y = Pavg, color = "Predicted"), size = 4) +
+        geom_text(aes(y = Obs + 0.05, label = symbol), color = "black", size = 6, vjust = -0.5) + # Add symbols
+        scale_fill_manual(name = "", values = c("Observed" = "steelblue")) +
+        scale_color_manual(name = "", values = c("Predicted" = "red")) +
+        labs(y = "Estimate", x = x_label) + ylim(0,1) +
+        theme_minimal())
+    } else {
+      warning(paste("Skipping subgroup:", subgroup, "due to missing required columns in calibration output."))
+    }
+  } else {
+    warning(paste("Skipping subgroup:", subgroup, "due to missing values in data."))
+  }
+}
+
+# Inspect the results for each subgroup
+male_calibration_results
+
+# Initialize an empty list to store calibration results
+female_calibration_results <- list()
+
+for (subgroup in subgroups) {
+  if (all(!is.na(female_data[[subgroup]]))) {
+    female_calibration_results[[subgroup]] <- calibration(
+      female_predicted_probabilities,
+      female_data$highbp14090_adj,
+      group = female_data[[subgroup]]
+    )
+
+    cal_result <- female_calibration_results[[subgroup]]
+    cal_result <- as.data.frame(cal_result[["stats"]])
+    
+    if (!is.null(cal_result) && "n" %in% names(cal_result) && "Pavg" %in% names(cal_result) && "Obs" %in% names(cal_result)) {
+      cal_df <- data.frame(
+        Subgroup = factor(rownames(cal_result), levels = rownames(cal_result)),
+        n = cal_result$n,
+        Pavg = cal_result$Pavg,
+        Obs = cal_result$Obs
+      )
+      cal_df <- cal_df[1:(nrow(cal_df) - 1), ]
+
+      # Set x-axis label dynamically
+      x_label <- ifelse(subgroup %in% names(subgroup_labels), subgroup_labels[[subgroup]], subgroup)
+
+      # Assign level labels for bars if available
+      if (subgroup %in% names(level_labels)) {
+        cal_df$Subgroup <- factor(cal_df$Subgroup, levels = names(level_labels[[subgroup]]), labels = level_labels[[subgroup]])
+      }
+
+      # Identify symbols for bars
+      cal_df$asterisk <- ifelse(abs(cal_df$Obs - cal_df$Pavg) / cal_df$Obs > 0.20, "*", "")
+      cal_df$X_mark <- ifelse(cal_df$Obs < 0.05, "X", "")
+
+      # Merge symbols if both conditions are met
+      cal_df$symbol <- paste0(cal_df$asterisk, cal_df$X_mark)
+
+      # Plot with symbols for significant differences and low observations
+      print(ggplot(cal_df, aes(x = Subgroup)) +
+        geom_bar(aes(y = Obs, fill = "Observed"), stat = "identity", width = 0.6, alpha = 0.7) +
+        geom_point(aes(y = Pavg, color = "Predicted"), size = 4) +
+        geom_text(aes(y = Obs + 0.05, label = symbol), color = "black", size = 6, vjust = -0.5) + # Add symbols
+        scale_fill_manual(name = "", values = c("Observed" = "steelblue")) +
+        scale_color_manual(name = "", values = c("Predicted" = "red")) +
+        labs(y = "Estimate", x = x_label) + ylim(0,1) +
+        theme_minimal())
+    } else {
+      warning(paste("Skipping subgroup:", subgroup, "due to missing required columns in calibration output."))
+    }
+  } else {
+    warning(paste("Skipping subgroup:", subgroup, "due to missing values in data."))
+  }
+}
+
+# Inspect the results for each subgroup
+female_calibration_results
+```
+
+### Beta coefficients for full and reduced models
+
+Beta coefficients for the full and reduced models can be seen below.
+
+```{r, warning = FALSE, message = FALSE}
+# Get beta coefficients and their standard errors for full models
+extract_beta_coefs(male_model)
+extract_beta_coefs(female_model)
+
+# Get beta coefficients and their standard errors for reduced models
+extract_beta_coefs(male_reduced_model)
+extract_beta_coefs(female_reduced_model)
+```
+
+### Shap plot (male reduced model)
+
+Below is the basis of a hypertension risk profile for a 24-year-old male using HTNPoRT. For this given individual, the risk profile showcases their predicted probability of hypertension, the average predicted probability of hypertension among their sex, and the ranked importance of their features to their predicted probability in a SHAP plot. Feature modification will be available for the risk profiles once HTNPoRT models are rendered executable via a web application. SHAP values for a given individual are relative to the model’s average prediction and sum to the difference between the individual and average predictions. Positive SHAP values on the plot represent features increasing the individual’s predicted probability, while negative SHAP values represent features decreasing it. This given individual’s predicted probability of hypertension is 0.20%, compared to the average predicted probability of 27.58% among Canadian men. Their most influential risk factor on their predicted probability is having a positive family history of hypertension, which increases their probability of hypertension relative to the average by around 3.15%. However, this individual’s age of 24, body mass index of 19.6 kg/m2, and non-diabetic status decrease their probability of hypertension relative to the average by around 28.41%, 6.43%, and 3.41%, respectively. Therefore, the individual in question could avoid replicating any of their family’s concerning lifestyle habits while maintaining their healthy weight and blood sugar to prevent hypertension and improve their profile. Note that family history is associated with hypertension risk through not only genetic factors, but also environmental factors as there are significant differences in body weight control, physical activity, and diet between those with and without a positive family history for hypertension.
+
+Although the risk profile below can inform its user of features increasing and decreasing their predicted probability of hypertension, standard error bars have been placed on the SHAP values to show the uncertainty associated with these values and are wide given that they have been computed for a single individual rather than the whole study population. With the wide individual-level standard error bars, individuals should therefore be cautious while making any lifestyle-related decisions and perhaps facilitate a discussion on their risk profiles with a health provider, all upon identifying and characterizing their modifiable risk factors for hypertension.
+
+```{r, warning = FALSE, message = FALSE}
+# Reset male data
+male_data <- dplyr::filter(imputed_cycles1to6_data, clc_sex == 1)
+male_data <- male_data %>%
+  dplyr::mutate(wgt_full = wgt_full / mean(wgt_full))
+
+# Fit final reduced male model with glm to avoid errors
+male_final_reduced_model <- glm(highbp14090_adj ~ rcs(clc_age, 4) + fmh_15 + rcs(clc_age, 4)*rcs(hwmdbmi, 3) + rcs(clc_age, 4)*diabx, family = quasibinomial(), data = male_data, weights = wgt_full)
+
+# Predictors and outcome only
+male_data <- male_data %>% 
+  dplyr::select(clc_age, fmh_15, diabx, hwmdbmi)
+
+# Create observation as a data frame
+observation <- data.frame(
+  clc_age = 24,         # 24-year old male
+  fmh_15 = 1,           # Family history of hypertension present
+  hwmdbmi = 19.6,       # BMI = 19.6; Healthy
+  diabx = 0             # Diabetes absent
+)
+
+# Ensure observation has the same structure and var order as male_data
+observation <- observation[, names(male_data), drop = FALSE]
+
+for (var in names(male_data)) {
+  if (is.factor(male_data[[var]])) {
+    # Convert to factor and ensure levels match male_data
+    observation[[var]] <- factor(observation[[var]], levels = levels(male_data[[var]]))
+  } else {
+    # Convert to numeric for consistency
+    observation[[var]] <- as.numeric(observation[[var]])
+  }
+}
+
+# Create explainer object for model
+male_explainer <- iml::Predictor$new(
+   model = male_final_reduced_model,                               # Pass the model
+   data = male_data,                                               # Pass the data
+   y = male_data[["highbp14090_adj"]],                             # Indicate outcome
+   type = "response"                                               # Return predicted probabilities )
+)
+
+# Compute and plot SHAP values
+set.seed(123)
+male_shap_values <- iml::Shapley$new(male_explainer, x.interest = observation)
+
+shap_df <- as.data.frame(male_shap_values$results) %>%
+  mutate(
+    std.err = sqrt(phi.var) / sqrt(100),  # Individual SE based on MC sampling
+    feature = reorder(feature, phi)       # Reorder for plotting
+  )
+
+shap_df %>%
+  mutate(feature = reorder(feature, phi)) %>%
+  ggplot(aes(x = phi, y = feature)) +
+  geom_bar(stat = "identity", fill = "grey30") +
+  geom_errorbarh(aes(xmin = phi - std.err, xmax = phi + std.err), height = 0.2) +
+  labs(
+    x = "SHAP value",
+    y = NULL,
+    title = paste0("Actual prediction: ", round(male_shap_values$y.hat.interest, 2),
+                   "\nAverage prediction: ", round(male_shap_values$y.hat.average, 2))
+  ) +
+  theme_minimal()
+
+as.data.frame(shap_df) %>%
+  arrange(desc(phi)) %>%
+  select(feature.value, phi, std.err)
+```
+
+### Shap-adjusted ORs and CIs (full models only)
+
+SHAP-adjusted odds ratios obtained from the full models, along with their 95% confidence intervals, are available below and describe the association between model predictors and hypertension while accounting for non-linearity and interactions. These adjusted odds ratios were calculated by exponentiating the difference between the mean SHAP value (i.e., log odds) for the risk category and the mean SHAP value for the reference category.
+
+The SHAP-adjusted odds ratios presented below are mostly in line with associations between risk factors and hypertension in literature, but there are a few anomalies. Current smoking seems to have a protective effect against hypertension as compared to never smoking in both men (OR: 0.84, 95% CI: 0.84-0.85) and women (OR: 0.86, 95% CI: 0.85-0.86). The association between smoking and hypertension appears to be inconsistent across published literature, with some studies reporting insignificant and even inverse relationships. One study postulated that the association between smoking and the development of hypertension is diverse in different urban settings. Moreover, the inverse associations can be attributed to current smokers having lower body mass indices compared to former and never smokers. Meanwhile, being a low-risk drinker seems to have a protective effect in women only (OR: 0.79, 95% CI: 0.79-0.79), though this has been observed in a few other studies which stated that light alcohol consumption may reduce hypertension risk in women through favourable changes in high-density lipoprotein cholesterol. Another contradictory inverse association seen below includes that between insufficient sleep duration and hypertension in both men (OR: 0.92. 95% CI: 0.92-0.92) and women (OR: 0.88, 95% CI: 0.87-0.88). Additionally, contradictory inverse associations were even seen between having poor or fair mental health and hypertension in both men (OR: 0.93, 95% CI: 0.93-0.93) and women (OR: 0.98, 95% CI: 0.98-0.98), as well as between stress and hypertension in both men (OR: 0.93, 95% CI: 0.93-0.93) and women (OR: 0.85, 95% CI: 0.85-0.85). Regarding a potential reason for these associations, men and women with shorter sleep durations, poorer mental health, and higher perceived stress levels tend to be younger in age. These inverse associations are weak in magnitude, nonetheless.
+
+As hinted above, most of these inverse associations are all likely due to the individuals in certain risk categories also having highly protective features from stronger predictors (i.e., young age or low body mass index), causing the average SHAP value for these risk categories to dip below the average SHAP value for their respective reference categories and thus cause the mean difference (i.e., log(OR)) to become negative across the study populations. Again, SHAP values for a given individual are relative to the model’s average prediction and sum to the difference between the individual and average predictions. This means that a risk factor like current smoking could have a negative SHAP value (or a protective factor like never smoking could have a positive SHAP value) at the individual and/or population levels if the model primarily predicts hypertension through heavily stronger predictors like age, body mass index, and diabetes.
+
+```{r, warning = FALSE, message = FALSE}
+# Reset male and female data
+male_data <- dplyr::filter(imputed_cycles1to6_data, clc_sex == 1)
+female_data <- dplyr::filter(imputed_cycles1to6_data, clc_sex == 2)
+
+male_data <- male_data %>%
+  dplyr::mutate(wgt_full = wgt_full / mean(wgt_full))
+female_data <- female_data %>%
+  dplyr::mutate(wgt_full = wgt_full / mean(wgt_full))
+
+# Fit final full models with glm to avoid errors
+male_final_model <- glm(highbp14090_adj ~ rcs(clc_age, 4) + married + edudr04 + working + gendmhi + gen_025 + gen_045 + fmh_15 + rcs(hwmdbmi, 3) + low_drink_score1 + rcs(minperweek, 3) + smoke + slp_11 + totalfv + diabx + ckd + rcs(clc_age, 4)*gen_045 + rcs(clc_age, 4)*rcs(hwmdbmi, 3) + rcs(clc_age, 4)*rcs(minperweek, 3) + rcs(clc_age, 4)*smoke + rcs(clc_age, 4)*slp_11 + rcs(clc_age, 4)*diabx + rcs(clc_age, 4)*ckd, data = male_data, family = binomial(), weights = wgt_full)
+
+female_final_model <- glm(highbp14090_adj ~ rcs(clc_age, 4) + married + edudr04 + working + gendmhi + gen_025 + gen_045 + fmh_15 + rcs(hwmdbmi, 3) + low_drink_score1 + rcs(minperweek, 3) + smoke + slp_11 + totalfv + diabx + ckd + rcs(clc_age, 4)*gen_045 + rcs(clc_age, 4)*rcs(hwmdbmi, 3) + rcs(clc_age, 4)*rcs(minperweek, 3) + rcs(clc_age, 4)*smoke + rcs(clc_age, 4)*slp_11 + rcs(clc_age, 4)*diabx + rcs(clc_age, 4)*ckd, data = female_data, family = binomial(), weights = wgt_full)
+
+# Male model
+# Predictors only
+male_data <- male_data %>% 
+  dplyr::select(recodeflow:::select_vars_by_role(c("Predictor"), my_variables)) %>%
+  dplyr::select(-whr)
+
+# Create explainer object for model
+male_explainer <- iml::Predictor$new(
+   model = male_final_model,                                       # Pass the model
+   data = male_data,                                               # Pass the data
+   y = male_data[["highbp14090_adj"]]                              # Indicate outcome
+)
+
+# Initialize a list to store SHAP values
+set.seed(123)
+male_shap_list <- list()
+
+# Generate Shap values for each row in male_data
+for (i in 1:nrow(male_data)) {
+    # Ensure observation remains a data frame
+    observation <- male_data[i, , drop = FALSE]  
+    
+    # Generate SHAP values
+    male_shap_values <- iml::Shapley$new(male_explainer, x.interest = observation)
+    
+    # Store results in the list
+    male_shap_list[[i]] <- male_shap_values$results
+}
+
+# Convert list into a data frame for easier manipulation
+all_male_shap_values <- do.call(rbind, male_shap_list)
+
+# Loop through all predictors and print their S-OR and CI
+predictors <- recodeflow:::select_vars_by_role(c("Predictor"), my_variables)
+predictors <- predictors[predictors != "whr"]
+
+for (pred in predictors) {
+  print(calculate_shap_or_ci(all_male_shap_values, pred))
+}
+
+# Female model
+# Predictors only
+female_data <- female_data %>% 
+  dplyr::select(recodeflow:::select_vars_by_role(c("Predictor"), my_variables)) %>%
+  dplyr::select(-whr)
+
+# Create explainer object for model
+female_explainer <- iml::Predictor$new(
+   model = female_final_model,                                      # Pass the model
+   data = female_data,                                              # Pass the data
+   y = female_data[["highbp14090_adj"]]                             # Indicate outcome
+)
+
+# Initialize a list to store SHAP values
+set.seed(123)
+female_shap_list <- list()
+
+# Generate Shap values for each row in female_data
+for (i in 1:nrow(female_data)) {
+    # Ensure observation remains a data frame
+    observation <- female_data[i, , drop = FALSE]  
+    
+    # Generate SHAP values
+    female_shap_values <- iml::Shapley$new(female_explainer, x.interest = observation)
+    
+    # Store results in the list
+    female_shap_list[[i]] <- female_shap_values$results
+}
+
+# Convert list into a data frame for easier manipulation
+all_female_shap_values <- do.call(rbind, female_shap_list)
+
+# Loop through all predictors and print their S-OR and CI
+predictors <- recodeflow:::select_vars_by_role(c("Predictor"), my_variables)
+predictors <- predictors[predictors != "whr"]
+
+for (pred in predictors) {
+  print(calculate_shap_or_ci(all_female_shap_values, pred))
+}
+```
