@@ -1,0 +1,568 @@
+---
+title: "model-export"
+format: html
+editor: visual
+---
+
+## Summary
+
+This guide provides a step-by-step approach for safely exporting survey-weighted GLM models from Statistics Canada while preserving the ability to make predictions and perform recalibration in new settings. The key challenge is removing all individual-level and identifiable data while retaining the statistical components necessary for valid inference.
+
+**Key Steps:**
+
+1. Strip all individual-level data from the model object
+2. Preserve essential statistical components (coefficients, variance-covariance matrix)
+3. Extract and save transformation parameters (centering, scaling, spline knots)
+4. Document survey design metadata without individual identifiers
+5. Validate the export before transfer
+6. Implement recalibration methods in the new environment
+
+## Understanding a svyglm object
+
+A `svyglm` object inherits from both the `svyglm` and `glm` classes, containing standard GLM components plus survey-specific information:
+
+**Standard GLM components:**
+
+- `coefficients`: Model parameter estimates
+- `residuals`: Individual-level residuals (MUST BE REMOVED)
+- `fitted.values`: Individual predictions (MUST BE REMOVED)
+- `model`: Original data frame (MUST BE REMOVED)
+- `family`: Distribution and link function (SAFE TO KEEP)
+- `formula`: Model specification (SAFE TO KEEP)
+- `qr`: QR decomposition of design matrix (REMOVE - not needed for prediction)
+
+**Survey-specific components:**
+
+- `survey.design`: Contains survey weights, strata, clusters, and THE ORIGINAL DATA (MUST BE REMOVED)
+- `vcov`: Variance-covariance matrix using sandwich estimators (CRITICAL TO KEEP)
+- `df.residual`: Degrees of freedom accounting for survey design (KEEP)
+
+The embedded survey design object poses the primary privacy risk as it contains all individual-level data.
+
+## Step 1: Basic model stripping
+
+Start with a basic function to remove individual-level data:
+
+```{r}
+strip_svyglm <- function(model) {
+  # Remove all individual-level components
+  model$y <- NULL
+  model$model <- NULL
+  model$residuals <- NULL
+  model$fitted.values <- NULL
+  model$effects <- NULL
+  model$qr <- NULL
+  model$linear.predictors <- NULL
+  model$weights <- NULL
+  model$prior.weights <- NULL
+  model$data <- NULL
+  
+  # Remove the environment to prevent data access
+  attr(model$terms, ".Environment") <- emptyenv()
+  attr(model$formula, ".Environment") <- emptyenv()
+  
+  return(model)
+}
+```
+
+## Step 2: Handling survey design information
+
+The survey design object requires special care. We need to preserve the structure but remove individual data:
+
+```{r}
+clean_survey_design <- function(design) {
+  # Create a summary that preserves structure without data
+  design_summary <- list(
+    nobs = nrow(design$variables),
+    nstrata = length(unique(design$strata)),
+    nclusters = length(unique(design$cluster)),
+    has_weights = !is.null(design$prob),
+    design_type = class(design)[1],
+    call = design$call
+  )
+  
+  # For finite population correction
+  if (!is.null(design$fpc)) {
+    design_summary$has_fpc <- TRUE
+    design_summary$fpc_summary <- "FPC information available"
+  }
+  
+  return(design_summary)
+}
+```
+
+## Step 3: Preserving complex model features
+
+### Centering and Scaling
+
+When predictors are centered and scaled, you must preserve these transformations:
+
+```{r}
+extract_centering_info <- function(model, original_data_summary) {
+  centering_info <- list()
+  
+  # For each predictor in the model
+  predictors <- all.vars(formula(model))[-1]  # Exclude response
+  
+  for (pred in predictors) {
+    if (pred %in% names(original_data_summary)) {
+      centering_info[[pred]] <- list(
+        center = original_data_summary[[pred]]$mean
+      )
+    }
+  }
+  
+  return(centering_info)
+}
+```
+
+### Restricted cubic splines (RCS)
+
+RCS terms require special handling because knot locations must be preserved:
+
+```{r}
+extract_spline_info <- function(model) {
+  spline_info <- list()
+  
+  # Get the model matrix to access attributes
+  mm <- model.matrix(model)
+  
+  # Look for spline-related attributes
+  attrs <- attributes(mm)
+  
+  # Common spline packages store knots differently
+  # For rms::rcs
+  if ("parms" %in% names(attrs)) {
+    spline_info$parms <- attrs$parms
+  }
+  
+  # For splines::ns
+  if ("knots" %in% names(attrs)) {
+    spline_info$knots <- attrs$knots
+  }
+  
+  # Extract from individual columns
+  for (col in colnames(mm)) {
+    col_attrs <- attributes(mm[,col])
+    if (!is.null(col_attrs$knots)) {
+      spline_info[[col]] <- list(knots = col_attrs$knots)
+    }
+  }
+  
+  return(spline_info)
+}
+```
+
+### Factor variables
+
+Preserve factor levels and contrasts:
+
+```{r}
+extract_factor_info <- function(model) {
+  factor_info <- list()
+  
+  # Get factor levels from xlevels
+  if (!is.null(model$xlevels)) {
+    factor_info$xlevels <- model$xlevels
+  }
+  
+  # Get contrast information
+  if (!is.null(model$contrasts)) {
+    factor_info$contrasts <- model$contrasts
+  }
+  
+  return(factor_info)
+}
+```
+
+## Step 4: Creating a complete export function
+
+Here's a comprehensive function that combines all the steps:
+
+```{r}
+create_safe_export <- function(svyglm_model, data_summary = NULL) {
+  
+  # First, strip the model
+  clean_model <- strip_svyglm(svyglm_model)
+  
+  # Extract all necessary components
+  safe_export <- list(
+    # Core components for prediction
+    coefficients = coef(svyglm_model),
+    vcov = vcov(svyglm_model),
+    
+    # Model specification
+    formula = formula(svyglm_model),
+    family = svyglm_model$family,
+    
+    # Degrees of freedom and dispersion
+    df.residual = svyglm_model$df.residual,
+    dispersion = summary(svyglm_model)$dispersion,
+    
+    # Survey design summary (no individual data)
+    survey_info = clean_survey_design(svyglm_model$survey.design),
+    
+    # Transformation information
+    centering = if (!is.null(data_summary)) {
+      extract_centering_info(svyglm_model, data_summary)
+    } else NULL,
+    
+    spline_info = extract_spline_info(svyglm_model),
+    factor_info = extract_factor_info(svyglm_model),
+    
+    # For recalibration
+    original_prevalence = if (svyglm_model$family$family == "binomial") {
+      # This should be calculated in secure environment
+      data_summary$outcome_prevalence
+    } else NULL
+  )
+  
+  class(safe_export) <- "safe_svyglm"
+  return(safe_export)
+}
+```
+
+## Step 5: Making predictions with the exported model
+
+Create a predict method for the safe export:
+
+```{r}
+predict.safe_svyglm <- function(object, newdata, type = "link", se.fit = FALSE) {
+  
+  # Apply centering if available
+  if (!is.null(object$centering)) {
+    for (var in names(object$centering)) {
+      if (var %in% names(newdata)) {
+        newdata[[var]] <- (newdata[[var]] - object$centering[[var]]$center)
+      }
+    }
+  }
+
+  # Create formula with no outcome (right-hand side only)
+  rhs_formula <- reformulate(attr(terms(object$formula), "term.labels"))
+
+  # Create model matrix
+  X <- model.matrix(rhs_formula, new_data)
+
+  # Predict using the stripped safe model
+  eta <- as.vector(X %*% object$coefficients)
+
+  # If response type is needed (e.g., for logistic models)
+  predicted_probs <- object$family$linkinv(eta)
+
+  return(predicted_probs)
+}
+```
+
+## Step 6: Model recalibration
+
+### Simple intercept recalibration
+
+For models with centered predictors, adjusting for different population prevalence:
+
+```{r}
+recalibrate_intercept <- function(safe_model, new_prevalence) {
+  if (is.null(safe_model$original_prevalence)) {
+    stop("Original prevalence not available in exported model")
+  }
+  
+  # Calculate adjustment on log-odds scale
+  original_logit <- qlogis(safe_model$original_prevalence)
+  new_logit <- qlogis(new_prevalence)
+  adjustment <- new_logit - original_logit
+  
+  # Create recalibrated model
+  recalibrated <- safe_model
+  recalibrated$coefficients["(Intercept)"] <- 
+    recalibrated$coefficients["(Intercept)"] + adjustment
+  
+  return(recalibrated)
+}
+```
+
+### Full recalibration with new data
+
+When you have labeled data in the new environment:
+
+```{r}
+recalibrate_model <- function(safe_model, new_data, new_outcomes, method = "logistic") {
+  
+  if (method == "logistic") {
+    # Logistic recalibration: adjust intercept and slope
+    original_pred <- predict(safe_model, new_data, type = "link")
+    
+    recal_fit <- glm(new_outcomes ~ original_pred, family = binomial())
+    
+    # Apply recalibration
+    recalibrated <- safe_model
+    recalibrated$coefficients <- recalibrated$coefficients * coef(recal_fit)[2]
+    recalibrated$coefficients["(Intercept)"] <- 
+      recalibrated$coefficients["(Intercept)"] + coef(recal_fit)[1]
+    
+    return(recalibrated)
+  }
+  
+  if (method == "platt") {
+    # Platt scaling - similar but preserves more of original model
+    # Implementation here...
+  }
+}
+```
+
+### Bayesian recalibration
+
+Using the survey model as a prior:
+
+```{r}
+prepare_for_bayesian_recal <- function(safe_model) {
+  # Extract components needed for Bayesian updating
+  prior_info <- list(
+    beta_mean = safe_model$coefficients,
+    beta_precision = solve(safe_model$vcov),  # Inverse of covariance
+    df = safe_model$df.residual
+  )
+  
+  # For use with Stan or other Bayesian frameworks
+  return(prior_info)
+}
+```
+
+## Step 7: Validation and quality checks
+
+### Before export (in secure environment):
+
+```{r}
+validate_export <- function(original_model, safe_export, new_data) {
+  # 1. Check no individual data remains
+  individual_data_check <- function(obj) {
+    dangerous_names <- c("residuals", "fitted.values", "y", "model", 
+                        "weights", "data", "linear.predictors")
+    
+    for (name in dangerous_names) {
+      if (!is.null(obj[[name]]) && length(obj[[name]]) > 0) {
+        return(FALSE)
+      }
+    }
+    return(TRUE)
+  }
+  
+  # 2. Check predictions match
+  orig_pred <- predict(original_model, newdata = new_data, type = "response")
+  safe_pred <- predict.safe_svyglm(safe_export, newdata = new_data, type = "response")
+  
+  prediction_match <- all.equal(as.numeric(orig_pred), as.numeric(safe_pred), tolerance = 1e-10)
+  
+  # 3. Check components preserved
+  components_ok <- all(
+    identical(coef(original_model), safe_export$coefficients),
+    all.equal(vcov(original_model), safe_export$vcov),
+    identical(formula(original_model), safe_export$formula)
+  )
+  
+  return(list(
+    no_individual_data = individual_data_check(safe_export),
+    predictions_match = prediction_match,
+    components_preserved = components_ok
+  ))
+}
+```
+
+### After import (in new environment):
+
+```{r}
+assess_calibration <- function(safe_model, new_data, new_outcomes) {
+  predictions <- predict(safe_model, new_data, type = "response")
+  
+  # Calibration plot data
+  calibration_df <- data.frame(
+    pred = predictions,
+    obs = new_outcomes
+  ) %>%
+    mutate(bin = cut(pred, breaks = seq(0, 1, 0.1))) %>%
+    group_by(bin) %>%
+    summarise(
+      mean_pred = mean(pred),
+      mean_obs = mean(obs),
+      n = n()
+    )
+  
+  # Hosmer-Lemeshow test
+  hl_test <- ResourceSelection::hoslem.test(new_outcomes, predictions)
+  
+  # Calibration slope and intercept
+  calib_model <- glm(new_outcomes ~ qlogis(predictions), family = binomial())
+  
+  return(list(
+    calibration_data = calibration_df,
+    hosmer_lemeshow = hl_test,
+    calibration_intercept = coef(calib_model)[1],
+    calibration_slope = coef(calib_model)[2]
+  ))
+}
+```
+
+## Complete workflow example
+
+Here's how to use all these functions together.
+
+In secure environment:
+
+```{r}
+library(survey)
+library(rms)
+
+# 1. Fit your models
+weighted_male$degf <- 68
+male_model <- survey::svyglm(highbp14090_adj ~ rcs(clc_age, 4) + married + edudr04 + working + gendmhi + gen_025 + gen_045 + fmh_15 + rcs(hwmdbmi, 3) + low_drink_score1 + rcs(minperweek, 3) + smoke + slp_11 + totalfv + diabx + ckd + rcs(clc_age, 4)*gen_045 + rcs(clc_age, 4)*rcs(hwmdbmi, 3) + rcs(clc_age, 4)*rcs(minperweek, 3) + rcs(clc_age, 4)*smoke + rcs(clc_age, 4)*slp_11 + rcs(clc_age, 4)*diabx + rcs(clc_age, 4)*ckd, design = weighted_male, family = quasibinomial())
+
+weighted_female$degf <- 68
+female_model <- survey::svyglm(highbp14090_adj ~ rcs(clc_age, 4) + married + edudr04 + working + gendmhi + gen_025 + gen_045 + fmh_15 + rcs(hwmdbmi, 3) + low_drink_score1 + rcs(minperweek, 3) + smoke + slp_11 + totalfv + diabx + ckd + rcs(clc_age, 4)*gen_045 + rcs(clc_age, 4)*rcs(hwmdbmi, 3) + rcs(clc_age, 4)*rcs(minperweek, 3) + rcs(clc_age, 4)*smoke + rcs(clc_age, 4)*slp_11 + rcs(clc_age, 4)*diabx + rcs(clc_age, 4)*ckd, design = weighted_female, family = quasibinomial())
+
+weighted_male$degf <- 68
+male_reduced_model <- survey::svyglm(highbp14090_adj ~ rcs(clc_age, 4) + fmh_15 + rcs(clc_age, 4)*rcs(hwmdbmi, 3) + rcs(clc_age, 4)*diabx, design = weighted_male, family = quasibinomial())
+
+weighted_female$degf <- 68
+female_reduced_model <- survey::svyglm(highbp14090_adj ~ rcs(clc_age, 4) + fmh_15 + rcs(clc_age, 4)*rcs(hwmdbmi, 3) + rcs(clc_age, 4)*diabx, design = weighted_female, family = quasibinomial())
+
+# 2. Create data summary (without individual values)
+male_data_summary <- list(
+  clc_age = list(mean = 46.1451),
+  married_2 = list(mean = 0.0859),
+  married_3 = list(mean = 0.2485),
+  edudr04_1 = list(mean = 0.2172),
+  edudr04_2 = list(mean = 0.1251),
+  working = list(mean = 0.2587),
+  gendmhi = list(mean = 0.0668),
+  gen_025 = list(mean = 0.2284),
+  gen_045 = list(mean = 0.3499),
+  fmh_15 = list(mean = 0.5248),
+  hwmdbmi = list(mean = 27.66777),
+  low_drink_score2 = list(mean = 0.778),
+  low_drink_score3 = list(mean = 0.0456),
+  low_drink_score4 = list(mean = 0.0722),
+  minperweek = list(mean = 147.6497),
+  smoke_1 = list(mean = 0.3087),
+  smoke_2 = list(mean = 0.2277),
+  slp_11 = list(mean = 7.015036),
+  totalfv = list(mean = 3.280092),
+  diabx = list(mean = 0.1049),
+  ckd = list(mean = 0.0448),
+  outcome_prevalence = 0.25
+)
+
+female_data_summary <- list(
+  clc_age = list(mean = 46.89546),
+  married_2 = list(mean = 0.1471),
+  married_3 = list(mean = 0.2101),
+  edudr04_1 = list(mean = 0.1934),
+  edudr04_2 = list(mean = 0.0997),
+  working = list(mean = 0.3534),
+  gendmhi = list(mean = 0.0885),
+  gen_025 = list(mean = 0.258),
+  gen_045 = list(mean = 0.3427),
+  fmh_15 = list(mean = 0.5736),
+  hwmdbmi = list(mean = 27.09638),
+  low_drink_score2 = list(mean = 0.7532),
+  low_drink_score3 = list(mean = 0.0385),
+  low_drink_score4 = list(mean = 0.032),
+  minperweek = list(mean = 126.2692),
+  smoke_1 = list(mean = 0.2722),
+  smoke_2 = list(mean = 0.1652),
+  slp_11 = list(mean = 7.176309),
+  totalfv = list(mean = 3.70042),
+  diabx = list(mean = 0.0734),
+  ckd = list(mean = 0.0576),
+  outcome_prevalence = 0.22
+)
+
+# 3. Create safe export
+male_safe_model <- create_safe_export(male_model, male_data_summary)
+female_safe_model <- create_safe_export(female_model, female_data_summary)
+male_safe_reduced_model <- create_safe_export(male_reduced_model, male_data_summary)
+female_safe_reduced_model <- create_safe_export(female_reduced_model, female_data_summary)
+
+# 4. Validate before saving
+set.seed(123)
+n <- 100
+
+cycle1 <- data.frame(
+  clc_age    = sample(20:79, n, replace = TRUE),
+  fmh_15     = sample(1:2, n, replace = TRUE),
+  lab_hba1   = runif(n, min = 0.041, max = 0.130),
+  ccc_51     = sample(1:2, n, replace = TRUE),
+  diab_drug2 = sample(c(0, 1), n, replace = TRUE),
+  hwmdbmi    = runif(n, min = 13.89, max = 49)
+)
+
+cycle1$hwmdbmi[1] <- 99.96  # BMI way above expected
+cycle1$fmh_15[2] <- 8       # Invalid family history code
+
+new_data <- recodeflow::rec_with_table(cycle1, c("clc_age", "fmh_15", "lab_hba1", "ccc_51", "diab_drug2", "diab_m", "diabx", "hwmdbmi"), variable_details = my_variable_details)
+
+new_data$fmh_15[2] <- NA
+new_data$diabx   <- ifelse(new_data$diabx == 2, 1,
+                           ifelse(new_data$diabx == 1, 0, NA))
+new_data$fmh_15  <- ifelse(new_data$fmh_15 == 2, 1,
+                           ifelse(new_data$fmh_15 == 1, 0, NA))
+
+new_data$diabx   <- factor(new_data$diabx, levels = c(0, 1))
+new_data$fmh_15  <- factor(new_data$fmh_15, levels = c(0, 1))
+
+validate_export(male_reduced_model, male_safe_reduced_model, new_data)
+validate_export(female_reduced_model, female_safe_reduced_model, new_data)
+
+# 5. Save the object
+saveRDS(male_safe_model, file = "P:/10619/Dropbox/htnport/models/svyglm/male_model.rds")
+saveRDS(female_safe_model, file = "P:/10619/Dropbox/htnport/models/svyglm/female_model.rds")
+saveRDS(male_safe_reduced_model, file = "P:/10619/Dropbox/htnport/models/svyglm/male_reduced_model.rds")
+saveRDS(female_safe_reduced_model, file = "P:/10619/Dropbox/htnport/models/svyglm/female_reduced_model.rds")
+```
+
+In new environment:
+
+```{r}
+# 6. Load and use
+male_safe_reduced_model <- readRDS("P:/10619/Dropbox/htnport/models/svyglm/male_reduced_model.rds")
+female_safe_reduced_model <- readRDS("P:/10619/Dropbox/htnport/models/svyglm/female_reduced_model.rds")
+
+# 7. Make predictions
+new_male_predictions <- predict(male_safe_reduced_model, new_data, type = "response")
+new_female_predictions <- predict(female_safe_reduced_model, new_data, type = "response")
+
+# 8. Assess calibration if you have outcomes
+if (!is.null(new_male_predictions)) {
+  calibration <- assess_calibration(male_safe_reduced_model, new_data, new_outcomes)
+  
+  # 9. Recalibrate if needed
+  if (calibration$calibration_slope < 0.8) {
+    recalibrated_model <- recalibrate_model(male_safe_reduced_model, new_data, 
+                                           new_male_predictions, method = "logistic")
+  }
+}
+
+if (!is.null(new_female_predictions)) {
+  calibration <- assess_calibration(female_safe_reduced_model, new_data, new_outcomes)
+  
+  # 9. Recalibrate if needed
+  if (calibration$calibration_slope < 0.8) {
+    recalibrated_model <- recalibrate_model(female_safe_reduced_model, new_data, 
+                                           new_female_predictions, method = "logistic")
+  }
+}
+```
+
+## Summary of key considerations
+
+1. **Privacy first**: Never include individual-level data in exports. This includes residuals, fitted values, and the original data frame.
+    
+2. **Preserve statistical components**: The variance-covariance matrix is critical for uncertainty quantification and recalibration. Always include it.
+    
+3. **Document transformations**: Centering, scaling, and spline knots must be explicitly preserved as they're not always recoverable from the model object.
+    
+4. **Plan for recalibration**: Include prevalence information and design metadata to support various recalibration approaches.
+    
+5. **Validate thoroughly**: Check both that individual data is removed AND that predictions remain accurate.
+    
+6. **Consider RCS complexity**: Spline terms require extra care - knot locations and any centering must be preserved together.
+
+This approach provides a secure, validated method for model export that maintains predictive accuracy while protecting individual privacy.
