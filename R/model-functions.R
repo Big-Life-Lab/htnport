@@ -378,6 +378,11 @@ calculate_shap_or_ci <- function(shap_values_df, predictor) {
 }
 
 # Function to plot ORs for age interactions
+library(ggplot2)
+library(ggeffects)
+library(scales)
+# library(ggrepel)
+
 plot_age_int_or <- function(model, var, var_type = c("categorical", "continuous"),
                             design = NULL, sex_label = "Group",
                             title_labels = NULL, legend_labels = NULL,
@@ -389,20 +394,6 @@ plot_age_int_or <- function(model, var, var_type = c("categorical", "continuous"
   legend_label <- if (!is.null(legend_labels) && var %in% names(legend_labels)) legend_labels[[var]] else var
   
   if (var_type == "categorical") {
-    
-    # preds <- ggpredict(model, terms = c("clc_age", var)) %>%
-    #   group_by(x) %>%
-    #   arrange(group) %>%
-    #   mutate(
-    #     predicted_ref = first(predicted),
-    #     odds = predicted / (1 - predicted),
-    #     odds_ref = predicted_ref / (1 - predicted_ref),
-    #     or = odds / odds_ref,
-    #     or_low = (conf.low / (1 - conf.low)) / odds_ref,
-    #     or_high = (conf.high / (1 - conf.high)) / odds_ref
-    #   ) %>%
-    #   ungroup() %>%
-    #   filter(group != first(group))  # Remove reference group
     
     preds <- ggpredict(model, terms = c("clc_age", var)) %>%
       group_by(x) %>%
@@ -418,13 +409,22 @@ plot_age_int_or <- function(model, var, var_type = c("categorical", "continuous"
         or_high = exp(log_or + 1.96 * se_log_or)
       ) %>%
       ungroup() %>%
-      filter(group != first(group))  # Remove reference group
+      filter(group != first(group))
+    
+    max_rows <- preds %>% group_by(group) %>% filter(x == max(x)) %>% ungroup()
+    y_max <- max(max_rows$or_high, na.rm = TRUE) * 1.25
     
     p <- ggplot(preds, aes(x = x, y = or, color = group, fill = group)) +
       geom_line(size = 1.2) +
-      geom_ribbon(aes(ymin = or_low, ymax = or_high), alpha = 0.2, color = NA) +
+      geom_point(data = max_rows, aes(x = x, y = or), color = "red", size = 3, inherit.aes = FALSE) +
+      geom_text(data = max_rows, aes(x = x, y = or, label = paste0("OR = ", round(or, 2))),
+                vjust = -1, hjust = 1.2, size = 3.5, color = "red", inherit.aes = FALSE) +
+      # geom_text_repel(data = max_rows, aes(x = x, y = or, label = paste0("OR = ", round(or, 2))),
+      #                          size = 3.5, color = "red", inherit.aes = FALSE, min.segment.length = 0) +
       geom_hline(yintercept = 1, linetype = "dotted") +
       scale_y_log10() +
+      coord_cartesian(ylim = c(min(preds$or_low), y_max)) +
+      annotation_logticks(sides = "l") +
       labs(
         title = paste0("Odds ratio by age for ", title_label, " in ", sex_label),
         x = "Age (years)",
@@ -453,20 +453,6 @@ plot_age_int_or <- function(model, var, var_type = c("categorical", "continuous"
     comps <- comp_vals[[var]]
     terms_string <- paste0(var, " [", paste(c(ref_val, comps), collapse = ", "), "]")
     
-    # preds <- ggpredict(model, terms = c("clc_age", terms_string)) %>%
-    #   group_by(x) %>%
-    #   arrange(group) %>%
-    #   mutate(
-    #     predicted_ref = first(predicted),
-    #     odds = predicted / (1 - predicted),
-    #     odds_ref = predicted_ref / (1 - predicted_ref),
-    #     or = odds / odds_ref,
-    #     or_low = (conf.low / (1 - conf.low)) / odds_ref,
-    #     or_high = (conf.high / (1 - conf.high)) / odds_ref
-    #   ) %>%
-    #   ungroup() %>%
-    #   filter(group != first(group))  # Remove reference group
-    
     preds <- ggpredict(model, terms = c("clc_age", terms_string)) %>%
       group_by(x) %>%
       arrange(group) %>%
@@ -481,13 +467,22 @@ plot_age_int_or <- function(model, var, var_type = c("categorical", "continuous"
         or_high = exp(log_or + 1.96 * se_log_or)
       ) %>%
       ungroup() %>%
-      filter(group != first(group))  # Remove reference group
+      filter(group != first(group))
     
-    p <- ggplot(preds, aes(x = x, y = or, color = group, fill = group, group = group)) +
+    max_rows <- preds %>% group_by(group) %>% filter(x == max(x)) %>% ungroup()
+    y_max <- max(max_rows$or_high, na.rm = TRUE) * 1.25
+    
+    p <- ggplot(preds, aes(x = x, y = or, color = group, fill = group)) +
       geom_line(size = 1.2) +
-      geom_ribbon(aes(ymin = or_low, ymax = or_high), alpha = 0.2, color = NA) +
+      geom_point(data = max_rows, aes(x = x, y = or), color = "red", size = 3, inherit.aes = FALSE) +
+      geom_text(data = max_rows, aes(x = x, y = or, label = paste0("OR = ", round(or, 2))),
+                vjust = -1, hjust = 1.2, size = 3.5, color = "red", inherit.aes = FALSE) +
+      # geom_text_repel(data = max_rows, aes(x = x, y = or, label = paste0("OR = ", round(or, 2))),
+      #                          size = 3.5, color = "red", inherit.aes = FALSE, min.segment.length = 0) +
       geom_hline(yintercept = 1, linetype = "dotted") +
       scale_y_log10() +
+      coord_cartesian(ylim = c(min(preds$or_low), y_max)) +
+      annotation_logticks(sides = "l") +
       labs(
         title = paste0("Odds ratio by age for ", title_label, " in ", sex_label),
         x = "Age (years)",
@@ -495,8 +490,10 @@ plot_age_int_or <- function(model, var, var_type = c("categorical", "continuous"
         color = legend_label,
         fill = legend_label
       ) +
+      scale_color_manual(name = legend_label, values = scales::hue_pal()(length(unique(preds$group))),
+                         labels = levels(preds$group)) +
+      scale_fill_manual(name = legend_label, values = scales::hue_pal()(length(unique(preds$group))),
+                        labels = levels(preds$group)) +
       theme_minimal()
   }
-  
-  return(p)
 }

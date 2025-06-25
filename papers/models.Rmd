@@ -1340,24 +1340,6 @@ for (var in rcs_variables) {
   
   title_label <- ifelse(var %in% names(title_labels), title_labels[[var]], var)
   x_label <- ifelse(var %in% names(var_labels), var_labels[[var]], var)
-
-  # # Male
-  # preds_male <- ggpredict(male_final_model, terms = var)
-  # preds_male$odds <- preds_male$predicted / (1 - preds_male$predicted)
-  # ref_row <- preds_male[which.min(preds_male$x), ]
-  # ref_odds <- ref_row$odds
-  # preds_male$or <- preds_male$odds / ref_odds
-  # preds_male$or_low <- (preds_male$conf.low / (1 - preds_male$conf.low)) / ref_odds
-  # preds_male$or_high <- (preds_male$conf.high / (1 - preds_male$conf.high)) / ref_odds
-  # 
-  # # Female
-  # preds_female <- ggpredict(female_final_model, terms = var)
-  # preds_female$odds <- preds_female$predicted / (1 - preds_female$predicted)
-  # ref_row <- preds_female[which.min(preds_female$x), ]
-  # ref_odds <- ref_row$odds
-  # preds_female$or <- preds_female$odds / ref_odds
-  # preds_female$or_low <- (preds_female$conf.low / (1 - preds_female$conf.low)) / ref_odds
-  # preds_female$or_high <- (preds_female$conf.high / (1 - preds_female$conf.high)) / ref_odds
   
   # Male
   preds_male <- ggpredict(male_final_model, terms = var)
@@ -1386,21 +1368,35 @@ for (var in rcs_variables) {
   preds_female$or_high <- exp(preds_female$log_or + 1.96 * preds_female$se_log_or)
 
   # Male plot
+  max_row_male <- preds_male[which.max(preds_male$x), ]
+  y_max_male <- max(max_row_male$or_high, na.rm = TRUE) * 1.25
+  
   print(ggplot(preds_male, aes(x = x, y = or)) +
     geom_line(color = "black", size = 1.2) +
     geom_ribbon(aes(ymin = or_low, ymax = or_high), fill = "grey", alpha = 0.3) +
+    geom_point(aes(x = max_row_male$x, y = max_row_male$or), color = "red", size = 3) +
+    geom_text(aes(x = max_row_male$x, y = max_row_male$or, label = paste0("OR = ", round(max_row_male$or, 2))), vjust = -1, hjust = 1.2, size = 3.5, color = "red") +
     geom_hline(yintercept = 1, linetype = "dotted") +
     scale_y_log10() +
+    coord_cartesian(ylim = c(min(preds_male$or_low), y_max_male)) +
+    annotation_logticks(sides = "l") +
     labs(title = paste0("Odds ratio by ", title_label, " in men"),
          x = x_label, y = "Adjusted odds ratio") +
     theme_minimal())
 
   # Female plot
+  max_row_female <- preds_female[which.max(preds_female$x), ]
+  y_max_female <- max(max_row_female$or_high, na.rm = TRUE) * 1.25
+  
   print(ggplot(preds_female, aes(x = x, y = or)) +
     geom_line(color = "black", size = 1.2) +
     geom_ribbon(aes(ymin = or_low, ymax = or_high), fill = "grey", alpha = 0.3) +
+    geom_point(aes(x = max_row_female$x, y = max_row_female$or), color = "red", size = 3) +
+    geom_text(aes(x = max_row_female$x, y = max_row_female$or, label = paste0("OR = ", round(max_row_female$or, 2))), vjust = -1, hjust = 1.2, size = 3.5, color = "red") +
     geom_hline(yintercept = 1, linetype = "dotted") +
     scale_y_log10() +
+    coord_cartesian(ylim = c(min(preds_female$or_low), y_max_female)) +
+    annotation_logticks(sides = "l") +
     labs(title = paste0("Odds ratio by ", title_label, " in women"),
          x = x_label, y = "Adjusted odds ratio") +
     theme_minimal())
@@ -2028,75 +2024,4 @@ for (var in age_cont_int_variables) {
     legend_labels = legend_labels
   ))
 }
-```
-
-### Save and export all model objects
-
-```{r}
-# svyglm models
-male_model$model <- NULL
-female_model$model <- NULL
-male_reduced_model$model <- NULL
-female_reduced_model$model <- NULL
-
-male_model$data <- NULL
-female_model$data <- NULL
-male_reduced_model$data <- NULL
-female_reduced_model$data <- NULL
-
-male_model$survey.design <- NULL
-female_model$survey.design <- NULL
-male_reduced_model$survey.design <- NULL
-female_reduced_model$survey.design <- NULL
-
-male_model$y <- NULL
-female_model$y <- NULL
-male_reduced_model$y <- NULL
-female_reduced_model$y <- NULL
-
-male_model$weights <- NULL
-female_model$weights <- NULL
-male_reduced_model$weights <- NULL
-female_reduced_model$weights <- NULL
-
-male_model$prior.weights <- NULL
-female_model$prior.weights <- NULL
-male_reduced_model$prior.weights <- NULL
-female_reduced_model$prior.weights <- NULL
-
-saveRDS(male_model, file = "P:/10619/Dropbox/htnport/vignettes/Model Objects/svyglm/male_model.rds")
-saveRDS(female_model, file = "P:/10619/Dropbox/htnport/vignettes/Model Objects/svyglm/female_model.rds")
-saveRDS(male_reduced_model, file = "P:/10619/Dropbox/htnport/vignettes/Model Objects/svyglm/male_reduced_model.rds")
-saveRDS(female_reduced_model, file = "P:/10619/Dropbox/htnport/vignettes/Model Objects/svyglm/female_reduced_model.rds")
-
-# glm models
-male_final_model$model <- NULL
-female_final_model$model <- NULL
-male_final_reduced_model$model <- NULL
-female_final_reduced_model$model <- NULL
-
-male_final_model$data <- NULL
-female_final_model$data <- NULL
-male_final_reduced_model$data <- NULL
-female_final_reduced_model$data <- NULL
-
-male_final_model$y <- NULL
-female_final_model$y <- NULL
-male_final_reduced_model$y <- NULL
-female_final_reduced_model$y <- NULL
-
-male_final_model$weights <- NULL
-female_final_model$weights <- NULL
-male_final_reduced_model$weights <- NULL
-female_final_reduced_model$weights <- NULL
-
-male_final_model$prior.weights <- NULL
-female_final_model$prior.weights <- NULL
-male_final_reduced_model$prior.weights <- NULL
-female_final_reduced_model$prior.weights <- NULL
-
-saveRDS(male_final_model, file = "P:/10619/Dropbox/htnport/vignettes/Model Objects/glm/male_final_model.rds")
-saveRDS(female_final_model, file = "P:/10619/Dropbox/htnport/vignettes/Model Objects/glm/female_final_model.rds")
-saveRDS(male_final_reduced_model, file = "P:/10619/Dropbox/htnport/vignettes/Model Objects/glm/male_final_reduced_model.rds")
-saveRDS(female_final_reduced_model, file = "P:/10619/Dropbox/htnport/vignettes/Model Objects/glm/female_final_reduced_model.rds")
 ```

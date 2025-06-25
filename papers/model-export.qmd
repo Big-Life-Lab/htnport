@@ -1,5 +1,5 @@
 ---
-title: "model-export"
+title: "Exporting HTNPoRT Models"
 format: html
 editor: visual
 ---
@@ -10,12 +10,12 @@ This guide provides a step-by-step approach for safely exporting survey-weighted
 
 **Key Steps:**
 
-1. Strip all individual-level data from the model object
-2. Preserve essential statistical components (coefficients, variance-covariance matrix)
-3. Extract and save transformation parameters (centering, scaling, spline knots)
-4. Document survey design metadata without individual identifiers
-5. Validate the export before transfer
-6. Implement recalibration methods in the new environment
+1.  Strip all individual-level data from the model object
+2.  Preserve essential statistical components (coefficients, variance-covariance matrix)
+3.  Extract and save transformation parameters (centering, scaling, spline knots)
+4.  Document survey design metadata without individual identifiers
+5.  Validate the export before transfer
+6.  Implement recalibration methods in the new environment
 
 ## Understanding a svyglm object
 
@@ -23,19 +23,19 @@ A `svyglm` object inherits from both the `svyglm` and `glm` classes, containing 
 
 **Standard GLM components:**
 
-- `coefficients`: Model parameter estimates
-- `residuals`: Individual-level residuals (MUST BE REMOVED)
-- `fitted.values`: Individual predictions (MUST BE REMOVED)
-- `model`: Original data frame (MUST BE REMOVED)
-- `family`: Distribution and link function (SAFE TO KEEP)
-- `formula`: Model specification (SAFE TO KEEP)
-- `qr`: QR decomposition of design matrix (REMOVE - not needed for prediction)
+-   `coefficients`: Model parameter estimates
+-   `residuals`: Individual-level residuals (MUST BE REMOVED)
+-   `fitted.values`: Individual predictions (MUST BE REMOVED)
+-   `model`: Original data frame (MUST BE REMOVED)
+-   `family`: Distribution and link function (SAFE TO KEEP)
+-   `formula`: Model specification (SAFE TO KEEP)
+-   `qr`: QR decomposition of design matrix (REMOVE - not needed for prediction)
 
 **Survey-specific components:**
 
-- `survey.design`: Contains survey weights, strata, clusters, and THE ORIGINAL DATA (MUST BE REMOVED)
-- `vcov`: Variance-covariance matrix using sandwich estimators (CRITICAL TO KEEP)
-- `df.residual`: Degrees of freedom accounting for survey design (KEEP)
+-   `survey.design`: Contains survey weights, strata, clusters, and THE ORIGINAL DATA (MUST BE REMOVED)
+-   `vcov`: Variance-covariance matrix using sandwich estimators (CRITICAL TO KEEP)
+-   `df.residual`: Degrees of freedom accounting for survey design (KEEP)
 
 The embedded survey design object poses the primary privacy risk as it contains all individual-level data.
 
@@ -101,14 +101,21 @@ When predictors are centered and scaled, you must preserve these transformations
 extract_centering_info <- function(model, original_data_summary) {
   centering_info <- list()
   
-  # For each predictor in the model
-  predictors <- all.vars(formula(model))[-1]  # Exclude response
+  # Extract predictor names from model formula (excluding response)
+  predictors <- all.vars(formula(model))[-1]
   
-  for (pred in predictors) {
-    if (pred %in% names(original_data_summary)) {
-      centering_info[[pred]] <- list(
-        center = original_data_summary[[pred]]$mean
-      )
+  for (var in predictors) {
+    # Match all summary keys that start with var
+    matching_keys <- grep(paste0("^", var), names(original_data_summary), value = TRUE)
+    
+    if (length(matching_keys) > 1) {
+      centering_info[[var]] <- list()
+      for (i in seq_along(matching_keys)) {
+        mean_val <- original_data_summary[[matching_keys[i]]]$mean
+        centering_info[[var]][[paste0("center", i)]] <- mean_val
+      }
+    } else if (var %in% names(original_data_summary)) {
+      centering_info[[var]] <- list(center = original_data_summary[[var]]$mean)
     }
   }
   
@@ -122,33 +129,31 @@ RCS terms require special handling because knot locations must be preserved:
 
 ```{r}
 extract_spline_info <- function(model) {
+  if (is.null(model$survey.design$variables)) {
+    stop("Model must retain survey.design$variables for this to work.")
+  }
+
   spline_info <- list()
+  formula_terms <- all.vars(formula(model))
+
+  # Extract terms that look like rcs(var, k)
+  rcs_terms <- grep("rcs\\(", deparse(model$call$formula), value = TRUE)
+  rcs_vars <- unlist(regmatches(rcs_terms, gregexpr("rcs\\([^\\)]+\\)", rcs_terms)))
   
-  # Get the model matrix to access attributes
-  mm <- model.matrix(model)
-  
-  # Look for spline-related attributes
-  attrs <- attributes(mm)
-  
-  # Common spline packages store knots differently
-  # For rms::rcs
-  if ("parms" %in% names(attrs)) {
-    spline_info$parms <- attrs$parms
-  }
-  
-  # For splines::ns
-  if ("knots" %in% names(attrs)) {
-    spline_info$knots <- attrs$knots
-  }
-  
-  # Extract from individual columns
-  for (col in colnames(mm)) {
-    col_attrs <- attributes(mm[,col])
-    if (!is.null(col_attrs$knots)) {
-      spline_info[[col]] <- list(knots = col_attrs$knots)
+  # Parse each rcs() call
+  for (rcs_call in rcs_vars) {
+    pieces <- gsub("rcs\\(([^,]+),\\s*([0-9]+)\\)", "\\1;\\2", rcs_call)
+    split <- unlist(strsplit(pieces, ";"))
+    varname <- trimws(split[1])
+    nk <- as.numeric(split[2])
+
+    # Get knot locations
+    if (varname %in% names(model$survey.design$variables)) {
+      var_data <- model$survey.design$variables[[varname]]
+      spline_info[[varname]] <- Hmisc::rcspline.eval(var_data, nk = nk, knots.only = TRUE)
     }
   }
-  
+
   return(spline_info)
 }
 ```
@@ -158,17 +163,21 @@ extract_spline_info <- function(model) {
 Preserve factor levels and contrasts:
 
 ```{r}
-extract_factor_info <- function(model) {
+extract_factor_info <- function(model, glm_model = NULL) {
   factor_info <- list()
   
   # Get factor levels from xlevels
-  if (!is.null(model$xlevels)) {
+  if (length(model$xlevels) > 0) {
     factor_info$xlevels <- model$xlevels
+  } else if (!is.null(glm_model) && length(glm_model$xlevels) > 0) {
+    factor_info$xlevels <- glm_model$xlevels
   }
   
   # Get contrast information
-  if (!is.null(model$contrasts)) {
+  if (length(model$contrasts) > 0) {
     factor_info$contrasts <- model$contrasts
+  } else if (!is.null(glm_model) && length(glm_model$contrasts) > 0) {
+    factor_info$contrasts <- glm_model$contrasts
   }
   
   return(factor_info)
@@ -180,7 +189,7 @@ extract_factor_info <- function(model) {
 Here's a comprehensive function that combines all the steps:
 
 ```{r}
-create_safe_export <- function(svyglm_model, data_summary = NULL) {
+create_safe_export <- function(svyglm_model, data_summary = NULL, glm_model = NULL) {
   
   # First, strip the model
   clean_model <- strip_svyglm(svyglm_model)
@@ -208,10 +217,10 @@ create_safe_export <- function(svyglm_model, data_summary = NULL) {
     } else NULL,
     
     spline_info = extract_spline_info(svyglm_model),
-    factor_info = extract_factor_info(svyglm_model),
+    factor_info = extract_factor_info(svyglm_model, glm_model),
     
     # For recalibration
-    original_prevalence = if (svyglm_model$family$family == "binomial") {
+    original_prevalence = if (svyglm_model$family$family == "quasibinomial") {
       # This should be calculated in secure environment
       data_summary$outcome_prevalence
     } else NULL
@@ -411,7 +420,11 @@ In secure environment:
 library(survey)
 library(rms)
 
+source("R/diabetes.R")
+my_variable_details <- read.csv("P:/10619/Dropbox/htnport/worksheets/variable-details.csv")
+
 # 1. Fit your models
+# svyglm
 weighted_male$degf <- 68
 male_model <- survey::svyglm(highbp14090_adj ~ rcs(clc_age, 4) + married + edudr04 + working + gendmhi + gen_025 + gen_045 + fmh_15 + rcs(hwmdbmi, 3) + low_drink_score1 + rcs(minperweek, 3) + smoke + slp_11 + totalfv + diabx + ckd + rcs(clc_age, 4)*gen_045 + rcs(clc_age, 4)*rcs(hwmdbmi, 3) + rcs(clc_age, 4)*rcs(minperweek, 3) + rcs(clc_age, 4)*smoke + rcs(clc_age, 4)*slp_11 + rcs(clc_age, 4)*diabx + rcs(clc_age, 4)*ckd, design = weighted_male, family = quasibinomial())
 
@@ -423,6 +436,23 @@ male_reduced_model <- survey::svyglm(highbp14090_adj ~ rcs(clc_age, 4) + fmh_15 
 
 weighted_female$degf <- 68
 female_reduced_model <- survey::svyglm(highbp14090_adj ~ rcs(clc_age, 4) + fmh_15 + rcs(clc_age, 4)*rcs(hwmdbmi, 3) + rcs(clc_age, 4)*diabx, design = weighted_female, family = quasibinomial())
+
+# glm
+male_data <- dplyr::filter(imputed_cycles1to6_data, clc_sex == 1)
+female_data <- dplyr::filter(imputed_cycles1to6_data, clc_sex == 2)
+
+male_data <- male_data %>%
+  dplyr::mutate(wgt_full = wgt_full / mean(wgt_full))
+female_data <- female_data %>%
+  dplyr::mutate(wgt_full = wgt_full / mean(wgt_full))
+
+male_final_model <- glm(highbp14090_adj ~ rcs(clc_age, 4) + married + edudr04 + working + gendmhi + gen_025 + gen_045 + fmh_15 + rcs(hwmdbmi, 3) + low_drink_score1 + rcs(minperweek, 3) + smoke + slp_11 + totalfv + diabx + ckd + rcs(clc_age, 4)*gen_045 + rcs(clc_age, 4)*rcs(hwmdbmi, 3) + rcs(clc_age, 4)*rcs(minperweek, 3) + rcs(clc_age, 4)*smoke + rcs(clc_age, 4)*slp_11 + rcs(clc_age, 4)*diabx + rcs(clc_age, 4)*ckd, data = male_data, family = binomial(), weights = wgt_full)
+
+female_final_model <- glm(highbp14090_adj ~ rcs(clc_age, 4) + married + edudr04 + working + gendmhi + gen_025 + gen_045 + fmh_15 + rcs(hwmdbmi, 3) + low_drink_score1 + rcs(minperweek, 3) + smoke + slp_11 + totalfv + diabx + ckd + rcs(clc_age, 4)*gen_045 + rcs(clc_age, 4)*rcs(hwmdbmi, 3) + rcs(clc_age, 4)*rcs(minperweek, 3) + rcs(clc_age, 4)*smoke + rcs(clc_age, 4)*slp_11 + rcs(clc_age, 4)*diabx + rcs(clc_age, 4)*ckd, data = female_data, family = binomial(), weights = wgt_full)
+
+male_final_reduced_model <- glm(highbp14090_adj ~ rcs(clc_age, 4) + fmh_15 + rcs(clc_age, 4)*rcs(hwmdbmi, 3) + rcs(clc_age, 4)*diabx, family = quasibinomial(), data = male_data, weights = wgt_full)
+
+female_final_reduced_model <- glm(highbp14090_adj ~ rcs(clc_age, 4) + fmh_15 + rcs(clc_age, 4)*rcs(hwmdbmi, 3) + rcs(clc_age, 4)*diabx, family = quasibinomial(), data = female_data, weights = wgt_full)
 
 # 2. Create data summary (without individual values)
 male_data_summary <- list(
@@ -437,9 +467,9 @@ male_data_summary <- list(
   gen_045 = list(mean = 0.3499),
   fmh_15 = list(mean = 0.5248),
   hwmdbmi = list(mean = 27.66777),
-  low_drink_score2 = list(mean = 0.778),
-  low_drink_score3 = list(mean = 0.0456),
-  low_drink_score4 = list(mean = 0.0722),
+  low_drink_score1_2 = list(mean = 0.778),
+  low_drink_score1_3 = list(mean = 0.0456),
+  low_drink_score1_4 = list(mean = 0.0722),
   minperweek = list(mean = 147.6497),
   smoke_1 = list(mean = 0.3087),
   smoke_2 = list(mean = 0.2277),
@@ -462,9 +492,9 @@ female_data_summary <- list(
   gen_045 = list(mean = 0.3427),
   fmh_15 = list(mean = 0.5736),
   hwmdbmi = list(mean = 27.09638),
-  low_drink_score2 = list(mean = 0.7532),
-  low_drink_score3 = list(mean = 0.0385),
-  low_drink_score4 = list(mean = 0.032),
+  low_drink_score1_2 = list(mean = 0.7532),
+  low_drink_score1_3 = list(mean = 0.0385),
+  low_drink_score1_4 = list(mean = 0.032),
   minperweek = list(mean = 126.2692),
   smoke_1 = list(mean = 0.2722),
   smoke_2 = list(mean = 0.1652),
@@ -476,10 +506,10 @@ female_data_summary <- list(
 )
 
 # 3. Create safe export
-male_safe_model <- create_safe_export(male_model, male_data_summary)
-female_safe_model <- create_safe_export(female_model, female_data_summary)
-male_safe_reduced_model <- create_safe_export(male_reduced_model, male_data_summary)
-female_safe_reduced_model <- create_safe_export(female_reduced_model, female_data_summary)
+male_safe_model <- create_safe_export(male_model, male_data_summary, glm_model = male_final_model)
+female_safe_model <- create_safe_export(female_model, female_data_summary, glm_model = female_final_model)
+male_safe_reduced_model <- create_safe_export(male_reduced_model, male_data_summary, glm_model = male_final_reduced_model)
+female_safe_reduced_model <- create_safe_export(female_reduced_model, female_data_summary, glm_model = female_final_reduced_model)
 
 # 4. Validate before saving
 set.seed(123)
@@ -553,16 +583,16 @@ if (!is.null(new_female_predictions)) {
 
 ## Summary of key considerations
 
-1. **Privacy first**: Never include individual-level data in exports. This includes residuals, fitted values, and the original data frame.
-    
-2. **Preserve statistical components**: The variance-covariance matrix is critical for uncertainty quantification and recalibration. Always include it.
-    
-3. **Document transformations**: Centering, scaling, and spline knots must be explicitly preserved as they're not always recoverable from the model object.
-    
-4. **Plan for recalibration**: Include prevalence information and design metadata to support various recalibration approaches.
-    
-5. **Validate thoroughly**: Check both that individual data is removed AND that predictions remain accurate.
-    
-6. **Consider RCS complexity**: Spline terms require extra care - knot locations and any centering must be preserved together.
+1.  **Privacy first**: Never include individual-level data in exports. This includes residuals, fitted values, and the original data frame.
+
+2.  **Preserve statistical components**: The variance-covariance matrix is critical for uncertainty quantification and recalibration. Always include it.
+
+3.  **Document transformations**: Centering, scaling, and spline knots must be explicitly preserved as they're not always recoverable from the model object.
+
+4.  **Plan for recalibration**: Include prevalence information and design metadata to support various recalibration approaches.
+
+5.  **Validate thoroughly**: Check both that individual data is removed AND that predictions remain accurate.
+
+6.  **Consider RCS complexity**: Spline terms require extra care - knot locations and any centering must be preserved together.
 
 This approach provides a secure, validated method for model export that maintains predictive accuracy while protecting individual privacy.
