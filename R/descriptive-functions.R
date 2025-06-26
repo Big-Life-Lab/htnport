@@ -214,5 +214,5 @@ create_weighted_density_plots <- function(
 
 # Function to get weighted quantiles
 get_weighted_quantiles <- function(variable, design, probs) {
-  svyquantile(as.formula(paste0("~", variable)), design = design, quantiles = probs, na.rm = TRUE)
+  survey::svyquantile(as.formula(paste0("~", variable)), design = design, quantiles = probs, na.rm = TRUE)
 }

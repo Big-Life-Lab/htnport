@@ -1,0 +1,35 @@
+default:
+  variables: !expr file.path(getwd(), "worksheets/variables.csv")
+  variable_details: !expr file.path(getwd(), "worksheets/variable-details.csv")
+  modules: NULL
+  data:
+    cycle1: !expr file.path(getwd(), "data/cycle1.dta")
+    cycle2: !expr file.path(getwd(), "data/cycle2.dta")
+    cycle3: !expr file.path(getwd(), "data/cycle3.dta")
+    cycle4: !expr file.path(getwd(), "data/cycle4.dta")
+    cycle5: !expr file.path(getwd(), "data/cycle5.dta")
+    cycle6: !expr file.path(getwd(), "data/cycle6.dta")
+    cycle1-meds: !expr file.path(getwd(), "data/cycle1-meds.sas7bdat")
+    cycle2-meds: !expr file.path(getwd(), "data/cycle2-meds.sas7bdat")
+    cycle3-meds: !expr file.path(getwd(), "data/cycle3-meds.dta")
+    cycle4-meds: !expr file.path(getwd(), "data/cycle4-meds.dta")
+    cycle5-meds: !expr file.path(getwd(), "data/cycle5-meds.dta")
+    cycle6-meds: !expr file.path(getwd(), "data/cycle6-meds.dta")
+  truncate_percentile: 99.5
+  outcome_info:
+    min: 0
+    max: 1
+prod:
+  data:
+    cycle1: !expr file.path(getwd(), "data/cycle1.dta")
+    cycle2: !expr file.path(getwd(), "data/cycle2.dta")
+    cycle3: !expr file.path(getwd(), "data/cycle3.dta")
+    cycle4: !expr file.path(getwd(), "data/cycle4.dta")
+    cycle5: !expr file.path(getwd(), "data/cycle5.dta")
+    cycle6: !expr file.path(getwd(), "data/cycle6.dta")
+    cycle1-meds: !expr file.path(getwd(), "data/cycle1-meds.sas7bdat")
+    cycle2-meds: !expr file.path(getwd(), "data/cycle2-meds.sas7bdat")
+    cycle3-meds: !expr file.path(getwd(), "data/cycle3-meds.dta")
+    cycle4-meds: !expr file.path(getwd(), "data/cycle4-meds.dta")
+    cycle5-meds: !expr file.path(getwd(), "data/cycle5-meds.dta")
+    cycle6-meds: !expr file.path(getwd(), "data/cycle6-meds.dta")

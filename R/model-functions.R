@@ -304,7 +304,7 @@ calculate_shap_or_ci <- function(shap_values_df, predictor) {
   # Case 1: Continuous variable with predefined cutoffs
   if (predictor %in% names(cutoffs)) {
     shap_filtered <- shap_filtered %>%
-      mutate(
+      dplyr::mutate(
         shap_category = cut(as.numeric(as.character(sub(".*=", "", feature.value))),
                             breaks = cutoffs[[predictor]],
                             labels = FALSE, include.lowest = TRUE, right = FALSE)
@@ -378,6 +378,7 @@ calculate_shap_or_ci <- function(shap_values_df, predictor) {
 }
 
 # Function to plot ORs for age interactions
+library(dplyr)
 library(ggplot2)
 library(ggeffects)
 library(scales)

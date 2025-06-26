@@ -421,7 +421,8 @@ library(survey)
 library(rms)
 
 source("R/diabetes.R")
-my_variable_details <- read.csv("P:/10619/Dropbox/htnport/worksheets/variable-details.csv")
+config <- config::get()
+my_variable_details <- read.csv(config$variable_details)
 
 # 1. Fit your models
 # svyglm
