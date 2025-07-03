@@ -421,8 +421,7 @@ library(survey)
 library(rms)
 
 source("R/diabetes.R")
-config <- config::get()
-my_variable_details <- read.csv(config$variable_details)
+my_variable_details <- read.csv("P:/10619/Dropbox/htnport/worksheets/variable-details.csv")
 
 # 1. Fit your models
 # svyglm
@@ -542,7 +541,12 @@ new_data$fmh_15  <- factor(new_data$fmh_15, levels = c(0, 1))
 validate_export(male_reduced_model, male_safe_reduced_model, new_data)
 validate_export(female_reduced_model, female_safe_reduced_model, new_data)
 
-# 5. Save the object
+# 5. Remove large formula components and save objects
+male_safe_model$formula <- NULL
+female_safe_model$formula <- NULL
+male_safe_reduced_model$formula <- NULL
+female_safe_reduced_model$formula <- NULL
+
 saveRDS(male_safe_model, file = "P:/10619/Dropbox/htnport/models/svyglm/male_model.rds")
 saveRDS(female_safe_model, file = "P:/10619/Dropbox/htnport/models/svyglm/female_model.rds")
 saveRDS(male_safe_reduced_model, file = "P:/10619/Dropbox/htnport/models/svyglm/male_reduced_model.rds")
@@ -552,9 +556,12 @@ saveRDS(female_safe_reduced_model, file = "P:/10619/Dropbox/htnport/models/svygl
 In new environment:
 
 ```{r}
-# 6. Load and use
+# 6. Load, restore formulas, and use
 male_safe_reduced_model <- readRDS("P:/10619/Dropbox/htnport/models/svyglm/male_reduced_model.rds")
 female_safe_reduced_model <- readRDS("P:/10619/Dropbox/htnport/models/svyglm/female_reduced_model.rds")
+
+male_safe_reduced_model$formula <- highbp14090_adj ~ rcs(clc_age, 4) + fmh_15 + rcs(clc_age, 4)*rcs(hwmdbmi, 3) + rcs(clc_age, 4)*diabx
+female_safe_reduced_model$formula <- highbp14090_adj ~ rcs(clc_age, 4) + fmh_15 + rcs(clc_age, 4)*rcs(hwmdbmi, 3) + rcs(clc_age, 4)*diabx
 
 # 7. Make predictions
 new_male_predictions <- predict(male_safe_reduced_model, new_data, type = "response")

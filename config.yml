@@ -15,6 +15,7 @@ default:
     cycle4-meds: !expr file.path(getwd(), "data/cycle4-meds.dta")
     cycle5-meds: !expr file.path(getwd(), "data/cycle5-meds.dta")
     cycle6-meds: !expr file.path(getwd(), "data/cycle6-meds.dta")
+    tracey: !expr file.path(getwd(), "data/From Tracy/CHMS_AM_validdays_1to3.sas7bdat")
   truncate_percentile: 99.5
   outcome_info:
     min: 0

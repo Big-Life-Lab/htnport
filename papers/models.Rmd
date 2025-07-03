@@ -42,23 +42,22 @@ source("R/model-functions.R")
 source("R/calibration.R")
 
 # Load metadata
-config <- config::get()
-my_variables <- read.csv(config$variables)
-my_variable_details <- read.csv(config$variable_details)
+my_variables <- read.csv("P:/10619/Dropbox/htnport/worksheets/variables.csv")
+my_variable_details <- read.csv("P:/10619/Dropbox/htnport/worksheets/variable-details.csv")
 ```
 
 ### Load medication data and recode medication variables
 
 ```{r, include = FALSE, warning = FALSE, message = FALSE}
 # Load medication data
-cycle1_meds <- read_sas(config$data$`cycle1-meds`)
+cycle1_meds <- read_sas("data/cycle1/cycle1-meds.sas7bdat")
 names(cycle1_meds) <- tolower(names(cycle1_meds)) 
-cycle2_meds <- read_sas(config$data$`cycle2-meds`)
-cycle3_meds <- read_stata(config$data$`cycle3-meds`)
-cycle4_meds <- read_stata(config$data$`cycle4-meds`)
+cycle2_meds <- read_sas("data/cycle2/cycle2-meds.sas7bdat")
+cycle3_meds <- read_stata("data/cycle3/cycle3-meds.dta")
+cycle4_meds <- read_stata("data/cycle4/cycle4-meds.dta")
 names(cycle4_meds) <- tolower(names(cycle4_meds)) 
-cycle5_meds <- read_stata(config$data$`cycle5-meds`)
-cycle6_meds <- read_stata(config$data$`cycle6-meds`)
+cycle5_meds <- read_stata("data/cycle5/cycle5-meds.dta")
+cycle6_meds <- read_stata("data/cycle6/cycle6-meds.dta")
 names(cycle6_meds) <- tolower(names(cycle6_meds)) 
 
 # Recode medication variables from medication data
@@ -74,12 +73,12 @@ cycle6_medication_data <- recodeflow::rec_with_table(cycle6_meds, c("clinicid", 
 
 ```{r, include = FALSE, warning = FALSE, message = FALSE}
 # Load overall cycle data
-cycle1 <- read_stata(config$data$cycle1)
-cycle2 <- read_stata(config$data$cycle2)
-cycle3 <- read_stata(config$data$cycle3)
-cycle4 <- read_stata(config$data$cycle4)
-cycle5 <- read_stata(config$data$cycle5)
-cycle6 <- read_stata(config$data$cycle6)
+cycle1 <- read_stata("data/cycle1/cycle1.dta")
+cycle2 <- read_stata("data/cycle2/cycle2.dta")
+cycle3 <- read_stata("data/cycle3/cycle3.dta")
+cycle4 <- read_stata("data/cycle4/cycle4.dta")
+cycle5 <- read_stata("data/cycle5/cycle5.dta")
+cycle6 <- read_stata("data/cycle6/cycle6.dta")
 names(cycle6) <- tolower(names(cycle6)) 
 
 # Assign cycle variable to each cycle for imputation purposes
@@ -124,7 +123,7 @@ cycles1to6_data <- cchsflow::merge_rec_data(cycle1_data, cycle2_data, cycle3_dat
 cycles1to6_data <- dplyr::filter(cycles1to6_data, insample == 1)
 
 # Load and merge extra accelerometer data to sample data
-tracey <- read_sas("data/From Tracy/CHMS_AM_validdays_1to3.sas7bdat")
+tracey <- read_sas(config$data$tracey)
 tracey$clinicid <-tracey$CLINICID
 tracey$mvpa_min <- tracey$avg_mvpa
 tracey$minperweek <- tracey$mvpa_min * 7
@@ -1379,7 +1378,6 @@ for (var in rcs_variables) {
     geom_text(aes(x = max_row_male$x, y = max_row_male$or, label = paste0("OR = ", round(max_row_male$or, 2))), vjust = -1, hjust = 1.2, size = 3.5, color = "red") +
     geom_hline(yintercept = 1, linetype = "dotted") +
     scale_y_log10() +
-    coord_cartesian(ylim = c(min(preds_male$or_low), y_max_male)) +
     annotation_logticks(sides = "l") +
     labs(title = paste0("Odds ratio by ", title_label, " in men"),
          x = x_label, y = "Adjusted odds ratio") +
@@ -1396,7 +1394,6 @@ for (var in rcs_variables) {
     geom_text(aes(x = max_row_female$x, y = max_row_female$or, label = paste0("OR = ", round(max_row_female$or, 2))), vjust = -1, hjust = 1.2, size = 3.5, color = "red") +
     geom_hline(yintercept = 1, linetype = "dotted") +
     scale_y_log10() +
-    coord_cartesian(ylim = c(min(preds_female$or_low), y_max_female)) +
     annotation_logticks(sides = "l") +
     labs(title = paste0("Odds ratio by ", title_label, " in women"),
          x = x_label, y = "Adjusted odds ratio") +

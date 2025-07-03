@@ -24,11 +24,11 @@ This project can only be run at the uOttawa Research Data Centre (RDC) managed b
     2.  Keep medications for each CHMS cycle a separate Stata file called cyclex-meds.dta, though those of cycles 1-2 will be SAS files (cyclex-meds.sas7bdat).
     3.  Put names() of cycle 6 and medications of cycles 1, 4, and 6 as lower case to allow proper recoding with rec_with_table().
     4.  Load data using read_stata() and read_sas().
-5. Follow workflow of one of the files in the papers folder to run specific code.
+5. Follow workflow of one of the files in the papers folder to run specific code and/or reproduce results.
 
 ## Folders
 
 - **R**: R functions necessary for running HTNPoRT descriptives, derivation, validation, and presentation.
 - **models**: Exported svyglm and glm model objects of HTNPoRT.
-- **papers**: Papers written for this project.
+- **papers**: Papers written for this project which include reproducible results.
 - **worksheets**: variables.csv and variable-details.csv files detailing which variables are transformed across CHMS for HTNPoRT analyses and how they are recoded, respectively.

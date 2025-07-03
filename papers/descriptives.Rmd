@@ -121,7 +121,7 @@ cycles1to6_data <- cchsflow::merge_rec_data(cycle1_data, cycle2_data, cycle3_dat
 cycles1to6_data <- dplyr::filter(cycles1to6_data, insample == 1)
 
 # Load and merge extra accelerometer data to sample data
-tracey <- read_sas("data/From Tracy/CHMS_AM_validdays_1to3.sas7bdat")
+tracey <- read_sas(config$data$tracey)
 tracey$clinicid <-tracey$CLINICID
 tracey$mvpa_min <- tracey$avg_mvpa
 tracey$minperweek <- tracey$mvpa_min * 7

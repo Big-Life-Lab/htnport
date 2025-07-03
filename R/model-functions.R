@@ -304,7 +304,7 @@ calculate_shap_or_ci <- function(shap_values_df, predictor) {
   # Case 1: Continuous variable with predefined cutoffs
   if (predictor %in% names(cutoffs)) {
     shap_filtered <- shap_filtered %>%
-      dplyr::mutate(
+      mutate(
         shap_category = cut(as.numeric(as.character(sub(".*=", "", feature.value))),
                             breaks = cutoffs[[predictor]],
                             labels = FALSE, include.lowest = TRUE, right = FALSE)
@@ -378,11 +378,10 @@ calculate_shap_or_ci <- function(shap_values_df, predictor) {
 }
 
 # Function to plot ORs for age interactions
-library(dplyr)
 library(ggplot2)
 library(ggeffects)
 library(scales)
-# library(ggrepel)
+library(ggrepel)
 
 plot_age_int_or <- function(model, var, var_type = c("categorical", "continuous"),
                             design = NULL, sex_label = "Group",
@@ -418,13 +417,10 @@ plot_age_int_or <- function(model, var, var_type = c("categorical", "continuous"
     p <- ggplot(preds, aes(x = x, y = or, color = group, fill = group)) +
       geom_line(size = 1.2) +
       geom_point(data = max_rows, aes(x = x, y = or), color = "red", size = 3, inherit.aes = FALSE) +
-      geom_text(data = max_rows, aes(x = x, y = or, label = paste0("OR = ", round(or, 2))),
-                vjust = -1, hjust = 1.2, size = 3.5, color = "red", inherit.aes = FALSE) +
-      # geom_text_repel(data = max_rows, aes(x = x, y = or, label = paste0("OR = ", round(or, 2))),
-      #                          size = 3.5, color = "red", inherit.aes = FALSE, min.segment.length = 0) +
+      geom_text_repel(data = max_rows, aes(x = x, y = or, label = paste0("OR = ", round(or, 2))),
+                                size = 3.5, color = "red", inherit.aes = FALSE, min.segment.length = 0) +
       geom_hline(yintercept = 1, linetype = "dotted") +
       scale_y_log10() +
-      coord_cartesian(ylim = c(min(preds$or_low), y_max)) +
       annotation_logticks(sides = "l") +
       labs(
         title = paste0("Odds ratio by age for ", title_label, " in ", sex_label),
@@ -476,13 +472,10 @@ plot_age_int_or <- function(model, var, var_type = c("categorical", "continuous"
     p <- ggplot(preds, aes(x = x, y = or, color = group, fill = group)) +
       geom_line(size = 1.2) +
       geom_point(data = max_rows, aes(x = x, y = or), color = "red", size = 3, inherit.aes = FALSE) +
-      geom_text(data = max_rows, aes(x = x, y = or, label = paste0("OR = ", round(or, 2))),
-                vjust = -1, hjust = 1.2, size = 3.5, color = "red", inherit.aes = FALSE) +
-      # geom_text_repel(data = max_rows, aes(x = x, y = or, label = paste0("OR = ", round(or, 2))),
-      #                          size = 3.5, color = "red", inherit.aes = FALSE, min.segment.length = 0) +
+      geom_text_repel(data = max_rows, aes(x = x, y = or, label = paste0("OR = ", round(or, 2))),
+                               size = 3.5, color = "red", inherit.aes = FALSE, min.segment.length = 0) +
       geom_hline(yintercept = 1, linetype = "dotted") +
       scale_y_log10() +
-      coord_cartesian(ylim = c(min(preds$or_low), y_max)) +
       annotation_logticks(sides = "l") +
       labs(
         title = paste0("Odds ratio by age for ", title_label, " in ", sex_label),

@@ -7,6 +7,11 @@ Description: The analysis for the HTNPoRT project
 Depends:
     R (>= 4.4.1)
 Imports:
+    rmarkdown,
+    dplyr,
+    magrittr,
+    recodeflow,
+    cchsflow,
     haven,
     logger,
     mice,
@@ -16,14 +21,18 @@ Imports:
     gtsummary,
     flextable,
     rms,
+    Hmisc,
     pROC,
     CalibrationCurves,
+    cowplot,
     plyr,
     tidyr,
     iml,
     ggplot2,
     ggeffects,
-    scales
+    ggrepel,
+    scales,
+    ResourceSelection
 License: MIT + file LICENSE
 URL: https://github.com/Big-Life-Lab/htnport
 Encoding: UTF-8
