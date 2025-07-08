@@ -20,7 +20,7 @@ This project can only be run at the uOttawa Research Data Centre (RDC) managed b
 2.  Place the directory to the above folder in .libPaths() and use library() to load dependencies afterwards.
 3.  Load functions and worksheets using source() and read.csv(), respectively.
 4.  Create data folder in htnport and load CHMS data from there.
-    1.  Ensure all required components of each CHMS cycle (minus medications) are in one Stata file called cyclex.dta.
+    1.  Ensure all required components of each CHMS cycle (minus medications) are in one Stata file called cyclex.dta. Combined bootstrap weights for all six cycles are located in cycles1to6_bsw.dta.
     2.  Keep medications for each CHMS cycle a separate Stata file called cyclex-meds.dta, though those of cycles 1-2 will be SAS files (cyclex-meds.sas7bdat).
     3.  Put names() of cycle 6 and medications of cycles 1, 4, and 6 as lower case to allow proper recoding with rec_with_table().
     4.  Load data using read_stata() and read_sas().
