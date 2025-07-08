@@ -421,7 +421,8 @@ library(survey)
 library(rms)
 
 source("R/diabetes.R")
-my_variable_details <- read.csv("P:/10619/Dropbox/htnport/worksheets/variable-details.csv")
+config <- config::get()
+my_variable_details <- read.csv(config$variable_details)
 
 # 1. Fit your models
 # svyglm
@@ -438,21 +439,10 @@ weighted_female$degf <- 68
 female_reduced_model <- survey::svyglm(highbp14090_adj ~ rcs(clc_age, 4) + fmh_15 + rcs(clc_age, 4)*rcs(hwmdbmi, 3) + rcs(clc_age, 4)*diabx, design = weighted_female, family = quasibinomial())
 
 # glm
-male_data <- dplyr::filter(imputed_cycles1to6_data, clc_sex == 1)
-female_data <- dplyr::filter(imputed_cycles1to6_data, clc_sex == 2)
-
-male_data <- male_data %>%
-  dplyr::mutate(wgt_full = wgt_full / mean(wgt_full))
-female_data <- female_data %>%
-  dplyr::mutate(wgt_full = wgt_full / mean(wgt_full))
-
-male_final_model <- glm(highbp14090_adj ~ rcs(clc_age, 4) + married + edudr04 + working + gendmhi + gen_025 + gen_045 + fmh_15 + rcs(hwmdbmi, 3) + low_drink_score1 + rcs(minperweek, 3) + smoke + slp_11 + totalfv + diabx + ckd + rcs(clc_age, 4)*gen_045 + rcs(clc_age, 4)*rcs(hwmdbmi, 3) + rcs(clc_age, 4)*rcs(minperweek, 3) + rcs(clc_age, 4)*smoke + rcs(clc_age, 4)*slp_11 + rcs(clc_age, 4)*diabx + rcs(clc_age, 4)*ckd, data = male_data, family = binomial(), weights = wgt_full)
-
-female_final_model <- glm(highbp14090_adj ~ rcs(clc_age, 4) + married + edudr04 + working + gendmhi + gen_025 + gen_045 + fmh_15 + rcs(hwmdbmi, 3) + low_drink_score1 + rcs(minperweek, 3) + smoke + slp_11 + totalfv + diabx + ckd + rcs(clc_age, 4)*gen_045 + rcs(clc_age, 4)*rcs(hwmdbmi, 3) + rcs(clc_age, 4)*rcs(minperweek, 3) + rcs(clc_age, 4)*smoke + rcs(clc_age, 4)*slp_11 + rcs(clc_age, 4)*diabx + rcs(clc_age, 4)*ckd, data = female_data, family = binomial(), weights = wgt_full)
-
-male_final_reduced_model <- glm(highbp14090_adj ~ rcs(clc_age, 4) + fmh_15 + rcs(clc_age, 4)*rcs(hwmdbmi, 3) + rcs(clc_age, 4)*diabx, family = quasibinomial(), data = male_data, weights = wgt_full)
-
-female_final_reduced_model <- glm(highbp14090_adj ~ rcs(clc_age, 4) + fmh_15 + rcs(clc_age, 4)*rcs(hwmdbmi, 3) + rcs(clc_age, 4)*diabx, family = quasibinomial(), data = female_data, weights = wgt_full)
+male_final_model <- config$models$male_final_model
+female_final_model <- config$models$female_final_model
+male_final_reduced_model <- config$models$male_final_reduced_model
+female_final_reduced_model <- config$models$female_final_reduced_model
 
 # 2. Create data summary (without individual values)
 male_data_summary <- list(
@@ -511,29 +501,17 @@ female_safe_model <- create_safe_export(female_model, female_data_summary, glm_m
 male_safe_reduced_model <- create_safe_export(male_reduced_model, male_data_summary, glm_model = male_final_reduced_model)
 female_safe_reduced_model <- create_safe_export(female_reduced_model, female_data_summary, glm_model = female_final_reduced_model)
 
-# 4. Validate before saving
-set.seed(123)
-n <- 100
-
-cycle1 <- data.frame(
-  clc_age    = sample(20:79, n, replace = TRUE),
-  fmh_15     = sample(1:2, n, replace = TRUE),
-  lab_hba1   = runif(n, min = 0.041, max = 0.130),
-  ccc_51     = sample(1:2, n, replace = TRUE),
-  diab_drug2 = sample(c(0, 1), n, replace = TRUE),
-  hwmdbmi    = runif(n, min = 13.89, max = 49)
-)
-
-cycle1$hwmdbmi[1] <- 99.96  # BMI way above expected
-cycle1$fmh_15[2] <- 8       # Invalid family history code
+# 4. Validate with synthetic data before saving
+cycle1 <- config$data$`cycle1-synth`
 
 new_data <- recodeflow::rec_with_table(cycle1, c("clc_age", "fmh_15", "lab_hba1", "ccc_51", "diab_drug2", "diab_m", "diabx", "hwmdbmi"), variable_details = my_variable_details)
+new_data <- dplyr::select(new_data, c("clc_age", "fmh_15", "diabx", "hwmdbmi"))
 
 new_data$fmh_15[2] <- NA
-new_data$diabx   <- ifelse(new_data$diabx == 2, 1,
-                           ifelse(new_data$diabx == 1, 0, NA))
-new_data$fmh_15  <- ifelse(new_data$fmh_15 == 2, 1,
-                           ifelse(new_data$fmh_15 == 1, 0, NA))
+new_data$diabx   <- ifelse(new_data$diabx == 1, 1,
+                           ifelse(new_data$diabx == 2, 0, NA))
+new_data$fmh_15  <- ifelse(new_data$fmh_15 == 1, 1,
+                           ifelse(new_data$fmh_15 == 2, 0, NA))
 
 new_data$diabx   <- factor(new_data$diabx, levels = c(0, 1))
 new_data$fmh_15  <- factor(new_data$fmh_15, levels = c(0, 1))

@@ -42,22 +42,23 @@ source("R/model-functions.R")
 source("R/calibration.R")
 
 # Load metadata
-my_variables <- read.csv("P:/10619/Dropbox/htnport/worksheets/variables.csv")
-my_variable_details <- read.csv("P:/10619/Dropbox/htnport/worksheets/variable-details.csv")
+config <- config::get()
+my_variables <- read.csv(config$variables)
+my_variable_details <- read.csv(config$variable_details)
 ```
 
 ### Load medication data and recode medication variables
 
 ```{r, include = FALSE, warning = FALSE, message = FALSE}
 # Load medication data
-cycle1_meds <- read_sas("data/cycle1/cycle1-meds.sas7bdat")
+cycle1_meds <- read_sas(config$data$`cycle1-meds`)
 names(cycle1_meds) <- tolower(names(cycle1_meds)) 
-cycle2_meds <- read_sas("data/cycle2/cycle2-meds.sas7bdat")
-cycle3_meds <- read_stata("data/cycle3/cycle3-meds.dta")
-cycle4_meds <- read_stata("data/cycle4/cycle4-meds.dta")
+cycle2_meds <- read_sas(config$data$`cycle2-meds`)
+cycle3_meds <- read_stata(config$data$`cycle3-meds`)
+cycle4_meds <- read_stata(config$data$`cycle4-meds`)
 names(cycle4_meds) <- tolower(names(cycle4_meds)) 
-cycle5_meds <- read_stata("data/cycle5/cycle5-meds.dta")
-cycle6_meds <- read_stata("data/cycle6/cycle6-meds.dta")
+cycle5_meds <- read_stata(config$data$`cycle5-meds`)
+cycle6_meds <- read_stata(config$data$`cycle6-meds`)
 names(cycle6_meds) <- tolower(names(cycle6_meds)) 
 
 # Recode medication variables from medication data
@@ -73,12 +74,12 @@ cycle6_medication_data <- recodeflow::rec_with_table(cycle6_meds, c("clinicid", 
 
 ```{r, include = FALSE, warning = FALSE, message = FALSE}
 # Load overall cycle data
-cycle1 <- read_stata("data/cycle1/cycle1.dta")
-cycle2 <- read_stata("data/cycle2/cycle2.dta")
-cycle3 <- read_stata("data/cycle3/cycle3.dta")
-cycle4 <- read_stata("data/cycle4/cycle4.dta")
-cycle5 <- read_stata("data/cycle5/cycle5.dta")
-cycle6 <- read_stata("data/cycle6/cycle6.dta")
+cycle1 <- read_stata(config$data$cycle1)
+cycle2 <- read_stata(config$data$cycle2)
+cycle3 <- read_stata(config$data$cycle3)
+cycle4 <- read_stata(config$data$cycle4)
+cycle5 <- read_stata(config$data$cycle5)
+cycle6 <- read_stata(config$data$cycle6)
 names(cycle6) <- tolower(names(cycle6)) 
 
 # Assign cycle variable to each cycle for imputation purposes
@@ -146,7 +147,7 @@ imputed_cycles1to6_data <- impute_variables(dplyr::select(cycles1to6_data, -clin
 imputed_cycles1to6_data$clinicid <- cycles1to6_data$clinicid
 
 # Load bootstrap weights for all cycles and merge them to imputed sample data
-cycles1to6_bsw <- read_stata("data/cycles1to6_bsw.dta")
+cycles1to6_bsw <- read_stata(config$data$cycles1to6_bsw)
 names(cycles1to6_bsw) <- tolower(names(cycles1to6_bsw))
 
 cycles1to6_bsw <- cycles1to6_bsw %>%

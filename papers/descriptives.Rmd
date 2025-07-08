@@ -279,7 +279,7 @@ cycles1to6_data <- cchsflow::merge_rec_data(cycle1_data, cycle2_data, cycle3_dat
 cycles1to6_data <- dplyr::filter(cycles1to6_data, insample == 1)
 
 # Reload and remerge extra accelerometer data to sample data
-tracey <- read_sas("data/From Tracy/CHMS_AM_validdays_1to3.sas7bdat")
+tracey <- read_sas(config$data$tracey)
 tracey$clinicid <-tracey$CLINICID
 tracey$mvpa_min <- tracey$avg_mvpa
 tracey$minperweek <- tracey$mvpa_min * 7
@@ -298,7 +298,7 @@ imputed_cycles1to6_data <- impute_variables(dplyr::select(cycles1to6_data, -clin
 imputed_cycles1to6_data$clinicid <- cycles1to6_data$clinicid
 
 # Load bootstrap weights for all cycles and merge them to imputed sample data
-cycles1to6_bsw <- read_stata("data/cycles1to6_bsw.dta")
+cycles1to6_bsw <- read_stata(config$data$cycles1to6_bsw)
 names(cycles1to6_bsw) <- tolower(names(cycles1to6_bsw)) 
 
 cycles1to6_bsw <- cycles1to6_bsw %>%

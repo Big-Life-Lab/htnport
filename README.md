@@ -28,6 +28,7 @@ This project can only be run at the uOttawa Research Data Centre (RDC) managed b
 
 ## Folders
 
+- **data**: Study data (only available at RDC) and test data for validating svyglm model export.
 - **R**: R functions necessary for running HTNPoRT descriptives, derivation, validation, and presentation.
 - **models**: Exported svyglm and glm model objects of HTNPoRT.
 - **papers**: Papers written for this project which include reproducible results.

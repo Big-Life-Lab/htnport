@@ -1,7 +1,11 @@
 default:
   variables: !expr file.path(getwd(), "worksheets/variables.csv")
   variable_details: !expr file.path(getwd(), "worksheets/variable-details.csv")
-  modules: NULL
+  models: 
+    male_final_model: !expr file.path(getwd(), "models/glm/male_final_model.rds")
+    female_final_model: !expr file.path(getwd(), "models/glm/female_final_model.rds")
+    male_final_reduced_model: !expr file.path(getwd(), "models/glm/male_final_reduced_model.rds")
+    female_final_reduced_model: !expr file.path(getwd(), "models/glm/female_final_reduced_model.rds")
   data:
     cycle1: !expr file.path(getwd(), "data/cycle1.dta")
     cycle2: !expr file.path(getwd(), "data/cycle2.dta")
@@ -15,7 +19,9 @@ default:
     cycle4-meds: !expr file.path(getwd(), "data/cycle4-meds.dta")
     cycle5-meds: !expr file.path(getwd(), "data/cycle5-meds.dta")
     cycle6-meds: !expr file.path(getwd(), "data/cycle6-meds.dta")
+    cycles1to6_bsw: !expr file.path(getwd(), "data/cycles1to6_bsw.dta")
     tracey: !expr file.path(getwd(), "data/From Tracy/CHMS_AM_validdays_1to3.sas7bdat")
+    cycle1-synth: !expr file.path(getwd(), "data/cycle1-synth.dta") 
   truncate_percentile: 99.5
   outcome_info:
     min: 0
