@@ -677,3 +677,35 @@ combined_crude_models <- combined_crude_models[c("Sex", "Level", "OR", "CI_Lower
 # Print the combined data frame as a table
 flextable::flextable(combined_crude_models)
 ```
+
+### Table 2c - HTN based on medications only
+
+```{r}
+# Combine cycles to obtain sample
+cycles1to6_data <- cchsflow::merge_rec_data(cycle1_data, cycle2_data, cycle3_data, cycle4_data, cycle5_data, cycle6_data)
+cycles1to6_data <- dplyr::filter(cycles1to6_data, insample == 1)
+
+# Define the logic using dplyr
+htn_med_only_confirmed <- cycles1to6_data %>%
+  # Step 1: Must be classified hypertensive
+  dplyr::filter(highbp14090_adj == 1) %>%
+  
+  # Step 2: Must be on medication
+  dplyr::filter(anymed2 == 1) %>%
+  
+  # Step 3: Must NOT meet BP thresholds (i.e., BP normal/low or missing)
+  dplyr::filter(
+    is.na(sbp_adj) | is.na(dbp_adj) |
+      (
+        (((!is.na(diabx) & diabx == 1) | (!is.na(ckd) & ckd == 1)) & sbp_adj < 130 & dbp_adj < 80) |
+        ((is.na(diabx) | diabx != 1) & (is.na(ckd) | ckd != 1) & sbp_adj < 140 & dbp_adj < 90)
+      )
+  ) %>%
+  
+  # Step 4: Stratify by sex
+  dplyr::group_by(clc_sex) %>%
+  dplyr::summarise(`HTN via meds only (confirmed HTN cases)` = dplyr::n()) %>%
+  dplyr::ungroup()
+
+flextable::flextable(htn_med_only_confirmed)
+```

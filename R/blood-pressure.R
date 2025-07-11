@@ -113,7 +113,7 @@ determine_hypertension <- function(BPMDPBPS, BPMDPBPD, ANYMED2, CCC_32 = 2, CARD
   highBP14090 <- haven::tagged_na("b")
   
   # Set ANYMED2 to 0 if CCC_32 = 2 and either CARDIOV, CKD, or DIABX = 1
-  if (CCC_32 == 2 && (CARDIOV == 1 || CKD == 1 || DIABX == 1)) {
+  if ((!is.na(CCC_32) && CCC_32 == 2) && ((!is.na(CARDIOV) && CARDIOV == 1) || (!is.na(CKD) && CKD == 1) || (!is.na(DIABX) && DIABX == 1))) {
     ANYMED2 <- 0
   } else if (!is.na(ANYMED2) && ANYMED2 == "NA(b)") {
     ANYMED2 <- NA
@@ -331,7 +331,7 @@ determine_controlled_hypertension <- function(BPMDPBPS, BPMDPBPD, ANYMED2, CCC_3
   Control14090 <- haven::tagged_na("b")
   
   # Set ANYMED2 to 0 if CCC_32 = 2 and either CARDIOV, CKD, or DIABX = 1
-  if (CCC_32 == 2 && (CARDIOV == 1 || CKD == 1 || DIABX == 1)) {
+  if ((!is.na(CCC_32) && CCC_32 == 2) && ((!is.na(CARDIOV) && CARDIOV == 1) || (!is.na(CKD) && CKD == 1) || (!is.na(DIABX) && DIABX == 1))) {
     ANYMED2 <- 0
   } else if (!is.na(ANYMED2) && ANYMED2 == "NA(b)") {
     ANYMED2 <- NA
@@ -433,7 +433,7 @@ determine_controlled_adjusted_hypertension <- function(SBP_adj, DBP_adj, ANYMED2
   Control14090_adj <- haven::tagged_na("b")
   
   # Set ANYMED2 to 0 if CCC_32 = 2 and either CARDIOV, CKD, or DIABX = 1
-  if (CCC_32 == 2 && (CARDIOV == 1 || CKD == 1 || DIABX == 1)) {
+  if ((!is.na(CCC_32) && CCC_32 == 2) && ((!is.na(CARDIOV) && CARDIOV == 1) || (!is.na(CKD) && CKD == 1) || (!is.na(DIABX) && DIABX == 1))) {
     ANYMED2 <- 0
   } else if (!is.na(ANYMED2) && ANYMED2 == "NA(b)") {
     ANYMED2 <- NA
