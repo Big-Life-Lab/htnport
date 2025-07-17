@@ -14,6 +14,38 @@ calculate_simplified_vif <- function(design) {
   return(vif_values)
 }
 
+# Function to generate predictor importance data frame
+get_importance_df <- function(model_formula, model_data) {
+  # Fit a GLM model to get the ANOVA table with LR Chisq
+  model <- glm(formula = model_formula, data = model_data, weights = wgt_full, family = quasibinomial())
+  
+  # Get ANOVA table
+  anova_table <- car::Anova(model, test.statistic = "LR")
+  
+  # Get row names (predictor names)
+  names <- rownames(anova_table)
+  
+  # Extract LR Chisq and Df columns
+  chi_sq <- anova_table[, "LR Chisq"]
+  df <- anova_table[, "Df"]
+  
+  # Compute partial chi-squared minus degrees of freedom
+  partial_chi_sq <- chi_sq - df
+  
+  # Combine into a new data frame
+  importance_df <- data.frame(
+    Predictor = names,
+    ChiSq = chi_sq,
+    Df = df,
+    ChiSq_minus_Df = partial_chi_sq
+  )
+  
+  # Order by importance
+  importance_df <- importance_df[order(-importance_df$ChiSq_minus_Df), ]
+  
+  return(importance_df)
+}
+
 # Function for stepdown procedure by Harrell and Ambler
 stepdown <- function(full_model, data, threshold = 0.95) {
   # Predict full model's predicted values

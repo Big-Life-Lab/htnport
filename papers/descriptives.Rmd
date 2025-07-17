@@ -113,7 +113,63 @@ cycle5_data <- recodeflow::rec_with_table(cycle5, recodeflow:::select_vars_by_ro
 cycle6_data <- recodeflow::rec_with_table(cycle6, recodeflow:::select_vars_by_role(c("Recode"), my_variables), variable_details = my_variable_details, log = TRUE)
 ```
 
-### Table 1a - Weighted unimputed data
+### Table 1a - Unweighted unimputed data
+
+```{r, warning = FALSE, message = FALSE}
+# Combine cycles to obtain sample
+cycles1to6_data <- cchsflow::merge_rec_data(cycle1_data, cycle2_data, cycle3_data, cycle4_data, cycle5_data, cycle6_data)
+cycles1to6_data <- dplyr::filter(cycles1to6_data, insample == 1)
+
+# Load and merge extra accelerometer data to sample data
+tracey <- read_sas(config$data$tracey)
+tracey$clinicid <-tracey$CLINICID
+tracey$mvpa_min <- tracey$avg_mvpa
+tracey$minperweek <- tracey$mvpa_min * 7
+tracey <- subset(tracey, select = -c(CLINICID, avg_mvpa, adultPAG))
+
+cycles1to6_data <- dplyr::left_join(cycles1to6_data, tracey, by = c("clinicid"))
+cycles1to6_data <- cycles1to6_data %>%
+  dplyr::mutate(mvpa_min = coalesce(mvpa_min.x, mvpa_min.y),
+         minperweek = coalesce(minperweek.x, minperweek.y)) %>%
+  dplyr::mutate(mvpa_min = ifelse(is.na(mvpa_min), haven::tagged_na("b"), mvpa_min),
+         minperweek = ifelse(is.na(minperweek), haven::tagged_na("b"), minperweek)) %>%
+  dplyr::select(c(clinicid, wgt_full, clc_sex, recodeflow:::select_vars_by_role(c("imputation-predictor"), my_variables)))
+
+# Ensure derived categorical variables present in all six cycles can be properly tabulated
+cycles1to6_data$ckd <- recode_na_b(cycles1to6_data$ckd)
+cycles1to6_data$diabx <- recode_na_b(cycles1to6_data$diabx)
+cycles1to6_data$low_drink_score1 <- recode_na_b(cycles1to6_data$low_drink_score1)
+cycles1to6_data$working <- recode_na_b(cycles1to6_data$working)
+cycles1to6_data$clc_sex <- droplevels(cycles1to6_data$clc_sex)
+
+# Generate unimputed and unweighted Table 1
+table1a_data <- get_descriptive_data(
+  cycles1to6_data,
+  my_variables,
+  my_variable_details,
+  # All the variables whose descriptive statistics we want
+  recodeflow:::select_vars_by_role(
+    c("Table 1"),
+    my_variables
+  ),
+  # Sets the stratifier
+  list("all" = list("clc_sex"))
+)
+
+create_descriptive_table(
+  table1a_data,
+  my_variables,
+  my_variable_details,
+  recodeflow:::select_vars_by_role(
+    c("Table 1"),
+    my_variables
+  ),
+  column_stratifier = c("clc_sex"),
+  subjects_order = c("Age", "Sex", "Marital status", "Education", "Occupation", "Family history", "Exercise", "Diet", "Weight", "Chronic disease", "Alcohol", "Smoking", "Sleep", "General")
+)
+```
+
+### Table 1b - Weighted unimputed data
 
 ```{r, warning = FALSE, message = FALSE}
 # Combine cycles to obtain sample
@@ -271,7 +327,7 @@ original_names <- c(
 names(cycles1to6_data) <- dplyr::recode(names(cycles1to6_data), !!!original_names)
 ```
 
-### Table 1b - Weighted imputed data
+### Table 1c - Weighted imputed data
 
 ```{r, warning = FALSE, message = FALSE}
 # Combine cycles to reobtain sample
@@ -512,59 +568,106 @@ original_names <- c(
 names(imputed_cycles1to6_data) <- dplyr::recode(names(imputed_cycles1to6_data), !!!original_names)
 ```
 
-### Density plots for continuous variables
+### Table 2b - HTN based on medications only
 
 ```{r, warning = FALSE, message = FALSE}
-# Unimputed data
-create_weighted_density_plots(
-  data = cycles1to6_data,
-  grouping_var = "clc_sex",
-  weight_var = "wgt_full",
-  vars_to_plot = c("clc_age", "minperweek", "totalfv", "hwmdbmi", "slp_11"),
-  group_labels = c("Male", "Female"),
-  group_colors = c("blue", "red"),
-  plot_titles = c(
-    "Age Distribution",
-    "Exercise Distribution",
-    "Fruit and Vegetable Consumption Distribution",
-    "Body Mass Index Distribution",
-    "Sleep Duration Distribution"
-  ),
-  x_labels = c(
-    "Age (years)",
-    "Average minutes of exercise per week",
-    "Times per day produce consumed",
-    "Body mass index (kg/m2)",
-    "Hours slept per night"
-  )
-)
+# Combine cycles to obtain sample
+cycles1to6_data <- cchsflow::merge_rec_data(cycle1_data, cycle2_data, cycle3_data, cycle4_data, cycle5_data, cycle6_data)
+cycles1to6_data <- dplyr::filter(cycles1to6_data, insample == 1)
 
-# Imputed data
-create_weighted_density_plots(
-  data = imputed_cycles1to6_data, 
-  grouping_var = "clc_sex", 
-  weight_var = "wgt_full", 
-  vars_to_plot = c("clc_age", "minperweek", "totalfv", "hwmdbmi", "slp_11"), 
-  group_labels = c("Male", "Female"), 
-  group_colors = c("blue", "red"), 
-  plot_titles = c(
-    "Age Distribution",
-    "Exercise Distribution",
-    "Fruit and Vegetable Consumption Distribution",
-    "Body Mass Index Distribution",
-    "Sleep Duration Distribution"
-  ),
-  x_labels = c(
-    "Age (years)",
-    "Average minutes of exercise per week",
-    "Times per day produce consumed",
-    "Body mass index (kg/m2)",
-    "Hours slept per night"
+recode_na <- function(column) {
+  # Convert the column to character if it's a factor
+  if (is.factor(column)) {
+    column <- as.character(column)
+  }
+  # Replace "NA(c)" with "NA(b)"
+  column[column == "NA(c)"] <- NA
+  return(column)
+}
+
+cycles1to6_data$ckd <- recode_na(cycles1to6_data$ckd)
+cycles1to6_data$diabx <- recode_na(cycles1to6_data$diabx)
+
+# Create a binary variable for the "medication only" subgroup in the full dataset
+cycles1to6_data <- cycles1to6_data %>%
+  dplyr::mutate(meds_only_htn = dplyr::case_when(
+    highbp14090_adj == 1 &
+    anymed2 == 1 &
+    (is.na(sbp_adj) | is.na(dbp_adj) |
+      (((!is.na(diabx) & diabx == 1) | (!is.na(ckd) & ckd == 1)) & sbp_adj < 130 & dbp_adj < 80) |
+      ((is.na(diabx) | diabx != 1) & (is.na(ckd) | ckd != 1) & sbp_adj < 140 & dbp_adj < 90))
+    ~ 1,
+    TRUE ~ 0
+  ))
+
+# Create a survey design object using the full dataset
+weighted_data <- srvyr::as_survey(cycles1to6_data, weights = wgt_full)
+
+# Calculate the summary statistics
+htn_med_only_summary <- weighted_data %>%
+  dplyr::group_by(clc_sex) %>%
+  dplyr::summarise(
+    # Number of people with HTN based on meds only
+    n_meds_only = unweighted(sum(meds_only_htn)),
+    # Total number of people in the stratum (for unweighted %)
+    n_total = unweighted(n()),
+    # Weighted percentage of HTN based on meds only, out of the whole population
+    weighted_percent = survey_mean(meds_only_htn) * 100
+  ) %>%
+  # Calculate unweighted percentage
+  dplyr::mutate(
+    unweighted_percent = (n_meds_only / n_total) * 100
+  ) %>%
+  # Select and rename the final columns
+  dplyr::select(
+    `Sex` = clc_sex,
+    `HTN via meds only` = n_meds_only,
+    `Unweighted %` = unweighted_percent,
+    `Weighted %` = weighted_percent
   )
-)
+
+# Display the table
+flextable::flextable(htn_med_only_summary)
+
+# Table breaking down meds only HTN respondents by BP
+table2c_data <- cycles1to6_data %>%
+  # Step 1: Must be classified hypertensive and be on medication
+  filter(highbp14090_adj == 1 & anymed2 == 1) %>%
+  
+  # Step 2: Must also have BP below diagnostic thresholds (or NA)
+  filter(
+    is.na(sbp_adj) | is.na(dbp_adj) |
+      (((!is.na(diabx) & diabx == 1) | (!is.na(ckd) & ckd == 1)) & sbp_adj < 130 & dbp_adj < 80) |
+      ((is.na(diabx) | diabx != 1) & (is.na(ckd) | ckd != 1) & sbp_adj < 140 & dbp_adj < 90)
+  ) %>%
+  group_by(clc_sex) %>%
+  summarise(
+    # Counts for people WITHOUT diabetes or CKD
+    normal_bps = sum(
+      ((is.na(diabx) | diabx == 2) & (is.na(ckd) | ckd == 2)) & 
+      (sbp_adj < 140) & (dbp_adj < 90),
+      na.rm = TRUE
+    ),
+
+    
+    # Counts for people WITH diabetes or CKD
+    diab_or_ckd_normal_bps = sum(
+      ((!is.na(diabx) & diabx == 1) | (!is.na(ckd) & ckd == 1)) & 
+      (sbp_adj < 130) & (dbp_adj < 80),
+      na.rm = TRUE
+    ),
+    
+    # Counts for people WITH NA BPs
+    na_bps = sum(
+      (is.na(sbp_adj)) | (is.na(dbp_adj)),
+      na.rm = TRUE
+    ),
+  )
+
+flextable::flextable(table2c_data)
 ```
 
-### Table 2b - Weighted crude ORs and CIs for candidate predictors
+### Table 2c - Weighted crude ORs and CIs for candidate predictors
 
 ```{r, warning = FALSE, message = FALSE}
 # Truncate skewed continuous variables if necessary
@@ -678,34 +781,54 @@ combined_crude_models <- combined_crude_models[c("Sex", "Level", "OR", "CI_Lower
 flextable::flextable(combined_crude_models)
 ```
 
-### Table 2c - HTN based on medications only
+### Density plots for continuous variables
 
-```{r}
-# Combine cycles to obtain sample
-cycles1to6_data <- cchsflow::merge_rec_data(cycle1_data, cycle2_data, cycle3_data, cycle4_data, cycle5_data, cycle6_data)
-cycles1to6_data <- dplyr::filter(cycles1to6_data, insample == 1)
+```{r, warning = FALSE, message = FALSE}
+# Unimputed data
+create_weighted_density_plots(
+  data = cycles1to6_data,
+  grouping_var = "clc_sex",
+  weight_var = "wgt_full",
+  vars_to_plot = c("clc_age", "minperweek", "totalfv", "hwmdbmi", "slp_11"),
+  group_labels = c("Male", "Female"),
+  group_colors = c("blue", "red"),
+  plot_titles = c(
+    "Age Distribution",
+    "Exercise Distribution",
+    "Fruit and Vegetable Consumption Distribution",
+    "Body Mass Index Distribution",
+    "Sleep Duration Distribution"
+  ),
+  x_labels = c(
+    "Age (years)",
+    "Average minutes of exercise per week",
+    "Times per day produce consumed",
+    "Body mass index (kg/m2)",
+    "Hours slept per night"
+  )
+)
 
-# Define the logic using dplyr
-htn_med_only_confirmed <- cycles1to6_data %>%
-  # Step 1: Must be classified hypertensive
-  dplyr::filter(highbp14090_adj == 1) %>%
-  
-  # Step 2: Must be on medication
-  dplyr::filter(anymed2 == 1) %>%
-  
-  # Step 3: Must NOT meet BP thresholds (i.e., BP normal/low or missing)
-  dplyr::filter(
-    is.na(sbp_adj) | is.na(dbp_adj) |
-      (
-        (((!is.na(diabx) & diabx == 1) | (!is.na(ckd) & ckd == 1)) & sbp_adj < 130 & dbp_adj < 80) |
-        ((is.na(diabx) | diabx != 1) & (is.na(ckd) | ckd != 1) & sbp_adj < 140 & dbp_adj < 90)
-      )
-  ) %>%
-  
-  # Step 4: Stratify by sex
-  dplyr::group_by(clc_sex) %>%
-  dplyr::summarise(`HTN via meds only (confirmed HTN cases)` = dplyr::n()) %>%
-  dplyr::ungroup()
-
-flextable::flextable(htn_med_only_confirmed)
+# Imputed data
+create_weighted_density_plots(
+  data = imputed_cycles1to6_data, 
+  grouping_var = "clc_sex", 
+  weight_var = "wgt_full", 
+  vars_to_plot = c("clc_age", "minperweek", "totalfv", "hwmdbmi", "slp_11"), 
+  group_labels = c("Male", "Female"), 
+  group_colors = c("blue", "red"), 
+  plot_titles = c(
+    "Age Distribution",
+    "Exercise Distribution",
+    "Fruit and Vegetable Consumption Distribution",
+    "Body Mass Index Distribution",
+    "Sleep Duration Distribution"
+  ),
+  x_labels = c(
+    "Age (years)",
+    "Average minutes of exercise per week",
+    "Times per day produce consumed",
+    "Body mass index (kg/m2)",
+    "Hours slept per night"
+  )
+)
 ```

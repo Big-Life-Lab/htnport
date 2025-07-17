@@ -347,6 +347,20 @@ plot(female_data$totalfv, female_logit,
      ylab = "Female model log-odds", 
      pch = 16, cex = 0.5)
 lines(lowess(female_data$totalfv, female_logit), col = "blue", lwd = 2)
+
+# df / knot quantity validation with partial X2s
+male_partialx2_model <- survey::svyglm(highbp14090_adj ~ rcs(clc_age, 4) + married + edudr04 + working + gendmhi + gen_025 + gen_045 + fmh_15 +  rcs(hwmdbmi, 3) + low_drink_score1 + rcs(minperweek, 3) + smoke + rcs(slp_11, 3) + rcs(totalfv, 3) + diabx + ckd, design = weighted_male, family = quasibinomial())
+
+female_partialx2_model <- survey::svyglm(highbp14090_adj ~ rcs(clc_age, 4) + married + edudr04 + working + gendmhi + gen_025 + gen_045 + fmh_15 +  rcs(hwmdbmi, 3) + low_drink_score1 + rcs(minperweek, 3) + smoke + rcs(slp_11, 3) + rcs(totalfv, 3) + diabx + ckd, design = weighted_female, family = quasibinomial())
+
+male_importance_df <- get_importance_df(formula(male_partialx2_model), male_data)
+female_importance_df <- get_importance_df(formula(female_partialx2_model), female_data)
+
+print("Male Predictor Importance:")
+print(male_importance_df)
+
+print("Female Predictor Importance:")
+print(female_importance_df)
 ```
 
 ### Model specification
