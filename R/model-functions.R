@@ -448,6 +448,7 @@ plot_age_int_or <- function(model, var, var_type = c("categorical", "continuous"
     
     p <- ggplot(preds, aes(x = x, y = or, color = group, fill = group)) +
       geom_line(size = 1.2) +
+      geom_ribbon(aes(ymin = or_low, ymax = or_high), alpha = 0.2, color = NA) +
       geom_point(data = max_rows, aes(x = x, y = or), color = "red", size = 3, inherit.aes = FALSE) +
       geom_text_repel(data = max_rows, aes(x = x, y = or, label = paste0("OR = ", round(or, 2))),
                                 size = 3.5, color = "red", inherit.aes = FALSE, min.segment.length = 0) +
@@ -503,6 +504,7 @@ plot_age_int_or <- function(model, var, var_type = c("categorical", "continuous"
     
     p <- ggplot(preds, aes(x = x, y = or, color = group, fill = group)) +
       geom_line(size = 1.2) +
+      geom_ribbon(aes(ymin = or_low, ymax = or_high), alpha = 0.2, color = NA) +
       geom_point(data = max_rows, aes(x = x, y = or), color = "red", size = 3, inherit.aes = FALSE) +
       geom_text_repel(data = max_rows, aes(x = x, y = or, label = paste0("OR = ", round(or, 2))),
                                size = 3.5, color = "red", inherit.aes = FALSE, min.segment.length = 0) +

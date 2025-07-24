@@ -1068,7 +1068,7 @@ male_data <- male_data %>%
   dplyr::select(recodeflow:::select_vars_by_role(c("Predictor"), my_variables)) %>%
   dplyr::select(-whr)
 
-# Create observation as a data frame
+# Create observation as a data frame. Feel free to change predictor values.
 observation <- data.frame(
   clc_age = 24,         # 24-year old male
   married = 3,          # Single
@@ -1152,7 +1152,7 @@ male_final_reduced_model <- glm(highbp14090_adj ~ rcs(clc_age, 4) + fmh_15 + rcs
 male_data <- male_data %>% 
   dplyr::select(clc_age, fmh_15, diabx, hwmdbmi)
 
-# Create observation as a data frame
+# Create observation as a data frame. Feel free to change predictor values.
 observation <- data.frame(
   clc_age = 24,         # 24-year old male
   fmh_15 = 1,           # Family history of hypertension present
