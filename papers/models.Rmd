@@ -136,7 +136,7 @@ cycles1to6_data <- cycles1to6_data %>%
          minperweek = coalesce(minperweek.x, minperweek.y)) %>%
   dplyr::mutate(mvpa_min = ifelse(is.na(mvpa_min), haven::tagged_na("b"), mvpa_min),
          minperweek = ifelse(is.na(minperweek), haven::tagged_na("b"), minperweek)) %>%
-  dplyr::select(c(clinicid, wgt_full, clc_sex, recodeflow:::select_vars_by_role(c("imputation-predictor", "cali-subgroup"), my_variables)))
+  dplyr::select(c(clinicid, wgt_full, clc_sex, highbp14090, control14090, control14090_adj, recodeflow:::select_vars_by_role(c("imputation-predictor", "cali-subgroup"), my_variables)))
 ```
 
 ### Reobtain imputed data and bootstrap weights, segregrate such data by sex, weight all data, and center variables.
@@ -159,6 +159,9 @@ imputed_cycles1to6_data <- dplyr::left_join(imputed_cycles1to6_data, cycles1to6_
 # set.seed(123)
 # imputed_cycles1to6_data <- data.frame(
 #   highbp14090_adj = sample(1:2, 1000, replace = TRUE), # Binary hypertension outcome
+# highbp14090 = sample(1:2, 1000, replace = TRUE), # Binary unadjusted hypertension outcome
+# control14090_adj = sample(1:2, 1000, replace = TRUE), # Binary controlled hypertension outcome
+# control14090 = sample(1:2, 1000, replace = TRUE), # Binary controlled and unadjusted hypertension outcome
 #   ccc_51 = sample(1:2, 1000, replace = TRUE), # Binary self-reported diabetes
 #   ckd = sample(1:2, 1000, replace = TRUE), # Binary chronic kidney disease
 #   edudr04 = sample(1:3, 1000, replace = TRUE), # Categorical education
@@ -208,6 +211,8 @@ imputed_cycles1to6_data <- truncate_skewed(imputed_cycles1to6_data)
 # Recode 2s as 0s in binary predictors and factorize all categorical predictors
 imputed_cycles1to6_data <- imputed_cycles1to6_data %>%
   dplyr::mutate(highbp14090_adj = ifelse(highbp14090_adj == 2, 0, highbp14090_adj),
+                highbp14090 = ifelse(highbp14090 == 2, 0, highbp14090),
+                control14090_adj = ifelse(control14090_adj == 2, 0, control14090_adj),
                 ckd = ifelse(ckd == 2, 0, ckd),
                 diabx = ifelse(diabx == 2, 0, diabx),
                 fmh_15 = ifelse(fmh_15 == 2, 0, fmh_15),
@@ -1027,29 +1032,6 @@ rcspline.eval(x = weighted_female$variables$minperweek, nk = 3, knots.only = TRU
 # attributes(rcspline.eval(female_model$clc_age, nk=4))$knots
 # attributes(rcspline.eval(female_model$hwmdbmi, nk=3))$knots
 # attributes(rcspline.eval(female_model$minperweek, nk=3))$knots
-```
-
-### Beta x predictor checks (change model for first two lines if nec.) 
-
-```{r, include = FALSE, warning = FALSE, message = FALSE}
-# Get the model matrix (contains all transformed variables and interactions)
-model_matrix <- model.matrix(male_model)
-
-# Get the coefficients
-coefs <- coef(male_model)
-
-# Create a matrix where each column is beta * variable for each term
-contributions <- sweep(model_matrix, 2, coefs, "*")
-
-# If you want the sum for each observation (the linear predictor)
-linear_predictor <- rowSums(contributions)
-
-# If you want to look at the contribution of each term for each observation
-head(contributions)
-
-# Or calculate summary statistics of the contributions
-contribution_summary <- colMeans(abs(contributions))
-sort(contribution_summary, decreasing = TRUE)  # Shows most influential terms
 ```
 
 ### Shap plot (male full model)
@@ -2037,4 +2019,167 @@ for (var in age_cont_int_variables) {
     legend_labels = legend_labels
   ))
 }
+```
+
+### Sensitivity analyses (unadjusted BPs)
+
+```{r, warning = FALSE, message = FALSE}
+# Fit full male and female models with unadjusted BPs and see effect
+weighted_male$degf <- 68
+male_model_unadj <- survey::svyglm(highbp14090 ~ rcs(clc_age, 4) + married + edudr04 + working + gendmhi + gen_025 + gen_045 + fmh_15 + rcs(hwmdbmi, 3) + low_drink_score1 + rcs(minperweek, 3) + smoke + slp_11 + totalfv + diabx + ckd + rcs(clc_age, 4)*gen_045 + rcs(clc_age, 4)*rcs(hwmdbmi, 3) + rcs(clc_age, 4)*rcs(minperweek, 3) + rcs(clc_age, 4)*smoke + rcs(clc_age, 4)*slp_11 + rcs(clc_age, 4)*diabx + rcs(clc_age, 4)*ckd, design = weighted_male, family = quasibinomial())
+
+weighted_female$degf <- 68
+female_model_unadj <- survey::svyglm(highbp14090 ~ rcs(clc_age, 4) + married + edudr04 + working + gendmhi + gen_025 + gen_045 + fmh_15 + rcs(hwmdbmi, 3) + low_drink_score1 + rcs(minperweek, 3) + smoke + slp_11 + totalfv + diabx + ckd + rcs(clc_age, 4)*gen_045 + rcs(clc_age, 4)*rcs(hwmdbmi, 3) + rcs(clc_age, 4)*rcs(minperweek, 3) + rcs(clc_age, 4)*smoke + rcs(clc_age, 4)*slp_11 + rcs(clc_age, 4)*diabx + rcs(clc_age, 4)*ckd, design = weighted_female, family = quasibinomial())
+
+male_predicted_probabilities_unadj_full <- generate_predicted_probabilities(male_model_unadj)
+female_predicted_probabilities_unadj_full <- generate_predicted_probabilities(female_model_unadj)
+
+calibration(male_predicted_probabilities_unadj_full, model.frame(male_model_unadj)$highbp14090)
+calibration(female_predicted_probabilities_unadj_full, model.frame(female_model_unadj)$highbp14090)
+
+# Fit reduced male and female models with unadjusted BPs and see effect
+weighted_male$degf <- 68
+male_reduced_model_unadj <- survey::svyglm(highbp14090 ~ rcs(clc_age, 4) + fmh_15 + rcs(clc_age, 4)*rcs(hwmdbmi, 3) + rcs(clc_age, 4)*diabx, design = weighted_male, family = quasibinomial())
+
+weighted_female$degf <- 68
+female_reduced_model_unadj <- survey::svyglm(highbp14090 ~ rcs(clc_age, 4) + fmh_15 + rcs(clc_age, 4)*rcs(hwmdbmi, 3) + rcs(clc_age, 4)*diabx, design = weighted_female, family = quasibinomial())
+
+male_predicted_probabilities_unadj_reduced <- generate_predicted_probabilities(male_reduced_model_unadj)
+female_predicted_probabilities_unadj_reduced <- generate_predicted_probabilities(female_reduced_model_unadj)
+
+calibration(male_predicted_probabilities_unadj_reduced, model.frame(male_reduced_model_unadj)$highbp14090)
+calibration(female_predicted_probabilities_unadj_reduced, model.frame(female_reduced_model_unadj)$highbp14090)
+
+# Get predicted probabilities for models with adjusted BPs
+male_predicted_probabilities_adj_full <- generate_predicted_probabilities(male_model)
+female_predicted_probabilities_adj_full <- generate_predicted_probabilities(female_model)
+male_predicted_probabilities_adj_reduced <- generate_predicted_probabilities(male_reduced_model)
+female_predicted_probabilities_adj_reduced <- generate_predicted_probabilities(female_reduced_model)
+
+# Plot cumulative frequency of predicted probabilities (unadjusted BPs vs. adjusted BPs)
+# Full models
+plot(sort(male_predicted_probabilities_unadj_full), seq_along(male_predicted_probabilities_unadj_full), type = "s", col = "black", lwd = 2, xlab = "Predicted probability", ylab = "Cumulative frequency")
+lines(sort(male_predicted_probabilities_adj_full), seq_along(male_predicted_probabilities_adj_full), type = "s", col = "blue", lwd = 2)
+legend("bottomright", legend = c("Unadjusted BP", "Adjusted BP"), col = c("black", "blue"), lwd = 2)
+
+plot(sort(female_predicted_probabilities_unadj_full), seq_along(female_predicted_probabilities_unadj_full), type = "s", col = "black", lwd = 2, xlab = "Predicted probability", ylab = "Cumulative frequency")
+lines(sort(female_predicted_probabilities_adj_full), seq_along(female_predicted_probabilities_adj_full), type = "s", col = "blue", lwd = 2)
+legend("bottomright", legend = c("Unadjusted BP", "Adjusted BP"), col = c("black", "blue"), lwd = 2)
+
+# Reduced models
+plot(sort(male_predicted_probabilities_unadj_reduced), seq_along(male_predicted_probabilities_unadj_reduced), type = "s", col = "black", lwd = 2, xlab = "Predicted probability", ylab = "Cumulative frequency")
+lines(sort(male_predicted_probabilities_adj_reduced), seq_along(male_predicted_probabilities_adj_reduced), type = "s", col = "blue", lwd = 2)
+legend("bottomright", legend = c("Unadjusted BP", "Adjusted BP"), col = c("black", "blue"), lwd = 2)
+
+plot(sort(female_predicted_probabilities_unadj_reduced), seq_along(female_predicted_probabilities_unadj_reduced), type = "s", col = "black", lwd = 2, xlab = "Predicted probability", ylab = "Cumulative frequency")
+lines(sort(female_predicted_probabilities_adj_reduced), seq_along(female_predicted_probabilities_adj_reduced), type = "s", col = "blue", lwd = 2)
+legend("bottomright", legend = c("Unadjusted BP", "Adjusted BP"), col = c("black", "blue"), lwd = 2)
+```
+
+### Sensitivity analyses (uncontrolled HTN only)
+
+```{r, warning = FALSE, message = FALSE}
+# Exclude those who have controlled HTN and recreate centered weighted objects
+imputed_cycles1to6_data <- imputed_cycles1to6_data %>%
+  dplyr::filter(control14090_adj != 1)
+
+male_data <- dplyr::filter(imputed_cycles1to6_data, clc_sex == 1)
+female_data <- dplyr::filter(imputed_cycles1to6_data, clc_sex == 2)
+
+male_data <- male_data %>%
+  dplyr::mutate(wgt_full = wgt_full / mean(wgt_full))
+
+male_replicate_weights <- male_data %>%
+  dplyr::select(dplyr::starts_with("bsw")) %>%
+  names()
+
+weighted_male <- male_data %>%
+  srvyr::as_survey_rep(
+    weights = wgt_full,
+    repweights = all_of(male_replicate_weights),
+    type = "bootstrap"
+  )
+
+weighted_male$degf <- 68
+
+female_data <- female_data %>%
+  dplyr::mutate(wgt_full = wgt_full / mean(wgt_full))
+
+female_replicate_weights <- female_data %>%
+  dplyr::select(dplyr::starts_with("bsw")) %>%
+  names()
+
+weighted_female <- female_data %>%
+  srvyr::as_survey_rep(
+    weights = wgt_full,
+    repweights = all_of(female_replicate_weights),
+    type = "bootstrap"
+  )
+
+weighted_female$degf <- 68
+
+for (var in cont_variables) {
+  weighted_male$variables[[var]] <- center_cont_variable(var, weighted_male)
+}
+for (var in cont_variables) {
+  weighted_female$variables[[var]] <- center_cont_variable(var, weighted_female)
+}
+
+for (var in cat_variables) {
+  weighted_male$variables[[var]] <- center_cat_variable(var, weighted_male)
+}
+for (var in cat_variables) {
+  weighted_female$variables[[var]] <- center_cat_variable(var, weighted_female)
+}
+
+# Fit full male and female models with uncontrolled HTN and see effect
+weighted_male$degf <- 68
+male_model_uncontrolled <- survey::svyglm(highbp14090_adj ~ rcs(clc_age, 4) + married + edudr04 + working + gendmhi + gen_025 + gen_045 + fmh_15 + rcs(hwmdbmi, 3) + low_drink_score1 + rcs(minperweek, 3) + smoke + slp_11 + totalfv + diabx + ckd + rcs(clc_age, 4)*gen_045 + rcs(clc_age, 4)*rcs(hwmdbmi, 3) + rcs(clc_age, 4)*rcs(minperweek, 3) + rcs(clc_age, 4)*smoke + rcs(clc_age, 4)*slp_11 + rcs(clc_age, 4)*diabx + rcs(clc_age, 4)*ckd, design = weighted_male, family = quasibinomial())
+
+weighted_female$degf <- 68
+female_model_uncontrolled <- survey::svyglm(highbp14090_adj ~ rcs(clc_age, 4) + married + edudr04 + working + gendmhi + gen_025 + gen_045 + fmh_15 + rcs(hwmdbmi, 3) + low_drink_score1 + rcs(minperweek, 3) + smoke + slp_11 + totalfv + diabx + ckd + rcs(clc_age, 4)*gen_045 + rcs(clc_age, 4)*rcs(hwmdbmi, 3) + rcs(clc_age, 4)*rcs(minperweek, 3) + rcs(clc_age, 4)*smoke + rcs(clc_age, 4)*slp_11 + rcs(clc_age, 4)*diabx + rcs(clc_age, 4)*ckd, design = weighted_female, family = quasibinomial())
+
+male_predicted_probabilities_uncontrolled <- generate_predicted_probabilities(male_model_uncontrolled)
+female_predicted_probabilities_uncontrolled <- generate_predicted_probabilities(female_model_uncontrolled)
+
+calibration(male_predicted_probabilities, model.frame(male_model_uncontrolled)$highbp14090_adj)
+calibration(female_predicted_probabilities, model.frame(female_model_uncontrolled)$highbp14090_adj)
+
+# Fit reduced male and female models with uncontrolled HTN and see effect
+weighted_male$degf <- 68
+male_reduced_model_uncontrolled <- survey::svyglm(highbp14090_adj ~ rcs(clc_age, 4) + fmh_15 + rcs(clc_age, 4)*rcs(hwmdbmi, 3) + rcs(clc_age, 4)*diabx, design = weighted_male, family = quasibinomial())
+
+weighted_female$degf <- 68
+female_reduced_model_uncontrolled <- survey::svyglm(highbp14090_adj ~ rcs(clc_age, 4) + fmh_15 + rcs(clc_age, 4)*rcs(hwmdbmi, 3) + rcs(clc_age, 4)*diabx, design = weighted_female, family = quasibinomial())
+
+male_predicted_probabilities_uncontrolled_reduced <- generate_predicted_probabilities(male_reduced_model_uncontrolled)
+female_predicted_probabilities_uncontrolled_reduced <- generate_predicted_probabilities(female_reduced_model_uncontrolled)
+
+calibration(male_predicted_probabilities_uncontrolled_reduced, model.frame(male_reduced_model_uncontrolled)$highbp14090_adj)
+calibration(female_predicted_probabilities_uncontrolled_reduced, model.frame(female_reduced_model_uncontrolled)$highbp14090_adj)
+
+# Get predicted probabilities for models using both types of HTN
+male_predicted_probabilities_both_full <- generate_predicted_probabilities(male_model)
+female_predicted_probabilities_both_full <- generate_predicted_probabilities(female_model)
+male_predicted_probabilities_both_reduced <- generate_predicted_probabilities(male_reduced_model)
+female_predicted_probabilities_both_reduced <- generate_predicted_probabilities(female_reduced_model)
+
+# Plot cumulative frequency of predicted probabilities (uncontrolled HTN only vs. uncontrolled + controlled HTN)
+# Full models
+plot(sort(male_predicted_probabilities_uncontrolled), seq_along(male_predicted_probabilities_uncontrolled), type = "s", col = "black", lwd = 2, xlab = "Predicted probability", ylab = "Cumulative frequency", ylim = range(c(seq_along(male_predicted_probabilities_uncontrolled), seq_along(male_predicted_probabilities_both_full))))
+lines(sort(male_predicted_probabilities_both_full), seq_along(male_predicted_probabilities_both_full), type = "s", col = "blue", lwd = 2)
+legend("bottomright", legend = c("Uncontrolled HTN", "Uncontrolled + Controlled HTN"), col = c("black", "blue"), lwd = 2)
+
+plot(sort(female_predicted_probabilities_uncontrolled), seq_along(female_predicted_probabilities_uncontrolled), type = "s", col = "black", lwd = 2, xlab = "Predicted probability", ylab = "Cumulative frequency", ylim = range(c(seq_along(female_predicted_probabilities_uncontrolled), seq_along(female_predicted_probabilities_both_full))))
+lines(sort(female_predicted_probabilities_both_full), seq_along(female_predicted_probabilities_both_full), type = "s", col = "blue", lwd = 2)
+legend("bottomright", legend = c("Uncontrolled HTN", "Uncontrolled + Controlled HTN"), col = c("black", "blue"), lwd = 2)
+
+# Reduced models
+plot(sort(male_predicted_probabilities_uncontrolled_reduced), seq_along(male_predicted_probabilities_uncontrolled_reduced), type = "s", col = "black", lwd = 2, xlab = "Predicted probability", ylab = "Cumulative frequency", ylim = range(c(seq_along(male_predicted_probabilities_uncontrolled_reduced), seq_along(male_predicted_probabilities_both_reduced))))
+lines(sort(male_predicted_probabilities_both_reduced), seq_along(male_predicted_probabilities_both_reduced), type = "s", col = "blue", lwd = 2)
+legend("bottomright", legend = c("Uncontrolled HTN", "Uncontrolled + Controlled HTN"), col = c("black", "blue"), lwd = 2)
+
+plot(sort(female_predicted_probabilities_uncontrolled_reduced), seq_along(female_predicted_probabilities_uncontrolled_reduced), type = "s", col = "black", lwd = 2, xlab = "Predicted probability", ylab = "Cumulative frequency", ylim = range(c(seq_along(female_predicted_probabilities_uncontrolled_reduced), seq_along(female_predicted_probabilities_both_reduced))))
+lines(sort(female_predicted_probabilities_both_reduced), seq_along(female_predicted_probabilities_both_reduced), type = "s", col = "blue", lwd = 2)
+legend("bottomright", legend = c("Uncontrolled HTN", "Uncontrolled + Controlled HTN"), col = c("black", "blue"), lwd = 2)
 ```

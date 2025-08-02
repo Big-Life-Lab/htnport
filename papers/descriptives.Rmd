@@ -347,7 +347,7 @@ cycles1to6_data <- cycles1to6_data %>%
          minperweek = coalesce(minperweek.x, minperweek.y)) %>%
   dplyr::mutate(mvpa_min = ifelse(is.na(mvpa_min), haven::tagged_na("b"), mvpa_min),
          minperweek = ifelse(is.na(minperweek), haven::tagged_na("b"), minperweek)) %>%
-  dplyr::select(c(clinicid, wgt_full, clc_sex, recodeflow:::select_vars_by_role(c("imputation-predictor, cali-subgroup"), my_variables)))
+  dplyr::select(c(clinicid, wgt_full, clc_sex, highbp14090, control14090, control14090_adj, recodeflow:::select_vars_by_role(c("imputation-predictor, cali-subgroup"), my_variables)))
 
 # Impute data
 imputed_cycles1to6_data <- impute_variables(dplyr::select(cycles1to6_data, -clinicid), outcomes = recodeflow:::select_vars_by_role(c("Predictor, cali-subgroup"), my_variables), predictors = recodeflow:::select_vars_by_role(c("imputation-predictor"), my_variables))
@@ -468,6 +468,9 @@ gtsummary::tbl_svysummary(
 # set.seed(123)
 # imputed_cycles1to6_data <- data.frame(
 # highbp14090_adj = sample(1:2, 1000, replace = TRUE), # Binary hypertension outcome
+# highbp14090 = sample(1:2, 1000, replace = TRUE), # Binary unadjusted hypertension outcome
+# control14090_adj = sample(1:2, 1000, replace = TRUE), # Binary controlled hypertension outcome
+# control14090 = sample(1:2, 1000, replace = TRUE), # Binary controlled and unadjusted hypertension outcome
 # ccc_51 = sample(1:2, 1000, replace = TRUE), # Binary self-reported diabetes
 # ckd = sample(1:2, 1000, replace = TRUE), # Binary chronic kidney disease
 # edudr04 = sample(1:3, 1000, replace = TRUE), # Categorical education
@@ -503,14 +506,17 @@ gtsummary::tbl_svysummary(
 # Rename hypertension variable for table
 imputed_cycles1to6_data <- imputed_cycles1to6_data %>%
   dplyr::rename(
-    'Hypertension' = highbp14090_adj
+    'Hypertension (Adjusted BPs)' = highbp14090_adj,
+    'Hypertension (Unadjusted BPs)' = highbp14090,
+    'Controlled Hypertension (Adjusted BPs)' = control14090_adj,
+    'Controlled Hypertension (Unadjusted BPs)' = control14090,
   )
 
 # Apply weights to data
 weighted_imputed_data <- survey::svydesign(
   id = ~1,
   weights = ~wgt_full,
-  data = dplyr::select(imputed_cycles1to6_data, c('Hypertension', clc_sex, wgt_full))
+  data = dplyr::select(imputed_cycles1to6_data, c('Hypertension (Adjusted BPs)', 'Hypertension (Unadjusted BPs)', 'Controlled Hypertension (Adjusted BPs)', 'Controlled Hypertension (Unadjusted BPs)', clc_sex, wgt_full))
 )
 
 # Generate table itself
@@ -537,8 +543,14 @@ gtsummary::tbl_svysummary(
     ~ .x %>%
       dplyr::mutate(
         label = dplyr::case_when(
-          variable == "Hypertension" & label == "1" ~ "Yes",
-          variable == "Hypertension" & label == "2" ~ "No",
+          variable == "Hypertension (Adjusted BPs)" & label == "1" ~ "Yes",
+          variable == "Hypertension (Adjusted BPs)" & label == "2" ~ "No",
+          variable == "Hypertension (Unadjusted BPs)" & label == "1" ~ "Yes",
+          variable == "Hypertension (Unadjusted BPs)" & label == "2" ~ "No",
+          variable == "Controlled Hypertension (Adjusted BPs)" & label == "1" ~ "Yes",
+          variable == "Controlled Hypertension (Adjusted BPs)" & label == "2" ~ "No",
+          variable == "Controlled Hypertension (Unadjusted BPs)" & label == "1" ~ "Yes",
+          variable == "Controlled Hypertension (Unadjusted BPs)" & label == "2" ~ "No",
           TRUE ~ label
         )
       )
@@ -546,7 +558,10 @@ gtsummary::tbl_svysummary(
 
 # Revert the names in the data frame
 original_names <- c(
-  "Hypertension" = "highbp14090_adj",
+  "Hypertension (Adjusted BPs)" = "highbp14090_adj",
+  'Hypertension (Unadjusted BPs)' = "highbp14090",
+  'Controlled Hypertension (Adjusted BPs)' = "control14090_adj",
+  'Controlled Hypertension (Unadjusted BPs)' = "control14090",
   "Age" = "clc_age",
   "Marital status" = "married",
   "Highest education level" = "edudr04",
@@ -568,106 +583,7 @@ original_names <- c(
 names(imputed_cycles1to6_data) <- dplyr::recode(names(imputed_cycles1to6_data), !!!original_names)
 ```
 
-### Table 2b - HTN based on medications only
-
-```{r, warning = FALSE, message = FALSE}
-# Combine cycles to obtain sample
-cycles1to6_data <- cchsflow::merge_rec_data(cycle1_data, cycle2_data, cycle3_data, cycle4_data, cycle5_data, cycle6_data)
-cycles1to6_data <- dplyr::filter(cycles1to6_data, insample == 1)
-
-recode_na <- function(column) {
-  # Convert the column to character if it's a factor
-  if (is.factor(column)) {
-    column <- as.character(column)
-  }
-  # Replace "NA(c)" with "NA(b)"
-  column[column == "NA(c)"] <- NA
-  return(column)
-}
-
-cycles1to6_data$ckd <- recode_na(cycles1to6_data$ckd)
-cycles1to6_data$diabx <- recode_na(cycles1to6_data$diabx)
-
-# Create a binary variable for the "medication only" subgroup in the full dataset
-cycles1to6_data <- cycles1to6_data %>%
-  dplyr::mutate(meds_only_htn = dplyr::case_when(
-    highbp14090_adj == 1 &
-    anymed2 == 1 &
-    (is.na(sbp_adj) | is.na(dbp_adj) |
-      (((!is.na(diabx) & diabx == 1) | (!is.na(ckd) & ckd == 1)) & sbp_adj < 130 & dbp_adj < 80) |
-      ((is.na(diabx) | diabx != 1) & (is.na(ckd) | ckd != 1) & sbp_adj < 140 & dbp_adj < 90))
-    ~ 1,
-    TRUE ~ 0
-  ))
-
-# Create a survey design object using the full dataset
-weighted_data <- srvyr::as_survey(cycles1to6_data, weights = wgt_full)
-
-# Calculate the summary statistics
-htn_med_only_summary <- weighted_data %>%
-  dplyr::group_by(clc_sex) %>%
-  dplyr::summarise(
-    # Number of people with HTN based on meds only
-    n_meds_only = unweighted(sum(meds_only_htn)),
-    # Total number of people in the stratum (for unweighted %)
-    n_total = unweighted(n()),
-    # Weighted percentage of HTN based on meds only, out of the whole population
-    weighted_percent = survey_mean(meds_only_htn) * 100
-  ) %>%
-  # Calculate unweighted percentage
-  dplyr::mutate(
-    unweighted_percent = (n_meds_only / n_total) * 100
-  ) %>%
-  # Select and rename the final columns
-  dplyr::select(
-    `Sex` = clc_sex,
-    `HTN via meds only` = n_meds_only,
-    `Unweighted %` = unweighted_percent,
-    `Weighted %` = weighted_percent
-  )
-
-# Display the table
-flextable::flextable(htn_med_only_summary)
-
-# Table breaking down meds only HTN respondents by BP
-table2c_data <- cycles1to6_data %>%
-  # Step 1: Must be classified hypertensive and be on medication
-  filter(highbp14090_adj == 1 & anymed2 == 1) %>%
-  
-  # Step 2: Must also have BP below diagnostic thresholds (or NA)
-  filter(
-    is.na(sbp_adj) | is.na(dbp_adj) |
-      (((!is.na(diabx) & diabx == 1) | (!is.na(ckd) & ckd == 1)) & sbp_adj < 130 & dbp_adj < 80) |
-      ((is.na(diabx) | diabx != 1) & (is.na(ckd) | ckd != 1) & sbp_adj < 140 & dbp_adj < 90)
-  ) %>%
-  group_by(clc_sex) %>%
-  summarise(
-    # Counts for people WITHOUT diabetes or CKD
-    normal_bps = sum(
-      ((is.na(diabx) | diabx == 2) & (is.na(ckd) | ckd == 2)) & 
-      (sbp_adj < 140) & (dbp_adj < 90),
-      na.rm = TRUE
-    ),
-
-    
-    # Counts for people WITH diabetes or CKD
-    diab_or_ckd_normal_bps = sum(
-      ((!is.na(diabx) & diabx == 1) | (!is.na(ckd) & ckd == 1)) & 
-      (sbp_adj < 130) & (dbp_adj < 80),
-      na.rm = TRUE
-    ),
-    
-    # Counts for people WITH NA BPs
-    na_bps = sum(
-      (is.na(sbp_adj)) | (is.na(dbp_adj)),
-      na.rm = TRUE
-    ),
-  )
-
-flextable::flextable(table2c_data)
-```
-
-### Table 2c - Weighted crude ORs and CIs for candidate predictors
+### Table 2b - Weighted crude ORs and CIs for candidate predictors
 
 ```{r, warning = FALSE, message = FALSE}
 # Truncate skewed continuous variables if necessary
