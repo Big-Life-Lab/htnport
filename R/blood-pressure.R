@@ -1,4 +1,4 @@
-#' @title Adjust systolic blood pressure
+#' @title Adjusted systolic blood pressure
 #'
 #' @description This function adjusts systolic blood pressure based on the respondent's systolic average blood pressure across
 #' six measurements. The adjustment is made using specific correction factors. The adjusted systolic blood pressure
@@ -23,17 +23,17 @@
 #' @export
 adjust_SBP <- function(BPMDPBPS) {
   SBP_adj <- 0
-  
+
   if (BPMDPBPS >= 0 && BPMDPBPS < 996 && !is.na(BPMDPBPS)) { # Proceeds without non-responses
     SBP_adj <- 11.4 + (0.93 * BPMDPBPS)
   } else {
     SBP_adj <- haven::tagged_na("b") # SBP_adj is set to NA(b) for non-response values
   }
-  
+
   return(SBP_adj)
 }
 
-#' @title Adjust diastolic blood pressure
+#' @title Adjusted diastolic blood pressure
 #'
 #' @description This function adjusts diastolic blood pressure based on the respondent's diastolic average blood pressure across
 #' six measurements. The adjustment is made using specific correction factors. The adjusted diastolic blood pressure
@@ -58,17 +58,17 @@ adjust_SBP <- function(BPMDPBPS) {
 #' @export
 adjust_DBP <- function(BPMDPBPD) {
   DBP_adj <- 0
-  
+
   if (BPMDPBPD >= 0 && BPMDPBPD < 996 && !is.na(BPMDPBPD)) { # Proceeds without non-responses
     DBP_adj <- 15.6 + (0.83 * BPMDPBPD)
   } else {
     DBP_adj <- haven::tagged_na("b") # DBP_adj is set to NA(b) for non-response values
   }
-  
+
   return(DBP_adj)
 }
 
-#' @title Determine Hypertension Status
+#' @title Hypertension derived variable
 #'
 #' @description
 #' This function determines the hypertension status of a respondent based on their systolic and diastolic blood pressure measurements and medication usage.
@@ -111,14 +111,14 @@ determine_hypertension <- function(BPMDPBPS, BPMDPBPD, ANYMED2, CCC_32 = 2, CARD
   highsys140 <- NA
   highdias90 <- NA
   highBP14090 <- haven::tagged_na("b")
-  
+
   # Set ANYMED2 to 0 if CCC_32 = 2 and either CARDIOV, CKD, or DIABX = 1
   if ((!is.na(CCC_32) && CCC_32 == 2) && ((!is.na(CARDIOV) && CARDIOV == 1) || (!is.na(CKD) && CKD == 1) || (!is.na(DIABX) && DIABX == 1))) {
     ANYMED2 <- 0
   } else if (!is.na(ANYMED2) && ANYMED2 == "NA(b)") {
     ANYMED2 <- NA
   }
-  
+
   if ((BPMDPBPS < 0) || (BPMDPBPS >= 996) || is.na(BPMDPBPS) || (BPMDPBPD < 0) || (BPMDPBPD >= 996) || is.na(BPMDPBPD)) {
     if (!is.na(ANYMED2) && ANYMED2 == 1) {
       highBP14090 <- 1
@@ -127,7 +127,7 @@ determine_hypertension <- function(BPMDPBPS, BPMDPBPD, ANYMED2, CCC_32 = 2, CARD
       return(highBP14090)
     }
   }
-  
+
   # Check conditions and assign values to highsys140 and highdias90
   if ((!is.na(DIABX) && DIABX == 1) || (!is.na(CKD) && CKD == 1)) {
     if (130 <= BPMDPBPS && BPMDPBPS < 996) {
@@ -137,7 +137,7 @@ determine_hypertension <- function(BPMDPBPS, BPMDPBPD, ANYMED2, CCC_32 = 2, CARD
     } else {
       return(highBP14090)
     }
-    
+
     if (80 <= BPMDPBPD && BPMDPBPD < 996) {
       highdias90 <- 1
     } else if (0 <= BPMDPBPD && BPMDPBPD < 80) {
@@ -153,7 +153,7 @@ determine_hypertension <- function(BPMDPBPS, BPMDPBPD, ANYMED2, CCC_32 = 2, CARD
     } else {
       return(highBP14090)
     }
-    
+
     if (90 <= BPMDPBPD && BPMDPBPD < 996) {
       highdias90 <- 1
     } else if (0 <= BPMDPBPD && BPMDPBPD < 90) {
@@ -162,7 +162,7 @@ determine_hypertension <- function(BPMDPBPS, BPMDPBPD, ANYMED2, CCC_32 = 2, CARD
       return(highBP14090)
     }
   }
-  
+
   # Calculate highBP14090
   if (highsys140 == 1 || highdias90 == 1) {
     highBP14090 <- 1
@@ -173,14 +173,14 @@ determine_hypertension <- function(BPMDPBPS, BPMDPBPD, ANYMED2, CCC_32 = 2, CARD
       highBP14090 <- 1
     }
   }
-  
+
   return(highBP14090)
 }
 
-#' @title Determine Adjusted Hypertension Status
+#' @title Hypertension derived variable with adjusted blood pressures
 #'
 #' @description
-#' This function determines the adjusted hypertension status of a respondent based on their adjusted systolic and diastolic blood pressure measurements and medication usage.
+#' This function determines the hypertension status of a respondent based on their adjusted systolic and diastolic blood pressure measurements and medication usage.
 #'
 #' @param SBP_adj An integer representing the adjusted systolic blood pressure measurement of the respondent.
 #' @param DBP_adj An integer representing the adjusted diastolic blood pressure measurement of the respondent.
@@ -220,14 +220,14 @@ determine_adjusted_hypertension <- function(SBP_adj, DBP_adj, ANYMED2, CCC_32 = 
   highsys140_adj <- NA
   highdias90_adj <- NA
   highBP14090_adj <- haven::tagged_na("b")
-  
+
   # Set ANYMED2 to 0 if CCC_32 = 2 and either CARDIOV, CKD, or DIABX = 1
   if ((!is.na(CCC_32) && CCC_32 == 2) && ((!is.na(CARDIOV) && CARDIOV == 1) || (!is.na(CKD) && CKD == 1) || (!is.na(DIABX) && DIABX == 1))) {
     ANYMED2 <- 0
   } else if (!is.na(ANYMED2) && ANYMED2 == "NA(b)") {
     ANYMED2 <- NA
   }
-  
+
   if ((SBP_adj < 0) || (SBP_adj >= 996) || is.na(SBP_adj) || (DBP_adj < 0) || (DBP_adj >= 996) || is.na(DBP_adj)) {
     if (!is.na(ANYMED2) && ANYMED2 == 1) {
       highBP14090_adj <- 1
@@ -236,7 +236,7 @@ determine_adjusted_hypertension <- function(SBP_adj, DBP_adj, ANYMED2, CCC_32 = 
       return(highBP14090_adj)
     }
   }
-  
+
   # Check conditions and assign values to highsys140_adj and highdias90_adj
   if ((!is.na(DIABX) && DIABX == 1) || (!is.na(CKD) && CKD == 1)) {
     if (130 <= SBP_adj && SBP_adj < 996) {
@@ -246,7 +246,7 @@ determine_adjusted_hypertension <- function(SBP_adj, DBP_adj, ANYMED2, CCC_32 = 
     } else {
       return(highBP14090_adj)
     }
-    
+
     if (80 <= DBP_adj && DBP_adj < 996) {
       highdias90_adj <- 1
     } else if (0 <= DBP_adj && DBP_adj < 80) {
@@ -262,7 +262,7 @@ determine_adjusted_hypertension <- function(SBP_adj, DBP_adj, ANYMED2, CCC_32 = 
     } else {
       return(highBP14090_adj)
     }
-    
+
     if (90 <= DBP_adj && DBP_adj < 996) {
       highdias90_adj <- 1
     } else if (0 <= DBP_adj && DBP_adj < 90) {
@@ -271,7 +271,7 @@ determine_adjusted_hypertension <- function(SBP_adj, DBP_adj, ANYMED2, CCC_32 = 
       return(highBP14090_adj)
     }
   }
-  
+
   # Initialize and calculate highBP14090_adj
   if (highsys140_adj == 1 || highdias90_adj == 1) {
     highBP14090_adj <- 1
@@ -282,11 +282,11 @@ determine_adjusted_hypertension <- function(SBP_adj, DBP_adj, ANYMED2, CCC_32 = 
       highBP14090_adj <- 1
     }
   }
-  
+
   return(highBP14090_adj)
 }
 
-#' @title Determine Controlled Hypertension Status
+#' @title Controlled hypertension derived variable
 #'
 #' @description
 #' This function determines the controlled hypertension status of a respondent based on their systolic and diastolic blood pressure measurements and medication usage.
@@ -329,18 +329,18 @@ determine_controlled_hypertension <- function(BPMDPBPS, BPMDPBPD, ANYMED2, CCC_3
   highsys140 <- NA
   highdias90 <- NA
   Control14090 <- haven::tagged_na("b")
-  
+
   # Set ANYMED2 to 0 if CCC_32 = 2 and either CARDIOV, CKD, or DIABX = 1
   if ((!is.na(CCC_32) && CCC_32 == 2) && ((!is.na(CARDIOV) && CARDIOV == 1) || (!is.na(CKD) && CKD == 1) || (!is.na(DIABX) && DIABX == 1))) {
     ANYMED2 <- 0
   } else if (!is.na(ANYMED2) && ANYMED2 == "NA(b)") {
     ANYMED2 <- NA
   }
-  
+
   if ((BPMDPBPS < 0) || (BPMDPBPS >= 996) || is.na(BPMDPBPS) || (BPMDPBPD < 0) || (BPMDPBPD >= 996) || is.na(BPMDPBPD)) {
     return(Control14090)
   }
-  
+
   # Check conditions and assign values to highsys140 and highdias90
   if ((!is.na(DIABX) && DIABX == 1) || (!is.na(CKD) && CKD == 1)) {
     if (130 <= BPMDPBPS && BPMDPBPS < 996) {
@@ -350,7 +350,7 @@ determine_controlled_hypertension <- function(BPMDPBPS, BPMDPBPD, ANYMED2, CCC_3
     } else {
       return(Control14090)
     }
-    
+
     if (80 <= BPMDPBPD && BPMDPBPD < 996) {
       highdias90 <- 1
     } else if (0 <= BPMDPBPD && BPMDPBPD < 80) {
@@ -366,7 +366,7 @@ determine_controlled_hypertension <- function(BPMDPBPS, BPMDPBPD, ANYMED2, CCC_3
     } else {
       return(Control14090)
     }
-    
+
     if (90 <= BPMDPBPD && BPMDPBPD < 996) {
       highdias90 <- 1
     } else if (0 <= BPMDPBPD && BPMDPBPD < 90) {
@@ -375,23 +375,23 @@ determine_controlled_hypertension <- function(BPMDPBPS, BPMDPBPD, ANYMED2, CCC_3
       return(Control14090)
     }
   }
-  
+
   # Check the conditions using nested ifelse statements
   if (!is.na(ANYMED2) && ANYMED2 == 1) {
     Control14090 <- ifelse(highsys140 == 1 || highdias90 == 1, 2,
-                           ifelse(highsys140 == 2 && highdias90 == 2, 1, NA)
+      ifelse(highsys140 == 2 && highdias90 == 2, 1, NA)
     )
   } else {
     Control14090 <- 2
   }
-  
+
   return(Control14090)
 }
 
-#' @title Determine Controlled Adjusted Hypertension Status
+#' @title Controlled hypertension derived variable with adjusted blood pressures
 #'
 #' @description
-#' This function determines the controlled adjusted hypertension status of a respondent based on their adjusted systolic and diastolic blood pressure measurements and medication usage.
+#' This function determines the controlled hypertension status of a respondent based on their adjusted systolic and diastolic blood pressure measurements and medication usage.
 #'
 #' @param SBP_adj An integer representing the adjusted systolic blood pressure measurement of the respondent.
 #' @param DBP_adj An integer representing the adjusted diastolic blood pressure measurement of the respondent.
@@ -431,18 +431,18 @@ determine_controlled_adjusted_hypertension <- function(SBP_adj, DBP_adj, ANYMED2
   highsys140_adj <- NA
   highdias90_adj <- NA
   Control14090_adj <- haven::tagged_na("b")
-  
+
   # Set ANYMED2 to 0 if CCC_32 = 2 and either CARDIOV, CKD, or DIABX = 1
   if ((!is.na(CCC_32) && CCC_32 == 2) && ((!is.na(CARDIOV) && CARDIOV == 1) || (!is.na(CKD) && CKD == 1) || (!is.na(DIABX) && DIABX == 1))) {
     ANYMED2 <- 0
   } else if (!is.na(ANYMED2) && ANYMED2 == "NA(b)") {
     ANYMED2 <- NA
   }
-  
+
   if ((SBP_adj < 0) || (SBP_adj >= 996) || is.na(SBP_adj) || (DBP_adj < 0) || (DBP_adj >= 996) || is.na(DBP_adj)) {
     return(Control14090_adj)
   }
-  
+
   # Check conditions and assign values to highsys140_adj and highdias90_adj
   if ((!is.na(DIABX) && DIABX == 1) || (!is.na(CKD) && CKD == 1)) {
     if (130 <= SBP_adj && SBP_adj < 996) {
@@ -452,7 +452,7 @@ determine_controlled_adjusted_hypertension <- function(SBP_adj, DBP_adj, ANYMED2
     } else {
       return(Control14090_adj)
     }
-    
+
     if (80 <= DBP_adj && DBP_adj < 996) {
       highdias90_adj <- 1
     } else if (0 <= DBP_adj && DBP_adj < 80) {
@@ -468,7 +468,7 @@ determine_controlled_adjusted_hypertension <- function(SBP_adj, DBP_adj, ANYMED2
     } else {
       return(Control14090_adj)
     }
-    
+
     if (90 <= DBP_adj && DBP_adj < 996) {
       highdias90_adj <- 1
     } else if (0 <= DBP_adj && DBP_adj < 90) {
@@ -477,15 +477,15 @@ determine_controlled_adjusted_hypertension <- function(SBP_adj, DBP_adj, ANYMED2
       return(Control14090_adj)
     }
   }
-  
+
   # Check the conditions using nested ifelse statements
   if (!is.na(ANYMED2) && ANYMED2 == 1) {
     Control14090_adj <- ifelse(highsys140_adj == 1 || highdias90_adj == 1, 2,
-                               ifelse(highsys140_adj == 2 && highdias90_adj == 2, 1, NA)
+      ifelse(highsys140_adj == 2 && highdias90_adj == 2, 1, NA)
     )
   } else {
     Control14090_adj <- 2
   }
-  
+
   return(Control14090_adj)
 }

@@ -1,4 +1,4 @@
-#' @title Calculate Non-HDL Cholesterol Level
+#' @title Non-HDL cholesterol level
 #'
 #' @description This function calculates a respondent's non-HDL cholesterol level by subtracting their HDL cholesterol level
 #' from their total cholesterol level. It first checks whether the input values `LAB_CHOL` (total cholesterol)
@@ -26,19 +26,19 @@
 #' @export
 calculate_nonHDL <- function(LAB_CHOL, LAB_HDL) {
   nonHDL <- 0
-  
+
   if (LAB_CHOL >= 0 && LAB_CHOL < 99.6 && LAB_HDL >= 0 && LAB_HDL < 9.96 && !is.na(LAB_CHOL) && !is.na(LAB_HDL)) {
     nonHDL <- LAB_CHOL - LAB_HDL
   } else {
     nonHDL <- haven::tagged_na("b")
   }
-  
+
   return(nonHDL)
 }
 
-#' Non-HDL Cholesterol Categorization
+#' @title Categorical non-HDL cholesterol level
 #'
-#' This function categorizes individuals' non-HDL cholesterol levels based on a threshold value.
+#' @description This function categorizes individuals' non-HDL cholesterol levels based on a threshold value.
 #'
 #' @param nonHDL Numeric value representing an individual's non-HDL cholesterol level.
 #'
@@ -59,7 +59,7 @@ calculate_nonHDL <- function(LAB_CHOL, LAB_HDL) {
 #' @export
 categorize_nonHDL <- function(nonHDL) {
   nonhdltodd <- 0
-  
+
   if (is.na(nonHDL) || nonHDL < 0) {
     nonhdltodd <- haven::tagged_na("b")
   } else {
@@ -72,7 +72,7 @@ categorize_nonHDL <- function(nonHDL) {
   return(nonhdltodd)
 }
 
-#' @title Calculate Waist-to-Height Ratio (WHR)
+#' @title Waist-to-height ratio (WHR)
 #'
 #' @description This function calculates the Waist-to-Height Ratio (WHR) by dividing the waist circumference by the height of the respondent.
 #'
@@ -96,12 +96,12 @@ categorize_nonHDL <- function(nonHDL) {
 #' @export
 calculate_WHR <- function(HWM_11CM, HWM_14CX) {
   WHR <- 0
-  
+
   if (HWM_11CM < 0 || is.na(HWM_11CM) || HWM_14CX < 0 || is.na(HWM_14CX)) {
     WHR <- haven::tagged_na("b")
   } else {
     WHR <- HWM_14CX / HWM_11CM
   }
-  
+
   return(WHR)
 }

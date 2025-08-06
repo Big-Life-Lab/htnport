@@ -2081,7 +2081,7 @@ legend("bottomright", legend = c("Unadjusted BP", "Adjusted BP"), col = c("black
 ```{r, warning = FALSE, message = FALSE}
 # Exclude those who have controlled HTN and recreate centered weighted objects
 imputed_cycles1to6_data <- imputed_cycles1to6_data %>%
-  dplyr::filter(control14090_adj != 1)
+  dplyr::filter(control14090_adj != 1 | control14090 != 1)
 
 male_data <- dplyr::filter(imputed_cycles1to6_data, clc_sex == 1)
 female_data <- dplyr::filter(imputed_cycles1to6_data, clc_sex == 2)
@@ -2142,8 +2142,8 @@ female_model_uncontrolled <- survey::svyglm(highbp14090_adj ~ rcs(clc_age, 4) + 
 male_predicted_probabilities_uncontrolled <- generate_predicted_probabilities(male_model_uncontrolled)
 female_predicted_probabilities_uncontrolled <- generate_predicted_probabilities(female_model_uncontrolled)
 
-calibration(male_predicted_probabilities, model.frame(male_model_uncontrolled)$highbp14090_adj)
-calibration(female_predicted_probabilities, model.frame(female_model_uncontrolled)$highbp14090_adj)
+calibration(male_predicted_probabilities_uncontrolled, model.frame(male_model_uncontrolled)$highbp14090_adj)
+calibration(female_predicted_probabilities_uncontrolled, model.frame(female_model_uncontrolled)$highbp14090_adj)
 
 # Fit reduced male and female models with uncontrolled HTN and see effect
 weighted_male$degf <- 68

@@ -1,6 +1,6 @@
-#' @title Calculate daily fruit and vegetable consumption in a year for respondent in CHMS cycles 1-2.
-#' 
-#' @description This function calculates the daily fruit and vegetable consumption in a year for respondent in the Canadian Health Measures 
+#' @title Daily fruit and vegetable consumption in a year - cycles 1-2
+#'
+#' @description This function calculates the daily fruit and vegetable consumption in a year for respondent in the Canadian Health Measures
 #' Survey (CHMS) cycles 1-2. It takes seven parameters, each representing the number of times per year a specific fruit or vegetable item
 #' was consumed. The function then sums up the consumption frequencies of all these items and divides the total by 365 to
 #' obtain the average daily consumption of fruits and vegetables in a year.
@@ -14,14 +14,14 @@
 #' @param GFVD23Y A numeric representing the number of times per year other vegetables were consumed.
 #'
 #' @return A numeric representing the average times per day fruits and vegetables were consumed in a year.
-#' 
+#'
 #' @details The function calculates the total consumption of fruits and vegetables in a year by summing up the consumption
 #'          frequencies of all the input items. It then divides the total by 365 to obtain the average daily consumption of
 #'          fruits and vegetables in a year. NA(b) is only returned if all the parameters are missing or if the average ends
 #'          up being NA.
-#' 
+#'
 #' @examples
-#' 
+#'
 #' # Example: Calculate average daily fruit and vegetable consumption for a cycle 1-2 respondent.
 #' # Let's assume the following annual consumption frequencies for each item:
 #' # WSDD14Y (fruit juice) = 50 times
@@ -32,30 +32,31 @@
 #' # GFVD22Y (potatoes) = 120 times
 #' # GFVD23Y (other vegetables) = 90 times
 #' # Using the function:
-#' find_totalFV_cycles1and2(WSDD14Y = 50, GFVD17Y = 150, GFVD18Y = 200, GFVD19Y = 100, GFVD20Y = 80, 
-#' GFVD22Y = 120, GFVD23Y = 90)
+#' find_totalFV_cycles1and2(
+#'   WSDD14Y = 50, GFVD17Y = 150, GFVD18Y = 200, GFVD19Y = 100, GFVD20Y = 80,
+#'   GFVD22Y = 120, GFVD23Y = 90
+#' )
 #' # Output: 2.164384
-#' 
+#'
 #' @export
 find_totalFV_cycles1and2 <- function(WSDD14Y, GFVD17Y, GFVD18Y, GFVD19Y, GFVD20Y, GFVD22Y, GFVD23Y) {
-  
   totalFV <- 0
-  
+
   if (all(is.na(c(WSDD14Y, GFVD17Y, GFVD18Y, GFVD19Y, GFVD20Y, GFVD22Y, GFVD23Y)))) {
     totalFV <- haven::tagged_na("b")
-  }
-  else {
+  } else if (all(!is.na(c(WSDD14Y, GFVD17Y, GFVD18Y, GFVD19Y, GFVD20Y, GFVD22Y, GFVD23Y))) && any(c(WSDD14Y, GFVD17Y, GFVD18Y, GFVD19Y, GFVD20Y, GFVD22Y, GFVD23Y) < 0)) {
+    totalFV <- haven::tagged_na("b")
+  } else {
     totalFV <- sum(c(WSDD14Y, GFVD17Y, GFVD18Y, GFVD19Y, GFVD20Y, GFVD22Y, GFVD23Y), na.rm = TRUE) / 365
   }
-  
+
   return(totalFV)
-  
 }
 
-#' @title Calculate daily fruit and vegetable consumption in a year for respondents in CHMS cycles 3-6.
-#' 
-#' @description This function calculates the daily fruit and vegetable consumption in a year for respondents in the Canadian Health Measures 
-#' Survey (CHMS) cycles 3-6. It takes eleven parameters, each representing the number of times per year a specific fruit or 
+#' @title Daily fruit and vegetable consumption in a year - cycles 3-6
+#'
+#' @description This function calculates the daily fruit and vegetable consumption in a year for respondents in the Canadian Health Measures
+#' Survey (CHMS) cycles 3-6. It takes eleven parameters, each representing the number of times per year a specific fruit or
 #' vegetable item was consumed. The function then sums up the consumption frequencies of all these items and divides the total
 #' by 365 to obtain the average daily consumption of fruits and vegetables in a year.
 #'
@@ -72,14 +73,14 @@ find_totalFV_cycles1and2 <- function(WSDD14Y, GFVD17Y, GFVD18Y, GFVD19Y, GFVD20Y
 #' @param GFVD23Y A numeric representing the number of times per year other vegetables were consumed.
 #'
 #' @return A numeric representing the average times per day fruits and vegetables were consumed in a year.
-#' 
+#'
 #' @details The function calculates the total consumption of fruits and vegetables in a year by summing up the consumption
 #'          frequencies of all the input items. It then divides the total by 365 to obtain the average daily consumption of
 #'          fruits and vegetables in a year. NA(b) is only returned if all the parameters are missing or if the average ends
 #'          up being NA.
-#' 
+#'
 #' @examples
-#' 
+#'
 #' # Example: Calculate average daily fruit and vegetable consumption for a cycle 3-6 respondent
 #' # Let's assume the following annual consumption frequencies for each item:
 #' # WSDD34Y (orange or grapefruit juice) = 50 times
@@ -94,25 +95,27 @@ find_totalFV_cycles1and2 <- function(WSDD14Y, GFVD17Y, GFVD18Y, GFVD19Y, GFVD20Y
 #' # GFVD22Y (potatoes) = 120 times
 #' # GFVD23Y (other vegetables) = 90 times
 #' # Using the function:
-#' find_totalFV_cycles3to6(WSDD34Y = 50, WSDD35Y = 100, GFVD17AY = 150, GFVD17BY = 80, GFVD17CY = 40, 
-#' GFVD17DY = 200, GFVD18Y = 100, GFVD19Y = 80, GFVD20Y = 60, GFVD22Y = 120, GFVD23Y = 90)
+#' find_totalFV_cycles3to6(
+#'   WSDD34Y = 50, WSDD35Y = 100, GFVD17AY = 150, GFVD17BY = 80, GFVD17CY = 40,
+#'   GFVD17DY = 200, GFVD18Y = 100, GFVD19Y = 80, GFVD20Y = 60, GFVD22Y = 120, GFVD23Y = 90
+#' )
 #' # Output: 2.931507
-#' 
+#'
 #' @export
 find_totalFV_cycles3to6 <- function(WSDD34Y, WSDD35Y, GFVD17AY, GFVD17BY, GFVD17CY, GFVD17DY, GFVD18Y, GFVD19Y, GFVD20Y, GFVD22Y, GFVD23Y) {
-  
   totalFV <- 0
-  
+
   if (all(is.na(c(WSDD34Y, WSDD35Y, GFVD17AY, GFVD17BY, GFVD17CY, GFVD17DY, GFVD18Y, GFVD19Y, GFVD20Y, GFVD22Y, GFVD23Y)))) {
     totalFV <- haven::tagged_na("b")
-  }
-  else {
+  } else if (all(!is.na(c(WSDD34Y, WSDD35Y, GFVD17AY, GFVD17BY, GFVD17CY, GFVD17DY, GFVD18Y, GFVD19Y, GFVD20Y, GFVD22Y, GFVD23Y))) && any(c(WSDD34Y, WSDD35Y, GFVD17AY, GFVD17BY, GFVD17CY, GFVD17DY, GFVD18Y, GFVD19Y, GFVD20Y, GFVD22Y, GFVD23Y) < 0)) {
+    totalFV <- haven::tagged_na("b")
+  } else {
     totalFV <- sum(c(WSDD34Y, WSDD35Y, GFVD17AY, GFVD17BY, GFVD17CY, GFVD17DY, GFVD18Y, GFVD19Y, GFVD20Y, GFVD22Y, GFVD23Y), na.rm = TRUE) / 365
   }
   return(totalFV)
 }
 
-#' @title Diet Categorization 
+#' @title Categorical diet indicator
 #'
 #' @description This function categorizes individuals' diet quality based on their total fruit and vegetable consumption.
 #'
@@ -127,27 +130,23 @@ find_totalFV_cycles3to6 <- function(WSDD34Y, WSDD35Y, GFVD17AY, GFVD17BY, GFVD17
 #' # Example 1: Categorize a totalFV value of 3 as poor diet
 #' determine_gooddiet(3)
 #' # Output: 2
-#' 
+#'
 #' # Example 2: Categorize a totalFV value of 7 as good diet
 #' determine_gooddiet(7)
 #' # Output: 1
 #'
 #' @export
 determine_gooddiet <- function(totalFV) {
-  
   gooddiet <- 0
-  
-  if (is.na(totalFV)) {
+
+  if (is.na(totalFV) || totalFV < 0) {
     gooddiet <- haven::tagged_na("b")
-  }
-  else {
+  } else {
     if (totalFV >= 5) {
       gooddiet <- 1
-    }
-    else {
+    } else {
       gooddiet <- 2
     }
   }
   return(gooddiet)
-  
 }

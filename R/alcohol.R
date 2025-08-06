@@ -1,4 +1,4 @@
-#' @title Calculate the Low Drink Score for a CHMS Respondent Based on Alcohol Consumption
+#' @title Low risk drinking score
 #'
 #' @description
 #' This function calculates a low drink score (step 1 only) for a respondent using
@@ -65,7 +65,7 @@ low_drink_score_fun <- function(CLC_SEX, ALC_11, ALCDWKY) {
   } else {
     step1 <- NA
   }
-  
+
   ## Categorical score
   low_drink_score <- 0
   if (!is.na(step1)) {
@@ -81,11 +81,11 @@ low_drink_score_fun <- function(CLC_SEX, ALC_11, ALCDWKY) {
   } else {
     low_drink_score <- haven::tagged_na("b")
   }
-  
+
   return(low_drink_score)
 }
 
-#' @title Calculate Low Drink Score According to Canada's Low-Risk Drinking Guidelines
+#' @title Low risk drinking score - former/never categories
 #'
 #' @description
 #' Computes a categorical alcohol consumption score based on Canada's Low-Risk Alcohol Drinking Guidelines (Step 1),
@@ -122,18 +122,13 @@ low_drink_score_fun <- function(CLC_SEX, ALC_11, ALCDWKY) {
 #'
 #' \strong{Step 2: Determine the final categorical score.}
 #' \itemize{
-#'   \item If Step 1 = 0:
+#'   \item If the point score from Step 1 is 0, the final category is determined based on lifetime and past-year drinking habits:
 #'     \itemize{
-#'       \item If ALC_17 == 2 and ALC_11 == 2: score = 1
-#'       \item If ALC_17 == 1 and ALC_11 == 2:
-#'         \itemize{
-#'           \item ALC_18 == 2: score = 1
-#'           \item ALC_18 == 1: score = 2
-#'         }
-#'       \item If ALC_11 == 1: score = 2
+#'       \item A score of 1 (Never drinker) is assigned if the respondent either never drank alcohol in their lifetime or is a former drinker who did not regularly consume more than 12 drinks a week.
+#'       \item A score of 2 (Low-risk drinker) is assigned if the respondent drank in the past year (but still scored 0 points) or is a former drinker with a history of regularly consuming more than 12 drinks a week.
 #'     }
-#'   \item If Step 1 = 1 or 2: score = 3
-#'   \item If Step 1 is 3 or more: score = 4
+#'   \item If the point score from Step 1 is 1 or 2, the respondent is classified as a \strong{Moderate drinker} (Score = 3).
+#'   \item If the point score from Step 1 is 3 or more, the respondent is classified as a \strong{Heavy drinker} (Score = 4).
 #' }
 #'
 #' @note
@@ -174,7 +169,7 @@ low_drink_score_fun1 <- function(CLC_SEX, ALC_11, ALCDWKY, ALC_17, ALC_18) {
   } else {
     step1 <- NA
   }
-  
+
   ## Step 2: Calculate the Final Categorical Score
   if (!is.na(step1)) {
     if (step1 == 0) {
@@ -203,6 +198,6 @@ low_drink_score_fun1 <- function(CLC_SEX, ALC_11, ALCDWKY, ALC_17, ALC_18) {
   } else {
     low_drink_score1 <- haven::tagged_na("b")
   }
-  
+
   return(low_drink_score1)
 }

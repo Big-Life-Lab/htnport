@@ -1,6 +1,6 @@
-#' @title Determine Inclusive Diabetes Status
+#' @title Diabetes derived variable
 #'
-#' @description This function evaluates inclusive diabetes status based on three factors: `diab_m`, `CCC_51`, and `diab_drug2`.
+#' @description This function evaluates diabetes status based on three factors: `diab_m`, `CCC_51`, and `diab_drug2`.
 #'
 #' @param diab_m An integer indicating whether the respondent has diabetes based on HbA1c level. 1 for "Yes", 2 for "No".
 #' @param CCC_51 An integer indicating whether the respondent self-reported diabetes. 1 for "Yes", 2 for "No".
@@ -29,9 +29,8 @@
 #'
 #' @export
 determine_inclusive_diabetes <- function(diab_m, CCC_51, diab_drug2) {
-  
-  diabX <- haven::tagged_na("b")  # Default value as tagged NA
-  
+  diabX <- haven::tagged_na("b") # Default value as tagged NA
+
   # Case 1: All are not NA
   if (!is.na(diab_m) && !is.na(CCC_51) && !is.na(diab_drug2)) {
     if (diab_m == 1 || CCC_51 == 1 || diab_drug2 == 1) {
@@ -39,36 +38,27 @@ determine_inclusive_diabetes <- function(diab_m, CCC_51, diab_drug2) {
     } else if (diab_m == 2 && CCC_51 == 2 && diab_drug2 == 0) {
       diabX <- 2 # "No" if all are 2
     }
-  }
-  
-  # Case 2: All are NA
-  else if (is.na(diab_m) && is.na(CCC_51) && is.na(diab_drug2)) {
+  } else if (is.na(diab_m) && is.na(CCC_51) && is.na(diab_drug2)) { # Case 2: All are NA
     diabX <- haven::tagged_na("b")
-  }
-  
-  # Case 3: Two values are NA, check the remaining one
-  else if (is.na(diab_m) && is.na(CCC_51)) {
+  } else if (is.na(diab_m) && is.na(CCC_51)) { # Case 3: Two values are NA, check the remaining one
     if (!is.na(diab_drug2) && diab_drug2 == 1) {
-      diabX <- 1 
+      diabX <- 1
     } else if (!is.na(diab_drug2) && diab_drug2 == 0) {
-      diabX <- haven::tagged_na("b")  
+      diabX <- haven::tagged_na("b")
     }
   } else if (is.na(diab_m) && is.na(diab_drug2)) {
     if (!is.na(CCC_51) && CCC_51 == 1) {
-      diabX <- 1 
+      diabX <- 1
     } else if (!is.na(CCC_51) && CCC_51 == 2) {
-      diabX <- 2  
+      diabX <- 2
     }
   } else if (is.na(CCC_51) && is.na(diab_drug2)) {
     if (!is.na(diab_m) && diab_m == 1) {
-      diabX <- 1 
+      diabX <- 1
     } else if (!is.na(diab_m) && diab_m == 2) {
-      diabX <- 2  
+      diabX <- 2
     }
-  }
-  
-  # Case 4: Only one value is NA, check the other two
-  else if (is.na(diab_m)) {
+  } else if (is.na(diab_m)) { # Case 4: Only one value is NA, check the other two
     if (CCC_51 == 1 || diab_drug2 == 1) {
       diabX <- 1 # "Yes" if any of the non-NA values is 1
     } else if (CCC_51 == 2 && diab_drug2 == 0) {
@@ -87,6 +77,6 @@ determine_inclusive_diabetes <- function(diab_m, CCC_51, diab_drug2) {
       diabX <- 2 # "No" if both non-NA values are 2
     }
   }
-  
+
   return(diabX)
 }

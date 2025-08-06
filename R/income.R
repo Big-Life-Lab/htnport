@@ -1,4 +1,4 @@
-#' @title Calculate adjusted total household income based on weighted household size.
+#' @title Adjusted total household income
 #'
 #' @description This function calculates the adjusted total household income based on the respondent's income amount
 #'              and actual household size, taking into account the weighted household size.
@@ -30,17 +30,16 @@
 #' # Example 3: Respondent with $90000 income and a household size of 1.
 #' calculate_Hhld_Income(THI_01 = 90000, DHHDHSZ = 1)
 #' # Output: 90000
-#' 
+#'
 #' @export
 calculate_Hhld_Income <- function(THI_01, DHHDHSZ) {
-  
-  # Step 1 - derive household adjustment based on household size 
+  # Step 1 - derive household adjustment based on household size
   hh_size_wt <- 0
-  
-  if (is.na(DHHDHSZ)) {
+
+  if (is.na(DHHDHSZ) || DHHDHSZ < 0) {
     return(haven::tagged_na("b"))
   }
-  
+
   for (i in 1:DHHDHSZ) {
     if (i == 1) {
       hh_size_wt <- hh_size_wt + 1
@@ -50,19 +49,18 @@ calculate_Hhld_Income <- function(THI_01, DHHDHSZ) {
       hh_size_wt <- hh_size_wt + 0.3
     }
   }
-  
-  # Step 2 - Adjust total household income based on household size 
+
+  # Step 2 - Adjust total household income based on household size
   adj_hh_inc <- THI_01 / hh_size_wt
-  if (is.na(adj_hh_inc)) {
+  if (is.na(adj_hh_inc) || adj_hh_inc < 0) {
     adj_hh_inc <- haven::tagged_na("b")
   }
   return(adj_hh_inc)
-  
 }
 
-#' Categorize Household Income
+#' @title Categorical adjusted household income
 #'
-#' This function categorizes individuals' household income based on specified income ranges.
+#' @description This function categorizes individuals' adjusted household income based on specified income ranges.
 #'
 #' @param adj_hh_inc Numeric value representing the adjusted household income.
 #'
@@ -85,36 +83,29 @@ calculate_Hhld_Income <- function(THI_01, DHHDHSZ) {
 #'
 #' @export
 categorize_income <- function(adj_hh_inc) {
-  
   incq <- haven::tagged_na("b")
-  
-  if (is.na(adj_hh_inc)) {
+
+  if (is.na(adj_hh_inc) || adj_hh_inc < 0) {
     return(incq)
-  }
-  else {
+  } else {
     if (adj_hh_inc <= 21500) {
       incq <- 1
-    }
-    else if (adj_hh_inc > 21500 && adj_hh_inc <= 35000) {
+    } else if (adj_hh_inc > 21500 && adj_hh_inc <= 35000) {
       incq <- 2
-    }
-    else if (adj_hh_inc > 35000 && adj_hh_inc <= 50000) {
+    } else if (adj_hh_inc > 35000 && adj_hh_inc <= 50000) {
       incq <- 3
-    }
-    else if (adj_hh_inc > 50000 && adj_hh_inc <= 70000) {
+    } else if (adj_hh_inc > 50000 && adj_hh_inc <= 70000) {
       incq <- 4
-    }
-    else if (adj_hh_inc > 70000) {
+    } else if (adj_hh_inc > 70000) {
       incq <- 5
     }
   }
   return(incq)
-  
 }
 
-#' Check If in Lowest Income Quintile
+#' @title Lowest income quintile indicator
 #'
-#' This function checks if an individual's income category corresponds to the lowest income quintile.
+#' @description This function checks if an individual's income category corresponds to the lowest income quintile.
 #'
 #' @param incq Categorical value indicating the income category as defined by the categorize_income function.
 #'
@@ -134,20 +125,16 @@ categorize_income <- function(adj_hh_inc) {
 #'
 #' @export
 in_lowest_income_qunitle <- function(incq) {
-  
   incq1 <- haven::tagged_na("b")
-  
-  if (is.na(incq) || (!is.na(incq) && incq == "NA(b)")) {
+
+  if (is.na(incq) || (!is.na(incq) && incq == "NA(b)") || incq < 0) {
     return(incq1)
-  }
-  else {
+  } else {
     if (incq == 1) {
       incq1 <- 1
-    }
-    else {
+    } else {
       incq1 <- 2
     }
   }
   return(incq1)
-  
 }
