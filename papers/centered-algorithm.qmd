@@ -1,0 +1,138 @@
+---
+title: "Centering HTNPoRT Models"
+author: "Rafidul Islam"
+date: 2025-08-24
+format: 
+  html:
+    toc: true
+    html-math-method: katex
+    css: styles.css
+editor: visual
+---
+
+## Load packages and functions
+
+```{r}
+#| warning: false
+#| message: false
+#| output: false
+
+.libPaths("P:/10619/Rpackages")
+library(dplyr)
+library(rms)
+
+source("R/centering-utils.R") 
+# functions in "util.R"
+# get_rcs: implement the formula of rcs components
+# step_dummy: dummy variables
+# step_rcs: rcs
+# step_interaction: interaction terms
+# step_center: centering
+# get_mean: get mean values from the original dataset
+# root.search: Root searching, not in use in this .qmd file
+```
+
+## Center male models
+
+Do ctrl+F to change from male to female.
+
+```{r}
+# -------- dummy variables --------
+vars_cat <- c("ckd", "diabx", "edudr04", "fmh_15", "gendmhi", "gen_025", "gen_045", "low_drink_score1", "married", "smoke", "working")
+male_data <- step_dummy(male_data, vars_cat)
+
+# -------- rcs --------
+# age
+k_age <- 4
+rcs.fit <- rcs(male_data$clc_age, k_age)
+knots_age <- attributes(rcs.fit)$parms # knot locations
+# BMI
+k_bmi <- 3
+rcs.fit <- rcs(male_data$hwmdbmi, k_bmi)
+knots_bmi <- attributes(rcs.fit)$parms # knot locations
+# exercise
+k_exercise <- 3
+rcs.fit <- rcs(male_data$minperweek, k_exercise)
+knots_exercise <- attributes(rcs.fit)$parms # knot locations
+# unpack rcs
+vars_rcs <- c("clc_age", "hwmdbmi", "minperweek")
+knots_list <- list(knots_age, knots_bmi, knots_exercise)
+knots_list <- setNames(knots_list, vars_rcs)
+male_data <- step_rcs(male_data, vars_rcs, knots_list)
+
+# -------- interaction terms --------
+interaction_list <- list(
+  c("clc_age", "gen_045"),
+  c("clc_age", "hwmdbmi"),
+  c("clc_age", "minperweek"),
+  c("clc_age", "smoke"),
+  c("clc_age", "slp_11"),
+  c("clc_age", "diabx"),
+  c("clc_age", "ckd")
+)
+male_data <- step_interaction(male_data, interaction_list)
+
+# -------- centering --------
+# get mean values from the ORIGINAL dataset
+male_data <- male_data %>%
+  dplyr::mutate(wgt_full = wgt_full / mean(wgt_full))
+
+male_replicate_weights <- male_data %>%
+  dplyr::select(dplyr::starts_with("bsw")) %>%
+  names()
+
+weighted_male <- male_data %>%
+  srvyr::as_survey_rep(
+    weights = wgt_full,
+    repweights = all_of(male_replicate_weights),
+    type = "bootstrap"
+  )
+
+vars_mean <- c("clc_age_rcs_1", "clc_age_rcs_2", "clc_age_rcs_3", "married_2", "married_3", "edudr04_1", "edudr04_2", "working_2", "gendmhi_1", "gen_025_2", "gen_045_2", "fmh_15_1", "hwmdbmi_rcs_1", "hwmdbmi_rcs_2", "low_drink_score1_2", "low_drink_score1_3", "low_drink_score1_4", "minperweek_rcs_1", "minperweek_rcs_2",
+"smoke_1", "smoke_2", "slp_11", "totalfv", "diabx_1", "ckd_1", "clc_age_rcs_1_by_gen_045_2", "clc_age_rcs_2_by_gen_045_2", "clc_age_rcs_3_by_gen_045_2", "clc_age_rcs_1_by_hwmdbmi_rcs_1", "clc_age_rcs_2_by_hwmdbmi_rcs_1", "clc_age_rcs_3_by_hwmdbmi_rcs_1", "clc_age_rcs_1_by_hwmdbmi_rcs_2", "clc_age_rcs_2_by_hwmdbmi_rcs_2", "clc_age_rcs_3_by_hwmdbmi_rcs_2", "clc_age_rcs_1_by_minperweek_rcs_1", "clc_age_rcs_2_by_minperweek_rcs_1", "clc_age_rcs_3_by_minperweek_rcs_1",
+"clc_age_rcs_1_by_minperweek_rcs_2", "clc_age_rcs_2_by_minperweek_rcs_2", "clc_age_rcs_3_by_minperweek_rcs_2", "clc_age_rcs_1_by_smoke_1", "clc_age_rcs_2_by_smoke_1", "clc_age_rcs_3_by_smoke_1", "clc_age_rcs_1_by_smoke_2", "clc_age_rcs_2_by_smoke_2", "clc_age_rcs_3_by_smoke_2", "clc_age_rcs_1_by_slp_11", "clc_age_rcs_2_by_slp_11", "clc_age_rcs_3_by_slp_11", "clc_age_rcs_1_by_diabx_1", "clc_age_rcs_2_by_diabx_1", "clc_age_rcs_3_by_diabx_1", "clc_age_rcs_1_by_ckd_1", "clc_age_rcs_2_by_ckd_1", "clc_age_rcs_3_by_ckd_1")
+
+means <- get_mean(weighted_male, vars_mean)
+
+# centering vars in the ORIGINAL dataset
+vars_center <- names(means)
+male_data_c <- step_center(male_data, vars_center, means)
+
+male_data_c <- male_data_c %>%
+  dplyr::mutate(highbp14090_adj = ifelse(highbp14090_adj == 2, 0, highbp14090_adj)) %>%
+  dplyr::mutate(wgt_full = wgt_full / mean(wgt_full))
+
+male_replicate_weights <- male_data_c %>%
+  dplyr::select(dplyr::starts_with("bsw")) %>%
+  names()
+
+weighted_male_c <- male_data_c %>%
+  srvyr::as_survey_rep(
+    weights = wgt_full,
+    repweights = all_of(male_replicate_weights),
+    type = "bootstrap"
+  )
+
+# Derive full and reduced centered models
+weighted_male_c$degf <- 68
+male_model_c <- survey::svyglm(highbp14090_adj ~ clc_age_rcs_1_C + clc_age_rcs_2_C + clc_age_rcs_3_C + married_2_C + married_3_C + edudr04_1_C + edudr04_2_C + working_2_C + gendmhi_1_C + gen_025_2_C + gen_045_2_C + fmh_15_1_C + hwmdbmi_rcs_1_C + hwmdbmi_rcs_2_C + low_drink_score1_2_C + low_drink_score1_3_C + low_drink_score1_4_C + minperweek_rcs_1_C + minperweek_rcs_2_C + smoke_1_C + smoke_2_C + slp_11_C + totalfv_C + diabx_1_C + ckd_1_C + clc_age_rcs_1_by_gen_045_2_C + clc_age_rcs_2_by_gen_045_2_C + clc_age_rcs_3_by_gen_045_2_C + clc_age_rcs_1_by_hwmdbmi_rcs_1_C + clc_age_rcs_2_by_hwmdbmi_rcs_1_C + clc_age_rcs_3_by_hwmdbmi_rcs_1_C +  clc_age_rcs_1_by_hwmdbmi_rcs_2_C + clc_age_rcs_2_by_hwmdbmi_rcs_2_C + clc_age_rcs_3_by_hwmdbmi_rcs_2_C + clc_age_rcs_1_by_minperweek_rcs_1_C + 
+clc_age_rcs_2_by_minperweek_rcs_1_C + clc_age_rcs_3_by_minperweek_rcs_1_C + 
+clc_age_rcs_1_by_minperweek_rcs_2_C + clc_age_rcs_2_by_minperweek_rcs_2_C + 
+clc_age_rcs_3_by_minperweek_rcs_2_C + clc_age_rcs_1_by_smoke_1_C + 
+clc_age_rcs_2_by_smoke_1_C + clc_age_rcs_3_by_smoke_1_C + clc_age_rcs_1_by_smoke_2_C + 
+clc_age_rcs_2_by_smoke_2_C + clc_age_rcs_3_by_smoke_2_C + 
+clc_age_rcs_1_by_slp_11_C + clc_age_rcs_2_by_slp_11_C + clc_age_rcs_3_by_slp_11_C +
+clc_age_rcs_1_by_diabx_1_C + clc_age_rcs_2_by_diabx_1_C + 
+clc_age_rcs_3_by_diabx_1_C + clc_age_rcs_1_by_ckd_1_C + clc_age_rcs_2_by_ckd_1_C + clc_age_rcs_3_by_ckd_1_C, design = weighted_male_c, family = quasibinomial())
+
+weighted_male_c$degf <- 68
+male_reduced_model_c <- survey::svyglm(highbp14090_adj ~ clc_age_rcs_1_C + clc_age_rcs_2_C + clc_age_rcs_3_C + fmh_15_1_C + hwmdbmi_rcs_1_C + hwmdbmi_rcs_2_C + diabx_1_C + clc_age_rcs_1_by_hwmdbmi_rcs_1_C + clc_age_rcs_2_by_hwmdbmi_rcs_1_C + clc_age_rcs_3_by_hwmdbmi_rcs_1_C +  clc_age_rcs_1_by_hwmdbmi_rcs_2_C + clc_age_rcs_2_by_hwmdbmi_rcs_2_C + clc_age_rcs_3_by_hwmdbmi_rcs_2_C + clc_age_rcs_1_by_diabx_1_C + clc_age_rcs_2_by_diabx_1_C + 
+clc_age_rcs_3_by_diabx_1_C + clc_age_rcs_1_by_ckd_1_C + clc_age_rcs_2_by_ckd_1_C + clc_age_rcs_3_by_ckd_1_C, design = weighted_male_c, family = quasibinomial())
+
+# Export beta coefficients and their standard errors for male centered models
+male_centered_betas <- extract_beta_coefs(male_model_c)
+male_reduced_centered_betas <- extract_beta_coefs(male_reduced_model_c)
+
+write.csv(male_centered_betas, file = "P:/10619/Dropbox/htnport/vignettes/New Modelling Output/Model Presentation Output/Parameters/Male Full Centered Model Betas.csv")
+write.csv(male_reduced_centered_betas, file = "P:/10619/Dropbox/htnport/vignettes/New Modelling Output/Model Presentation Output/Parameters/Male Reduced Centered Model Betas.csv")
+```

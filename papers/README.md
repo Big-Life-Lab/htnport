@@ -1,5 +1,9 @@
 # Papers
 
+## centered-algorithm.qmd
+
+Run this qmd to properly center the models of HTNPoRT.
+
 ## descriptives.Rmd
 
 Run this Rmd to reproduce all results pertaining to the descriptives of HTNPoRT study populations.

@@ -417,6 +417,7 @@ Here's how to use all these functions together.
 In secure environment:
 
 ```{r}
+.libPaths("P:/10619/Rpackages")
 library(survey)
 library(rms)
 
