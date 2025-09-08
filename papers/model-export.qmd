@@ -236,7 +236,7 @@ create_safe_export <- function(svyglm_model, data_summary = NULL, glm_model = NU
 Create a predict method for the safe export:
 
 ```{r}
-predict.safe_svyglm <- function(object, newdata, type = "link", se.fit = FALSE) {
+predict.safe_svyglm <- function(object, newdata, type = "response", se.fit = FALSE) {
   
   # Apply centering if available
   if (!is.null(object$centering)) {
@@ -250,16 +250,20 @@ predict.safe_svyglm <- function(object, newdata, type = "link", se.fit = FALSE) 
   # Create formula with no outcome (right-hand side only)
   rhs_formula <- reformulate(attr(terms(object$formula), "term.labels"))
 
-  # Create model matrix
-  X <- model.matrix(rhs_formula, new_data)
+  # Build model matrix
+  X <- model.matrix(rhs_formula, newdata)
 
-  # Predict using the stripped safe model
+  # Linear predictor
   eta <- as.vector(X %*% object$coefficients)
 
-  # If response type is needed (e.g., for logistic models)
-  predicted_probs <- object$family$linkinv(eta)
-
-  return(predicted_probs)
+  # Output depending on link/response
+  if (type == "link") {
+    return(eta)
+  } else if (type == "response") {
+    return(object$family$linkinv(eta))  # e.g. logistic transform
+  } else {
+    stop("Unsupported type")
+  }
 }
 ```
 
@@ -417,33 +421,34 @@ Here's how to use all these functions together.
 In secure environment:
 
 ```{r}
-.libPaths("P:/10619/Rpackages")
-library(survey)
-library(rms)
-
-source("R/diabetes.R")
-config <- config::get()
-my_variable_details <- read.csv(config$variable_details)
-
 # 1. Fit your models
-# svyglm
-weighted_male$degf <- 68
-male_model <- survey::svyglm(highbp14090_adj ~ rcs(clc_age, 4) + married + edudr04 + working + gendmhi + gen_025 + gen_045 + fmh_15 + rcs(hwmdbmi, 3) + low_drink_score1 + rcs(minperweek, 3) + smoke + slp_11 + totalfv + diabx + ckd + rcs(clc_age, 4)*gen_045 + rcs(clc_age, 4)*rcs(hwmdbmi, 3) + rcs(clc_age, 4)*rcs(minperweek, 3) + rcs(clc_age, 4)*smoke + rcs(clc_age, 4)*slp_11 + rcs(clc_age, 4)*diabx + rcs(clc_age, 4)*ckd, design = weighted_male, family = quasibinomial())
+weighted_male_c$degf <- 68
+male_model_c <- survey::svyglm(highbp14090_adj ~ clc_age_rcs_1_C + clc_age_rcs_2_C + clc_age_rcs_3_C + married_2_C + married_3_C + edudr04_1_C + edudr04_2_C + working_2_C + gendmhi_1_C + gen_025_2_C + gen_045_2_C + fmh_15_1_C + hwmdbmi_rcs_1_C + hwmdbmi_rcs_2_C + low_drink_score1_2_C + low_drink_score1_3_C + low_drink_score1_4_C + minperweek_rcs_1_C + minperweek_rcs_2_C + smoke_1_C + smoke_2_C + slp_11_C + totalfv_C + diabx_1_C + ckd_1_C + clc_age_rcs_1_by_gen_045_2_C + clc_age_rcs_2_by_gen_045_2_C + clc_age_rcs_3_by_gen_045_2_C + clc_age_rcs_1_by_hwmdbmi_rcs_1_C + clc_age_rcs_2_by_hwmdbmi_rcs_1_C + clc_age_rcs_3_by_hwmdbmi_rcs_1_C +  clc_age_rcs_1_by_hwmdbmi_rcs_2_C + clc_age_rcs_2_by_hwmdbmi_rcs_2_C + clc_age_rcs_3_by_hwmdbmi_rcs_2_C + clc_age_rcs_1_by_minperweek_rcs_1_C + 
+clc_age_rcs_2_by_minperweek_rcs_1_C + clc_age_rcs_3_by_minperweek_rcs_1_C + 
+clc_age_rcs_1_by_minperweek_rcs_2_C + clc_age_rcs_2_by_minperweek_rcs_2_C + 
+clc_age_rcs_3_by_minperweek_rcs_2_C + clc_age_rcs_1_by_smoke_1_C + 
+clc_age_rcs_2_by_smoke_1_C + clc_age_rcs_3_by_smoke_1_C + clc_age_rcs_1_by_smoke_2_C + clc_age_rcs_2_by_smoke_2_C + clc_age_rcs_3_by_smoke_2_C + 
+clc_age_rcs_1_by_slp_11_C + clc_age_rcs_2_by_slp_11_C + clc_age_rcs_3_by_slp_11_C +
+clc_age_rcs_1_by_diabx_1_C + clc_age_rcs_2_by_diabx_1_C + 
+clc_age_rcs_3_by_diabx_1_C + clc_age_rcs_1_by_ckd_1_C + clc_age_rcs_2_by_ckd_1_C + clc_age_rcs_3_by_ckd_1_C, design = weighted_male_c, family = quasibinomial())
 
-weighted_female$degf <- 68
-female_model <- survey::svyglm(highbp14090_adj ~ rcs(clc_age, 4) + married + edudr04 + working + gendmhi + gen_025 + gen_045 + fmh_15 + rcs(hwmdbmi, 3) + low_drink_score1 + rcs(minperweek, 3) + smoke + slp_11 + totalfv + diabx + ckd + rcs(clc_age, 4)*gen_045 + rcs(clc_age, 4)*rcs(hwmdbmi, 3) + rcs(clc_age, 4)*rcs(minperweek, 3) + rcs(clc_age, 4)*smoke + rcs(clc_age, 4)*slp_11 + rcs(clc_age, 4)*diabx + rcs(clc_age, 4)*ckd, design = weighted_female, family = quasibinomial())
+weighted_female_c$degf <- 68
+female_model_c <- survey::svyglm(highbp14090_adj ~ clc_age_rcs_1_C + clc_age_rcs_2_C + clc_age_rcs_3_C + married_2_C + married_3_C + edudr04_1_C + edudr04_2_C + working_2_C + gendmhi_1_C + gen_025_2_C + gen_045_2_C + fmh_15_1_C + hwmdbmi_rcs_1_C + hwmdbmi_rcs_2_C + low_drink_score1_2_C + low_drink_score1_3_C + low_drink_score1_4_C + minperweek_rcs_1_C + minperweek_rcs_2_C + smoke_1_C + smoke_2_C + slp_11_C + totalfv_C + diabx_1_C + ckd_1_C + clc_age_rcs_1_by_gen_045_2_C + clc_age_rcs_2_by_gen_045_2_C + clc_age_rcs_3_by_gen_045_2_C + clc_age_rcs_1_by_hwmdbmi_rcs_1_C + clc_age_rcs_2_by_hwmdbmi_rcs_1_C + clc_age_rcs_3_by_hwmdbmi_rcs_1_C +  clc_age_rcs_1_by_hwmdbmi_rcs_2_C + clc_age_rcs_2_by_hwmdbmi_rcs_2_C + clc_age_rcs_3_by_hwmdbmi_rcs_2_C + clc_age_rcs_1_by_minperweek_rcs_1_C +
+clc_age_rcs_2_by_minperweek_rcs_1_C + clc_age_rcs_3_by_minperweek_rcs_1_C +
+clc_age_rcs_1_by_minperweek_rcs_2_C + clc_age_rcs_2_by_minperweek_rcs_2_C +
+clc_age_rcs_3_by_minperweek_rcs_2_C + clc_age_rcs_1_by_smoke_1_C +
+clc_age_rcs_2_by_smoke_1_C + clc_age_rcs_3_by_smoke_1_C + clc_age_rcs_1_by_smoke_2_C + clc_age_rcs_2_by_smoke_2_C + clc_age_rcs_3_by_smoke_2_C +
+clc_age_rcs_1_by_slp_11_C + clc_age_rcs_2_by_slp_11_C + clc_age_rcs_3_by_slp_11_C +
+clc_age_rcs_1_by_diabx_1_C + clc_age_rcs_2_by_diabx_1_C +
+clc_age_rcs_3_by_diabx_1_C + clc_age_rcs_1_by_ckd_1_C + clc_age_rcs_2_by_ckd_1_C + clc_age_rcs_3_by_ckd_1_C, design = weighted_female_c, family = quasibinomial())
 
-weighted_male$degf <- 68
-male_reduced_model <- survey::svyglm(highbp14090_adj ~ rcs(clc_age, 4) + fmh_15 + rcs(clc_age, 4)*rcs(hwmdbmi, 3) + rcs(clc_age, 4)*diabx, design = weighted_male, family = quasibinomial())
+weighted_male_c$degf <- 68
+male_reduced_model_c <- survey::svyglm(highbp14090_adj ~ clc_age_rcs_1_C + clc_age_rcs_2_C + clc_age_rcs_3_C + fmh_15_1_C + hwmdbmi_rcs_1_C + hwmdbmi_rcs_2_C + diabx_1_C + clc_age_rcs_1_by_hwmdbmi_rcs_1_C + clc_age_rcs_2_by_hwmdbmi_rcs_1_C + clc_age_rcs_3_by_hwmdbmi_rcs_1_C +  clc_age_rcs_1_by_hwmdbmi_rcs_2_C + clc_age_rcs_2_by_hwmdbmi_rcs_2_C + clc_age_rcs_3_by_hwmdbmi_rcs_2_C + clc_age_rcs_1_by_diabx_1_C + clc_age_rcs_2_by_diabx_1_C + 
+clc_age_rcs_3_by_diabx_1_C, design = weighted_male_c, family = quasibinomial())
 
-weighted_female$degf <- 68
-female_reduced_model <- survey::svyglm(highbp14090_adj ~ rcs(clc_age, 4) + fmh_15 + rcs(clc_age, 4)*rcs(hwmdbmi, 3) + rcs(clc_age, 4)*diabx, design = weighted_female, family = quasibinomial())
-
-# glm
-male_final_model <- config$models$male_final_model
-female_final_model <- config$models$female_final_model
-male_final_reduced_model <- config$models$male_final_reduced_model
-female_final_reduced_model <- config$models$female_final_reduced_model
+weighted_female_c$degf <- 68
+female_reduced_model_c <- survey::svyglm(highbp14090_adj ~ clc_age_rcs_1_C + clc_age_rcs_2_C + clc_age_rcs_3_C + fmh_15_1_C + hwmdbmi_rcs_1_C + hwmdbmi_rcs_2_C + diabx_1_C + clc_age_rcs_1_by_hwmdbmi_rcs_1_C + clc_age_rcs_2_by_hwmdbmi_rcs_1_C + clc_age_rcs_3_by_hwmdbmi_rcs_1_C +  clc_age_rcs_1_by_hwmdbmi_rcs_2_C + clc_age_rcs_2_by_hwmdbmi_rcs_2_C + clc_age_rcs_3_by_hwmdbmi_rcs_2_C + clc_age_rcs_1_by_diabx_1_C + clc_age_rcs_2_by_diabx_1_C +
+clc_age_rcs_3_by_diabx_1_C, design = weighted_female_c, family = quasibinomial())
 
 # 2. Create data summary (without individual values)
 male_data_summary <- list(
@@ -497,54 +502,42 @@ female_data_summary <- list(
 )
 
 # 3. Create safe export
-male_safe_model <- create_safe_export(male_model, male_data_summary, glm_model = male_final_model)
-female_safe_model <- create_safe_export(female_model, female_data_summary, glm_model = female_final_model)
-male_safe_reduced_model <- create_safe_export(male_reduced_model, male_data_summary, glm_model = male_final_reduced_model)
-female_safe_reduced_model <- create_safe_export(female_reduced_model, female_data_summary, glm_model = female_final_reduced_model)
+male_safe_model <- create_safe_export(male_model_c)
+female_safe_model <- create_safe_export(female_model_c, female_data_summary)
+male_safe_reduced_model <- create_safe_export(male_reduced_model_c, male_data_summary)
+female_safe_reduced_model <- create_safe_export(female_reduced_model_c, female_data_summary)
 
-# 4. Validate with synthetic data before saving
-cycle1 <- config$data$`cycle1-synth`
-
-new_data <- recodeflow::rec_with_table(cycle1, c("clc_age", "fmh_15", "lab_hba1", "ccc_51", "diab_drug2", "diab_m", "diabx", "hwmdbmi"), variable_details = my_variable_details)
-new_data <- dplyr::select(new_data, c("clc_age", "fmh_15", "diabx", "hwmdbmi"))
-
-new_data$fmh_15[2] <- NA
-new_data$diabx   <- ifelse(new_data$diabx == 1, 1,
-                           ifelse(new_data$diabx == 2, 0, NA))
-new_data$fmh_15  <- ifelse(new_data$fmh_15 == 1, 1,
-                           ifelse(new_data$fmh_15 == 2, 0, NA))
-
-new_data$diabx   <- factor(new_data$diabx, levels = c(0, 1))
-new_data$fmh_15  <- factor(new_data$fmh_15, levels = c(0, 1))
-
-validate_export(male_reduced_model, male_safe_reduced_model, new_data)
-validate_export(female_reduced_model, female_safe_reduced_model, new_data)
-
+# 4. Validate with opposite data before saving
+validate_export(male_model_c, male_safe_model, female_data_c)
+validate_export(female_model_c, female_safe_model, male_data_c)
+validate_export(male_reduced_model_c, male_safe_reduced_model, female_data_c)
+validate_export(female_reduced_model_c, female_safe_reduced_model, male_data_c)
+ 
 # 5. Remove large formula components and save objects
 male_safe_model$formula <- NULL
 female_safe_model$formula <- NULL
 male_safe_reduced_model$formula <- NULL
 female_safe_reduced_model$formula <- NULL
 
-saveRDS(male_safe_model, file = "P:/10619/Dropbox/htnport/models/svyglm/male_model.rds")
-saveRDS(female_safe_model, file = "P:/10619/Dropbox/htnport/models/svyglm/female_model.rds")
-saveRDS(male_safe_reduced_model, file = "P:/10619/Dropbox/htnport/models/svyglm/male_reduced_model.rds")
-saveRDS(female_safe_reduced_model, file = "P:/10619/Dropbox/htnport/models/svyglm/female_reduced_model.rds")
+saveRDS(male_safe_model, file = "P:/10619/Dropbox/htnport/models/svyglm-centered/male_model.rds")
+saveRDS(female_safe_model, file = "P:/10619/Dropbox/htnport/models/svyglm-centered/female_model.rds")
+saveRDS(male_safe_reduced_model, file = "P:/10619/Dropbox/htnport/models/svyglm-centered/male_reduced_model.rds")
+saveRDS(female_safe_reduced_model, file = "P:/10619/Dropbox/htnport/models/svyglm-centered/female_reduced_model.rds")
 ```
 
 In new environment:
 
 ```{r}
 # 6. Load, restore formulas, and use
-male_safe_reduced_model <- readRDS("P:/10619/Dropbox/htnport/models/svyglm/male_reduced_model.rds")
-female_safe_reduced_model <- readRDS("P:/10619/Dropbox/htnport/models/svyglm/female_reduced_model.rds")
+male_safe_reduced_model <- readRDS("P:/10619/Dropbox/htnport/models/svyglm-centered/male_reduced_model.rds")
+female_safe_reduced_model <- readRDS("P:/10619/Dropbox/htnport/models/svyglm-centered/female_reduced_model.rds")
 
-male_safe_reduced_model$formula <- highbp14090_adj ~ rcs(clc_age, 4) + fmh_15 + rcs(clc_age, 4)*rcs(hwmdbmi, 3) + rcs(clc_age, 4)*diabx
-female_safe_reduced_model$formula <- highbp14090_adj ~ rcs(clc_age, 4) + fmh_15 + rcs(clc_age, 4)*rcs(hwmdbmi, 3) + rcs(clc_age, 4)*diabx
+male_safe_reduced_model$formula <- highbp14090_adj ~ clc_age_rcs_1_C + clc_age_rcs_2_C + clc_age_rcs_3_C + fmh_15_1_C + hwmdbmi_rcs_1_C + hwmdbmi_rcs_2_C + diabx_1_C + clc_age_rcs_1_by_hwmdbmi_rcs_1_C + clc_age_rcs_2_by_hwmdbmi_rcs_1_C + clc_age_rcs_3_by_hwmdbmi_rcs_1_C + clc_age_rcs_1_by_hwmdbmi_rcs_2_C + clc_age_rcs_2_by_hwmdbmi_rcs_2_C + clc_age_rcs_3_by_hwmdbmi_rcs_2_C + clc_age_rcs_1_by_diabx_1_C + clc_age_rcs_2_by_diabx_1_C + clc_age_rcs_3_by_diabx_1_C
+female_safe_reduced_model$formula <- highbp14090_adj ~ clc_age_rcs_1_C + clc_age_rcs_2_C + clc_age_rcs_3_C + fmh_15_1_C + hwmdbmi_rcs_1_C + hwmdbmi_rcs_2_C + diabx_1_C + clc_age_rcs_1_by_hwmdbmi_rcs_1_C + clc_age_rcs_2_by_hwmdbmi_rcs_1_C + clc_age_rcs_3_by_hwmdbmi_rcs_1_C + clc_age_rcs_1_by_hwmdbmi_rcs_2_C + clc_age_rcs_2_by_hwmdbmi_rcs_2_C + clc_age_rcs_3_by_hwmdbmi_rcs_2_C + clc_age_rcs_1_by_diabx_1_C + clc_age_rcs_2_by_diabx_1_C + clc_age_rcs_3_by_diabx_1_C
 
 # 7. Make predictions
-new_male_predictions <- predict(male_safe_reduced_model, new_data, type = "response")
-new_female_predictions <- predict(female_safe_reduced_model, new_data, type = "response")
+new_male_predictions <- predict(male_safe_reduced_model, newdata = female_data_c, type = "response")
+new_female_predictions <- predict(female_safe_reduced_model, newdata = male_data_c, type = "response")
 
 # 8. Assess calibration if you have outcomes
 if (!is.null(new_male_predictions)) {

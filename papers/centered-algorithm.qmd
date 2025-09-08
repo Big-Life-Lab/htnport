@@ -35,8 +35,6 @@ source("R/centering-utils.R")
 
 ## Prepare imputed dataset
 
-Do ctrl+F to change from male to female.
-
 ```{r, include = FALSE, warning = FALSE, message = FALSE}
 # Synthetic dataset for test use outside RDC
 # set.seed(123)
@@ -117,8 +115,9 @@ cat_variables <- c("ckd", "diabx", "edudr04", "fmh_15", "gendmhi", "gen_025", "g
 imputed_cycles1to6_data <- imputed_cycles1to6_data %>%
   dplyr::mutate(across(all_of(cat_variables), as.factor))
 
-# Separate male  data
+# Separate male data
 male_data <- dplyr::filter(imputed_cycles1to6_data, clc_sex == 1)
+female_data <- dplyr::filter(imputed_cycles1to6_data, clc_sex == 2)
 ```
 
 ## Center male models
@@ -186,6 +185,7 @@ means <- get_mean(weighted_male, vars_mean)
 vars_center <- names(means)
 male_data_c <- step_center(male_data, vars_center, means)
 
+# Obtain weighted and centered full and reduced models
 male_data_c <- male_data_c %>%
   dplyr::mutate(highbp14090_adj = ifelse(highbp14090_adj == 2, 0, highbp14090_adj)) %>%
   dplyr::mutate(wgt_full = wgt_full / mean(wgt_full))
@@ -212,8 +212,7 @@ male_model_c <- survey::svyglm(highbp14090_adj ~ clc_age_rcs_1_C + clc_age_rcs_2
 clc_age_rcs_2_by_minperweek_rcs_1_C + clc_age_rcs_3_by_minperweek_rcs_1_C + 
 clc_age_rcs_1_by_minperweek_rcs_2_C + clc_age_rcs_2_by_minperweek_rcs_2_C + 
 clc_age_rcs_3_by_minperweek_rcs_2_C + clc_age_rcs_1_by_smoke_1_C + 
-clc_age_rcs_2_by_smoke_1_C + clc_age_rcs_3_by_smoke_1_C + clc_age_rcs_1_by_smoke_2_C + 
-clc_age_rcs_2_by_smoke_2_C + clc_age_rcs_3_by_smoke_2_C + 
+clc_age_rcs_2_by_smoke_1_C + clc_age_rcs_3_by_smoke_1_C + clc_age_rcs_1_by_smoke_2_C + clc_age_rcs_2_by_smoke_2_C + clc_age_rcs_3_by_smoke_2_C + 
 clc_age_rcs_1_by_slp_11_C + clc_age_rcs_2_by_slp_11_C + clc_age_rcs_3_by_slp_11_C +
 clc_age_rcs_1_by_diabx_1_C + clc_age_rcs_2_by_diabx_1_C + 
 clc_age_rcs_3_by_diabx_1_C + clc_age_rcs_1_by_ckd_1_C + clc_age_rcs_2_by_ckd_1_C + clc_age_rcs_3_by_ckd_1_C, design = weighted_male_c, family = quasibinomial())
@@ -229,10 +228,11 @@ cbind(coef(male_reduced_model), coef(male_reduced_model_c))
 predict(male_reduced_model, type = "response") - predict(male_reduced_model_c, type = "response")
 ```
 
-## Export beta coefficients and their standard errors
+## Export model parameters
 
 Do ctrl+F to change from male to female.
 
+### Beta coefficients and their standard errors of centered models:
 ```{r}
 male_centered_betas <- extract_beta_coefs(male_model_c)
 male_reduced_centered_betas <- extract_beta_coefs(male_reduced_model_c)
@@ -240,3 +240,116 @@ male_reduced_centered_betas <- extract_beta_coefs(male_reduced_model_c)
 write.csv(male_centered_betas, file = "P:/10619/Dropbox/htnport/vignettes/New Modelling Output/Model Presentation Output/Parameters/Male Full Centered Model Betas.csv")
 write.csv(male_reduced_centered_betas, file = "P:/10619/Dropbox/htnport/vignettes/New Modelling Output/Model Presentation Output/Parameters/Male Reduced Centered Model Betas.csv")
 ```
+
+### Beta coefficients and their standard errors of centered bootstrap models:
+```{r}
+bootstrap_coefs <- function(data, indices, model) {
+  # Create bootstrap sample
+  boot_data <- data[indices, ]
+  
+  # Recreate survey design
+  boot_design <- survey::svydesign(ids = ~1, weights = ~wgt_full, data = boot_data)
+  
+  # Refit model
+  boot_model <- update(model, data = boot_data, design = boot_design)
+  
+  # Return coefficients
+  return(coef(boot_model))
+}
+
+n_bootstrap <- 1000
+set.seed(123)
+
+bootstrap_coefs_male <- replicate(n_bootstrap, {
+  boot_indices <- sample(1:nrow(male_data_c), replace = TRUE)
+  bootstrap_coefs(male_data_c, boot_indices, male_model_c)
+}, simplify = FALSE)
+
+coef_matrix_male <- do.call(rbind, bootstrap_coefs_male)
+rownames(coef_matrix_male) <- paste0("bootstrap_", 1:n_bootstrap)
+
+write.csv(coef_matrix_male, file = "P:/10619/Dropbox/htnport/vignettes/New Modelling Output/Model Presentation Output/Parameters/Male Full Centered Model Bootstrap Betas.csv", row.names = TRUE)
+
+bootstrap_coefs_male_reduced <- replicate(n_bootstrap, {
+  boot_indices <- sample(1:nrow(male_data_c), replace = TRUE)
+  bootstrap_coefs(male_data_c, boot_indices, male_reduced_model_c)
+}, simplify = FALSE)
+
+coef_matrix_male_reduced <- do.call(rbind, bootstrap_coefs_male_reduced)
+rownames(coef_matrix_male_reduced) <- paste0("bootstrap_", 1:n_bootstrap)
+
+write.csv(coef_matrix_male_reduced, file = "P:/10619/Dropbox/htnport/vignettes/New Modelling Output/Model Presentation Output/Parameters/Male Reduced Centered Model Bootstrap Betas.csv", row.names = TRUE)
+```
+
+### Validation data with components separated and prediction values:
+```{r}
+set.seed(123)
+male_validation_data <- data.frame(
+  clc_age = sample(20:79, 10000, replace = TRUE),
+  married = factor(sample(1:3, 10000, replace = TRUE)),
+  edudr04 = factor(sample(0:2, 10000, replace = TRUE)),
+  working = factor(sample(1:2, 10000, replace = TRUE)),
+  gendmhi = factor(sample(0:1, 10000, replace = TRUE)),
+  gen_025 = factor(sample(1:2, 10000, replace = TRUE)),
+  gen_045 = factor(sample(1:2, 10000, replace = TRUE)),
+  fmh_15 = factor(sample(0:1, 10000, replace = TRUE)),
+  hwmdbmi = runif(10000, 13.8, 49),
+  low_drink_score1 = factor(sample(1:4, 10000, replace = TRUE)),
+  minperweek = runif(10000, 0, 795),
+  smoke = factor(sample(0:2, 10000, replace = TRUE)),
+  slp_11 = runif(10000, 2, 18),
+  totalfv = runif(10000, 0, 10),
+  diabx = factor(sample(0:1, 10000, replace = TRUE)),
+  ckd = factor(sample(0:1, 10000, replace = TRUE))
+)
+
+# -------- dummy variables --------
+male_validation_data <- step_dummy(male_validation_data, cat_variables)
+
+# -------- rcs --------
+# age
+k_age <- 4
+rcs.fit <- rcs(male_validation_data$clc_age, k_age)
+knots_age <- attributes(rcs.fit)$parms # knot locations
+# BMI
+k_bmi <- 3
+rcs.fit <- rcs(male_validation_data$hwmdbmi, k_bmi)
+knots_bmi <- attributes(rcs.fit)$parms # knot locations
+# exercise
+k_exercise <- 3
+rcs.fit <- rcs(male_validation_data$minperweek, k_exercise)
+knots_exercise <- attributes(rcs.fit)$parms # knot locations
+# unpack rcs
+vars_rcs <- c("clc_age", "hwmdbmi", "minperweek")
+knots_list <- list(knots_age, knots_bmi, knots_exercise)
+knots_list <- setNames(knots_list, vars_rcs)
+male_validation_data <- step_rcs(male_validation_data, vars_rcs, knots_list)
+
+# -------- interaction terms --------
+interaction_list <- list(
+  c("clc_age", "gen_045"),
+  c("clc_age", "hwmdbmi"),
+  c("clc_age", "minperweek"),
+  c("clc_age", "smoke"),
+  c("clc_age", "slp_11"),
+  c("clc_age", "diabx"),
+  c("clc_age", "ckd")
+)
+male_validation_data <- step_interaction(male_validation_data, interaction_list)
+
+# Get weighted mean values from the dataset
+vars_mean <- c("clc_age_rcs_1", "clc_age_rcs_2", "clc_age_rcs_3", "married_2", "married_3", "edudr04_1", "edudr04_2", "working_2", "gendmhi_1", "gen_025_2", "gen_045_2", "fmh_15_1", "hwmdbmi_rcs_1", "hwmdbmi_rcs_2", "low_drink_score1_2", "low_drink_score1_3", "low_drink_score1_4", "minperweek_rcs_1", "minperweek_rcs_2",
+"smoke_1", "smoke_2", "slp_11", "totalfv", "diabx_1", "ckd_1", "clc_age_rcs_1_by_gen_045_2", "clc_age_rcs_2_by_gen_045_2", "clc_age_rcs_3_by_gen_045_2", "clc_age_rcs_1_by_hwmdbmi_rcs_1", "clc_age_rcs_2_by_hwmdbmi_rcs_1", "clc_age_rcs_3_by_hwmdbmi_rcs_1", "clc_age_rcs_1_by_hwmdbmi_rcs_2", "clc_age_rcs_2_by_hwmdbmi_rcs_2", "clc_age_rcs_3_by_hwmdbmi_rcs_2", "clc_age_rcs_1_by_minperweek_rcs_1", "clc_age_rcs_2_by_minperweek_rcs_1", "clc_age_rcs_3_by_minperweek_rcs_1",
+"clc_age_rcs_1_by_minperweek_rcs_2", "clc_age_rcs_2_by_minperweek_rcs_2", "clc_age_rcs_3_by_minperweek_rcs_2", "clc_age_rcs_1_by_smoke_1", "clc_age_rcs_2_by_smoke_1", "clc_age_rcs_3_by_smoke_1", "clc_age_rcs_1_by_smoke_2", "clc_age_rcs_2_by_smoke_2", "clc_age_rcs_3_by_smoke_2", "clc_age_rcs_1_by_slp_11", "clc_age_rcs_2_by_slp_11", "clc_age_rcs_3_by_slp_11", "clc_age_rcs_1_by_diabx_1", "clc_age_rcs_2_by_diabx_1", "clc_age_rcs_3_by_diabx_1", "clc_age_rcs_1_by_ckd_1", "clc_age_rcs_2_by_ckd_1", "clc_age_rcs_3_by_ckd_1")
+
+means <- get_mean(weighted_male, vars_mean)
+
+# centering vars in the dataset
+vars_center <- names(means)
+male_validation_data <- step_center(male_validation_data, vars_center, means)
+
+# Add centered model predictions to dataset
+male_validation_data$full_predicted <- predict(male_model_c, newdata = male_validation_data, type = "response")
+male_validation_data$reduced_predicted <- predict(male_reduced_model_c, newdata = male_validation_data, type = "response")
+```
+
