@@ -916,23 +916,16 @@ ggplot(Predict(female_final_model))
 male_full_betas <- extract_beta_coefs(male_model)
 female_full_betas <- extract_beta_coefs(female_model)
 
-# Get beta coefficients and their standard errors for full models
-male_glm_betas <- extract_beta_coefs(male_final_model)
-female_glm_betas <- extract_beta_coefs(female_final_model)
-
 # Get beta coefficients and their standard errors for reduced models
 male_reduced_betas <- extract_beta_coefs(male_reduced_model)
 female_reduced_betas <- extract_beta_coefs(female_reduced_model)
 
 # Export beta coefficient tables as csv files
-write.csv(male_full_betas, file = "P:/10619/Dropbox/htnport/vignettes/New Modelling Output/Model Presentation Output/Parameters/Male Full Model Betas.csv")
-write.csv(female_full_betas, file = "P:/10619/Dropbox/htnport/vignettes/New Modelling Output/Model Presentation Output/Parameters/Female Full Model Betas.csv")
+write.csv(male_full_betas, file = "P:/10619/Dropbox/htnport/vignettes/New Modelling Output/Model Presentation Output/Parameters/svyglm/Male Full Model Betas.csv")
+write.csv(female_full_betas, file = "P:/10619/Dropbox/htnport/vignettes/New Modelling Output/Model Presentation Output/Parameters/svyglm/Female Full Model Betas.csv")
 
-write.csv(male_glm_betas, file = "P:/10619/Dropbox/htnport/vignettes/New Modelling Output/Model Presentation Output/Parameters/Male Full GLM Model Betas.csv")
-write.csv(female_glm_betas, file = "P:/10619/Dropbox/htnport/vignettes/New Modelling Output/Model Presentation Output/Parameters/Female Full GLM Model Betas.csv")
-
-write.csv(male_reduced_betas, file = "P:/10619/Dropbox/htnport/vignettes/New Modelling Output/Model Presentation Output/Parameters/Male Reduced Model Betas.csv")
-write.csv(female_reduced_betas, file = "P:/10619/Dropbox/htnport/vignettes/New Modelling Output/Model Presentation Output/Parameters/Female Reduced Model Betas.csv")
+write.csv(male_reduced_betas, file = "P:/10619/Dropbox/htnport/vignettes/New Modelling Output/Model Presentation Output/Parameters/svyglm/Male Reduced Model Betas.csv")
+write.csv(female_reduced_betas, file = "P:/10619/Dropbox/htnport/vignettes/New Modelling Output/Model Presentation Output/Parameters/svyglm/Female Reduced Model Betas.csv")
 
 # Re-apply survey weights to male and female data
 male_replicate_weights <- male_data %>%

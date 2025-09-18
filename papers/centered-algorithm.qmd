@@ -122,7 +122,7 @@ female_data <- dplyr::filter(imputed_cycles1to6_data, clc_sex == 2)
 
 ## Center male models
 
-Do ctrl+F to change from male to female.
+Do ctrl+F to change from male to male.
 
 ```{r}
 # -------- dummy variables --------
@@ -230,18 +230,20 @@ predict(male_reduced_model, type = "response") - predict(male_reduced_model_c, t
 
 ## Export model parameters
 
-Do ctrl+F to change from male to female.
+Do ctrl+F to change from male to male.
 
 ### Beta coefficients and their standard errors of centered models:
+
 ```{r}
 male_centered_betas <- extract_beta_coefs(male_model_c)
 male_reduced_centered_betas <- extract_beta_coefs(male_reduced_model_c)
 
-write.csv(male_centered_betas, file = "P:/10619/Dropbox/htnport/vignettes/New Modelling Output/Model Presentation Output/Parameters/Male Full Centered Model Betas.csv")
-write.csv(male_reduced_centered_betas, file = "P:/10619/Dropbox/htnport/vignettes/New Modelling Output/Model Presentation Output/Parameters/Male Reduced Centered Model Betas.csv")
+write.csv(male_centered_betas, file = "P:/10619/Dropbox/htnport/vignettes/New Modelling Output/Model Presentation Output/Parameters/svyglm/Male Full Model Betas.csv")
+write.csv(male_reduced_centered_betas, file = "P:/10619/Dropbox/htnport/vignettes/New Modelling Output/Model Presentation Output/Parameters/svyglm/Male Reduced Model Betas.csv")
 ```
 
 ### Beta coefficients and their standard errors of centered bootstrap models:
+
 ```{r}
 bootstrap_coefs <- function(data, indices, model) {
   # Create bootstrap sample
@@ -268,7 +270,7 @@ bootstrap_coefs_male <- replicate(n_bootstrap, {
 coef_matrix_male <- do.call(rbind, bootstrap_coefs_male)
 rownames(coef_matrix_male) <- paste0("bootstrap_", 1:n_bootstrap)
 
-write.csv(coef_matrix_male, file = "P:/10619/Dropbox/htnport/vignettes/New Modelling Output/Model Presentation Output/Parameters/Male Full Centered Model Bootstrap Betas.csv", row.names = TRUE)
+write.csv(coef_matrix_male, file = "P:/10619/Dropbox/htnport/vignettes/New Modelling Output/Model Presentation Output/Parameters/svyglm/Male Full Model Bootstrap Betas.csv", row.names = TRUE)
 
 bootstrap_coefs_male_reduced <- replicate(n_bootstrap, {
   boot_indices <- sample(1:nrow(male_data_c), replace = TRUE)
@@ -278,10 +280,11 @@ bootstrap_coefs_male_reduced <- replicate(n_bootstrap, {
 coef_matrix_male_reduced <- do.call(rbind, bootstrap_coefs_male_reduced)
 rownames(coef_matrix_male_reduced) <- paste0("bootstrap_", 1:n_bootstrap)
 
-write.csv(coef_matrix_male_reduced, file = "P:/10619/Dropbox/htnport/vignettes/New Modelling Output/Model Presentation Output/Parameters/Male Reduced Centered Model Bootstrap Betas.csv", row.names = TRUE)
+write.csv(coef_matrix_male_reduced, file = "P:/10619/Dropbox/htnport/vignettes/New Modelling Output/Model Presentation Output/Parameters/svyglm/Male Reduced Model Bootstrap Betas.csv", row.names = TRUE)
 ```
 
 ### Validation data with components separated and prediction values:
+
 ```{r}
 set.seed(123)
 male_validation_data <- data.frame(
@@ -351,5 +354,5 @@ male_validation_data <- step_center(male_validation_data, vars_center, means)
 # Add centered model predictions to dataset
 male_validation_data$full_predicted <- predict(male_model_c, newdata = male_validation_data, type = "response")
 male_validation_data$reduced_predicted <- predict(male_reduced_model_c, newdata = male_validation_data, type = "response")
+write.csv(male_validation_data, file = "P:/10619/Dropbox/htnport/vignettes/New Modelling Output/Model Presentation Output/Parameters/svyglm/Male Validation Data.csv", row.names = TRUE)
 ```
-

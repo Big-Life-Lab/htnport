@@ -519,23 +519,23 @@ female_safe_model$formula <- NULL
 male_safe_reduced_model$formula <- NULL
 female_safe_reduced_model$formula <- NULL
 
-saveRDS(male_safe_model, file = "P:/10619/Dropbox/htnport/models/svyglm-centered/male_model.rds")
-saveRDS(female_safe_model, file = "P:/10619/Dropbox/htnport/models/svyglm-centered/female_model.rds")
-saveRDS(male_safe_reduced_model, file = "P:/10619/Dropbox/htnport/models/svyglm-centered/male_reduced_model.rds")
-saveRDS(female_safe_reduced_model, file = "P:/10619/Dropbox/htnport/models/svyglm-centered/female_reduced_model.rds")
+saveRDS(male_safe_model, file = "P:/10619/Dropbox/htnport/models/svyglm/male_model.rds")
+saveRDS(female_safe_model, file = "P:/10619/Dropbox/htnport/models/svyglm/female_model.rds")
+saveRDS(male_safe_reduced_model, file = "P:/10619/Dropbox/htnport/models/svyglm/male_reduced_model.rds")
+saveRDS(female_safe_reduced_model, file = "P:/10619/Dropbox/htnport/models/svyglm/female_reduced_model.rds")
 ```
 
 In new environment:
 
 ```{r}
 # 6. Load, restore formulas, and use
-male_safe_reduced_model <- readRDS("P:/10619/Dropbox/htnport/models/svyglm-centered/male_reduced_model.rds")
-female_safe_reduced_model <- readRDS("P:/10619/Dropbox/htnport/models/svyglm-centered/female_reduced_model.rds")
+male_safe_reduced_model <- readRDS("P:/10619/Dropbox/htnport/models/svyglm/male_reduced_model.rds")
+female_safe_reduced_model <- readRDS("P:/10619/Dropbox/htnport/models/svyglm/female_reduced_model.rds")
 
 male_safe_reduced_model$formula <- highbp14090_adj ~ clc_age_rcs_1_C + clc_age_rcs_2_C + clc_age_rcs_3_C + fmh_15_1_C + hwmdbmi_rcs_1_C + hwmdbmi_rcs_2_C + diabx_1_C + clc_age_rcs_1_by_hwmdbmi_rcs_1_C + clc_age_rcs_2_by_hwmdbmi_rcs_1_C + clc_age_rcs_3_by_hwmdbmi_rcs_1_C + clc_age_rcs_1_by_hwmdbmi_rcs_2_C + clc_age_rcs_2_by_hwmdbmi_rcs_2_C + clc_age_rcs_3_by_hwmdbmi_rcs_2_C + clc_age_rcs_1_by_diabx_1_C + clc_age_rcs_2_by_diabx_1_C + clc_age_rcs_3_by_diabx_1_C
 female_safe_reduced_model$formula <- highbp14090_adj ~ clc_age_rcs_1_C + clc_age_rcs_2_C + clc_age_rcs_3_C + fmh_15_1_C + hwmdbmi_rcs_1_C + hwmdbmi_rcs_2_C + diabx_1_C + clc_age_rcs_1_by_hwmdbmi_rcs_1_C + clc_age_rcs_2_by_hwmdbmi_rcs_1_C + clc_age_rcs_3_by_hwmdbmi_rcs_1_C + clc_age_rcs_1_by_hwmdbmi_rcs_2_C + clc_age_rcs_2_by_hwmdbmi_rcs_2_C + clc_age_rcs_3_by_hwmdbmi_rcs_2_C + clc_age_rcs_1_by_diabx_1_C + clc_age_rcs_2_by_diabx_1_C + clc_age_rcs_3_by_diabx_1_C
 
-# 7. Make predictions
+# 7. Make predictions using whole unpacked centered data
 new_male_predictions <- predict(male_safe_reduced_model, newdata = female_data_c, type = "response")
 new_female_predictions <- predict(female_safe_reduced_model, newdata = male_data_c, type = "response")
 
