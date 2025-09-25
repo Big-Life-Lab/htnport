@@ -237,15 +237,6 @@ Create a predict method for the safe export:
 
 ```{r}
 predict.safe_svyglm <- function(object, newdata, type = "response", se.fit = FALSE) {
-  
-  # Apply centering if available
-  if (!is.null(object$centering)) {
-    for (var in names(object$centering)) {
-      if (var %in% names(newdata)) {
-        newdata[[var]] <- (newdata[[var]] - object$centering[[var]]$center)
-      }
-    }
-  }
 
   # Create formula with no outcome (right-hand side only)
   rhs_formula <- reformulate(attr(terms(object$formula), "term.labels"))
@@ -502,7 +493,7 @@ female_data_summary <- list(
 )
 
 # 3. Create safe export
-male_safe_model <- create_safe_export(male_model_c)
+male_safe_model <- create_safe_export(male_model_c, male_data_summary)
 female_safe_model <- create_safe_export(female_model_c, female_data_summary)
 male_safe_reduced_model <- create_safe_export(male_reduced_model_c, male_data_summary)
 female_safe_reduced_model <- create_safe_export(female_reduced_model_c, female_data_summary)
