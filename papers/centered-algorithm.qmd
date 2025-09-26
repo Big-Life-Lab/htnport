@@ -35,7 +35,7 @@ source("R/centering-utils.R")
 
 ## Prepare imputed dataset
 
-```{r, include = FALSE, warning = FALSE, message = FALSE}
+```{r}
 # Synthetic dataset for test use outside RDC
 # set.seed(123)
 # imputed_cycles1to6_data <- data.frame(
@@ -270,7 +270,7 @@ bootstrap_coefs_male <- replicate(n_bootstrap, {
 coef_matrix_male <- do.call(rbind, bootstrap_coefs_male)
 rownames(coef_matrix_male) <- paste0("bootstrap_", 1:n_bootstrap)
 
-write.csv(coef_matrix_male, file = "P:/10619/Dropbox/htnport/vignettes/New Modelling Output/Model Presentation Output/Parameters/svyglm/Male Full Model Bootstrap Betas.csv", row.names = TRUE)
+write.csv(coef_matrix_male, file = "P:/10619/Dropbox/htnport/vignettes/New Modelling Output/Model Presentation Output/Parameters/svyglm/Bootstrap Betas/Male Full Model Bootstrap Betas.csv", row.names = TRUE)
 
 bootstrap_coefs_male_reduced <- replicate(n_bootstrap, {
   boot_indices <- sample(1:nrow(male_data_c), replace = TRUE)
@@ -280,10 +280,12 @@ bootstrap_coefs_male_reduced <- replicate(n_bootstrap, {
 coef_matrix_male_reduced <- do.call(rbind, bootstrap_coefs_male_reduced)
 rownames(coef_matrix_male_reduced) <- paste0("bootstrap_", 1:n_bootstrap)
 
-write.csv(coef_matrix_male_reduced, file = "P:/10619/Dropbox/htnport/vignettes/New Modelling Output/Model Presentation Output/Parameters/svyglm/Male Reduced Model Bootstrap Betas.csv", row.names = TRUE)
+write.csv(coef_matrix_male_reduced, file = "P:/10619/Dropbox/htnport/vignettes/New Modelling Output/Model Presentation Output/Parameters/svyglm/Bootstrap Betas/Male Reduced Model Bootstrap Betas.csv", row.names = TRUE)
 ```
 
 ### Validation data with components separated and prediction values:
+
+Comment out male knots and means, and uncomment female knots and means to switch.
 
 ```{r}
 set.seed(123)
@@ -312,17 +314,14 @@ male_validation_data <- step_dummy(male_validation_data, cat_variables)
 
 # -------- rcs --------
 # age
-k_age <- 4
-rcs.fit <- rcs(male_validation_data$clc_age, k_age)
-knots_age <- attributes(rcs.fit)$parms # knot locations
+knots_age <- c(24, 40, 57, 74) # male
+# knots_age <- c(25, 40, 57, 75) # female
 # BMI
-k_bmi <- 3
-rcs.fit <- rcs(male_validation_data$hwmdbmi, k_bmi)
-knots_bmi <- attributes(rcs.fit)$parms # knot locations
+knots_bmi <- c(22.35, 27.24, 34.178) # male
+# knots_bmi <- c(20.69, 26.23, 36.141) # female
 # exercise
-k_exercise <- 3
-rcs.fit <- rcs(male_validation_data$minperweek, k_exercise)
-knots_exercise <- attributes(rcs.fit)$parms # knot locations
+knots_exercise <- c(9, 103, 326) # male
+# knots_exercise <- c(1, 89, 290) # female
 # unpack rcs
 vars_rcs <- c("clc_age", "hwmdbmi", "minperweek")
 knots_list <- list(knots_age, knots_bmi, knots_exercise)
@@ -384,5 +383,165 @@ male_validation_data <- step_center(male_validation_data, vars_center, means)
 # Add centered model predictions to dataset
 male_validation_data$full_predicted <- predict(male_model_c, newdata = male_validation_data, type = "response")
 male_validation_data$reduced_predicted <- predict(male_reduced_model_c, newdata = male_validation_data, type = "response")
-write.csv(male_validation_data, file = "P:/10619/Dropbox/htnport/vignettes/New Modelling Output/Model Presentation Output/Parameters/svyglm/Male Validation Data.csv", row.names = TRUE)
+write.csv(male_validation_data, file = "P:/10619/Dropbox/htnport/vignettes/New Modelling Output/Model Presentation Output/Parameters/svyglm/Validation Data/Male Validation Data.csv", row.names = TRUE)
 ```
+
+### Vascular age
+
+```{r}
+# Male dataset
+male_vasc_age <- data.frame(
+  clc_age = 20:79,
+  married = factor(1, levels = 1:3),
+  edudr04 = factor(0, levels = 0:2),
+  working = factor(1, levels = 1:2),
+  gendmhi = factor(0, levels = 0:1),
+  gen_025 = factor(1, levels = 1:2),
+  gen_045 = factor(1, levels = 1:2),
+  fmh_15 = factor(0, levels = 0:1),
+  hwmdbmi = 27.66777,
+  low_drink_score1 = factor(1, levels = 1:4),
+  minperweek = 147.6497,
+  smoke = factor(0, levels = 0:2),
+  slp_11 = 7.015036,
+  totalfv = 3.280092,
+  diabx = factor(0, levels = 0:1),
+  ckd = factor(0, levels = 0:1)
+)
+
+# -------- dummy variables --------
+cat_variables <- c("ckd", "diabx", "edudr04", "fmh_15", "gendmhi", "gen_025", "gen_045", "low_drink_score1", "married", "smoke", "working")
+male_vasc_age <- step_dummy(male_vasc_age, cat_variables)
+
+# -------- rcs --------
+# age
+knots_age <- c(24, 40, 57, 74)
+# BMI
+knots_bmi <- c(22.35, 27.24, 34.178)
+# exercise
+knots_exercise <- c(9, 103, 326)
+# unpack rcs
+vars_rcs <- c("clc_age", "hwmdbmi", "minperweek")
+knots_list <- list(knots_age, knots_bmi, knots_exercise)
+knots_list <- setNames(knots_list, vars_rcs)
+male_vasc_age <- step_rcs(male_vasc_age, vars_rcs, knots_list)
+
+# -------- interaction terms --------
+interaction_list <- list(
+  c("clc_age", "gen_045"),
+  c("clc_age", "hwmdbmi"),
+  c("clc_age", "minperweek"),
+  c("clc_age", "smoke"),
+  c("clc_age", "slp_11"),
+  c("clc_age", "diabx"),
+  c("clc_age", "ckd")
+)
+male_vasc_age <- step_interaction(male_vasc_age, interaction_list)
+
+# Get weighted mean values from the dataset
+vars_mean <- c("clc_age_rcs_1", "clc_age_rcs_2", "clc_age_rcs_3", "married_2", "married_3", "edudr04_1", "edudr04_2", "working_2", "gendmhi_1", "gen_025_2", "gen_045_2", "fmh_15_1", "hwmdbmi_rcs_1", "hwmdbmi_rcs_2", "low_drink_score1_2", "low_drink_score1_3", "low_drink_score1_4", "minperweek_rcs_1", "minperweek_rcs_2",
+"smoke_1", "smoke_2", "slp_11", "totalfv", "diabx_1", "ckd_1", "clc_age_rcs_1_by_gen_045_2", "clc_age_rcs_2_by_gen_045_2", "clc_age_rcs_3_by_gen_045_2", "clc_age_rcs_1_by_hwmdbmi_rcs_1", "clc_age_rcs_2_by_hwmdbmi_rcs_1", "clc_age_rcs_3_by_hwmdbmi_rcs_1", "clc_age_rcs_1_by_hwmdbmi_rcs_2", "clc_age_rcs_2_by_hwmdbmi_rcs_2", "clc_age_rcs_3_by_hwmdbmi_rcs_2", "clc_age_rcs_1_by_minperweek_rcs_1", "clc_age_rcs_2_by_minperweek_rcs_1", "clc_age_rcs_3_by_minperweek_rcs_1",
+"clc_age_rcs_1_by_minperweek_rcs_2", "clc_age_rcs_2_by_minperweek_rcs_2", "clc_age_rcs_3_by_minperweek_rcs_2", "clc_age_rcs_1_by_smoke_1", "clc_age_rcs_2_by_smoke_1", "clc_age_rcs_3_by_smoke_1", "clc_age_rcs_1_by_smoke_2", "clc_age_rcs_2_by_smoke_2", "clc_age_rcs_3_by_smoke_2", "clc_age_rcs_1_by_slp_11", "clc_age_rcs_2_by_slp_11", "clc_age_rcs_3_by_slp_11", "clc_age_rcs_1_by_diabx_1", "clc_age_rcs_2_by_diabx_1", "clc_age_rcs_3_by_diabx_1", "clc_age_rcs_1_by_ckd_1", "clc_age_rcs_2_by_ckd_1", "clc_age_rcs_3_by_ckd_1")
+
+means <- c(
+  46.14509835, 10.41999141, 2.012829724, 0.085947731, 0.248462597,
+  0.217177205, 0.125063569, 0.258671725, 0.066840869, 0.228373362,
+  0.349876734, 0.524803077, 27.66777298, 2.529042313, 0.777985051,
+  0.045626893, 0.072198781, 147.6496834, 53.84564875, 0.308696985,
+  0.227724746, 7.015035776, 3.280091672, 0.104918358, 0.044784256,
+  15.14081401, 2.855721362, 0.518839488, 1289.586153, 294.9641651,
+  56.95945766, 121.6744825, 28.59310879, 5.458573727, 6383.426259,
+  1151.285813, 200.1725572, 2295.79088, 396.7168969, 67.65261735,
+  16.42423635, 4.962600721, 1.036863773, 9.689177061, 1.65996114,
+  0.282951234, 323.9788677, 74.51391132, 14.59326186, 6.145555691,
+  2.19318601, 0.472921201, 2.811431457, 1.26078209, 0.307342769
+)
+
+# centering vars in the dataset
+names(means) <- vars_mean
+vars_center <- names(means)
+male_vasc_age <- step_center(male_vasc_age, vars_center, means)
+
+# Add centered model predictions (aka vascular ages) to dataset
+male_vasc_age$vasc_age_full <- predict(male_model_c, newdata = male_vasc_age, type = "response")
+male_vasc_age$vasc_age_reduced <- predict(male_reduced_model_c, newdata = male_vasc_age, type = "response")
+male_vasc_age <- male_vasc_age[, c("clc_age", "vasc_age_full", "vasc_age_reduced")]
+write.csv(male_vasc_age, file = "P:/10619/Dropbox/htnport/vignettes/New Modelling Output/Model Presentation Output/Parameters/svyglm/Vascular Age/Male Vascular Age", row.names = TRUE)
+
+# Female dataset
+female_vasc_age <- data.frame(
+  clc_age = 20:79,
+  married = factor(1, levels = 1:3),
+  edudr04 = factor(0, levels = 0:2),
+  working = factor(1, levels = 1:2),
+  gendmhi = factor(0, levels = 0:1),
+  gen_025 = factor(1, levels = 1:2),
+  gen_045 = factor(1, levels = 1:2),
+  fmh_15 = factor(0, levels = 0:1),
+  hwmdbmi = 27.09638,
+  low_drink_score1 = factor(1, levels = 1:4),
+  minperweek = 126.2692,
+  smoke = factor(0, levels = 0:2),
+  slp_11 = 7.176309,
+  totalfv = 3.70042,
+  diabx = factor(0, levels = 0:1),
+  ckd = factor(0, levels = 0:1)
+)
+
+# -------- dummy variables --------
+cat_variables <- c("ckd", "diabx", "edudr04", "fmh_15", "gendmhi", "gen_025", "gen_045", "low_drink_score1", "married", "smoke", "working")
+female_vasc_age <- step_dummy(female_vasc_age, cat_variables)
+
+# -------- rcs --------
+knots_age <- c(25, 40, 57, 75)
+knots_bmi <- c(20.69, 26.23, 36.141)
+knots_exercise <- c(1, 89, 290)
+# unpack rcs
+vars_rcs <- c("clc_age", "hwmdbmi", "minperweek")
+knots_list <- list(knots_age, knots_bmi, knots_exercise)
+knots_list <- setNames(knots_list, vars_rcs)
+female_vasc_age <- step_rcs(female_vasc_age, vars_rcs, knots_list)
+
+# -------- interaction terms --------
+interaction_list <- list(
+  c("clc_age", "gen_045"),
+  c("clc_age", "hwmdbmi"),
+  c("clc_age", "minperweek"),
+  c("clc_age", "smoke"),
+  c("clc_age", "slp_11"),
+  c("clc_age", "diabx"),
+  c("clc_age", "ckd")
+)
+female_vasc_age <- step_interaction(female_vasc_age, interaction_list)
+
+# Get weighted mean values from the dataset
+vars_mean <- c("clc_age_rcs_1", "clc_age_rcs_2", "clc_age_rcs_3", "married_2", "married_3", "edudr04_1", "edudr04_2", "working_2", "gendmhi_1", "gen_025_2", "gen_045_2", "fmh_15_1", "hwmdbmi_rcs_1", "hwmdbmi_rcs_2", "low_drink_score1_2", "low_drink_score1_3", "low_drink_score1_4", "minperweek_rcs_1", "minperweek_rcs_2",
+"smoke_1", "smoke_2", "slp_11", "totalfv", "diabx_1", "ckd_1", "clc_age_rcs_1_by_gen_045_2", "clc_age_rcs_2_by_gen_045_2", "clc_age_rcs_3_by_gen_045_2", "clc_age_rcs_1_by_hwmdbmi_rcs_1", "clc_age_rcs_2_by_hwmdbmi_rcs_1", "clc_age_rcs_3_by_hwmdbmi_rcs_1", "clc_age_rcs_1_by_hwmdbmi_rcs_2", "clc_age_rcs_2_by_hwmdbmi_rcs_2", "clc_age_rcs_3_by_hwmdbmi_rcs_2", "clc_age_rcs_1_by_minperweek_rcs_1", "clc_age_rcs_2_by_minperweek_rcs_1", "clc_age_rcs_3_by_minperweek_rcs_1",
+"clc_age_rcs_1_by_minperweek_rcs_2", "clc_age_rcs_2_by_minperweek_rcs_2", "clc_age_rcs_3_by_minperweek_rcs_2", "clc_age_rcs_1_by_smoke_1", "clc_age_rcs_2_by_smoke_1", "clc_age_rcs_3_by_smoke_1", "clc_age_rcs_1_by_smoke_2", "clc_age_rcs_2_by_smoke_2", "clc_age_rcs_3_by_smoke_2", "clc_age_rcs_1_by_slp_11", "clc_age_rcs_2_by_slp_11", "clc_age_rcs_3_by_slp_11", "clc_age_rcs_1_by_diabx_1", "clc_age_rcs_2_by_diabx_1", "clc_age_rcs_3_by_diabx_1", "clc_age_rcs_1_by_ckd_1", "clc_age_rcs_2_by_ckd_1", "clc_age_rcs_3_by_ckd_1")
+
+means <- c(
+  46.89545843, 10.12555934, 2.151608321, 0.147107554, 0.210100305,
+  0.193357648, 0.099653209, 0.353413901, 0.088527417, 0.257966189,
+  0.342661718, 0.573552958, 27.0963796, 2.687938152, 0.753166452,
+  0.03853446, 0.03202675, 126.2691998, 49.59317196, 0.272198263,
+  0.165152547, 7.176308826, 3.700420139, 0.073367263, 0.057604582,
+  15.29680233, 2.877391597, 0.572698397, 1285.110359, 282.7253824,
+  60.12236359, 131.3924734, 29.62929288, 6.184663944, 5569.647047,
+  972.9401839, 186.0587491, 2174.213295, 375.6339899, 70.87545919,
+  14.19872096, 3.733773656, 0.824769535, 7.276738258, 1.206667012,
+  0.221478809, 336.01649, 73.01912727, 15.59617795, 4.268397084,
+  1.361402486, 0.314536375, 3.693735889, 1.553035432, 0.402545106
+)
+
+# centering vars in the dataset
+names(means) <- vars_mean
+vars_center <- names(means)
+female_vasc_age <- step_center(female_vasc_age, vars_center, means)
+
+# Add centered model predictions (aka vascular ages) to dataset
+female_vasc_age$vasc_age_full <- predict(female_model_c, newdata = female_vasc_age, type = "response")
+female_vasc_age$vasc_age_reduced <- predict(female_reduced_model_c, newdata = female_vasc_age, type = "response")
+female_vasc_age <- female_vasc_age[, c("clc_age", "vasc_age_full", "vasc_age_reduced")]
+write.csv(female_vasc_age, file = "P:/10619/Dropbox/htnport/vignettes/New Modelling Output/Model Presentation Output/Parameters/svyglm/Vascular Age/Female Vascular Age", row.names = TRUE)
+```
+
