@@ -544,4 +544,3 @@ female_vasc_age$vasc_age_reduced <- predict(female_reduced_model_c, newdata = fe
 female_vasc_age <- female_vasc_age[, c("clc_age", "vasc_age_full", "vasc_age_reduced")]
 write.csv(female_vasc_age, file = "P:/10619/Dropbox/htnport/vignettes/New Modelling Output/Model Presentation Output/Parameters/svyglm/Vascular Age/Female Vascular Age", row.names = TRUE)
 ```
-

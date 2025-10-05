@@ -23,17 +23,6 @@ process_long_medication_data <- function(cycle_data, cycle_medication_data) {
   return(cycle_data)
 }
 
-# Function to ensure derived categorical variables present in all six cycles can be properly tabulated
-recode_na_b <- function(column) {
-  # Convert the column to character if it's a factor
-  if (is.factor(column)) {
-    column <- as.character(column)
-  }
-  # Replace "NA(c)" with "NA(b)"
-  column[column == "NA(c)"] <- "NA(b)"
-  return(column)
-}
-
 # Function to truncate continious variables
 truncate_skewed <- function(df, threshold = 0.995, skew_threshold = 1) {
   
@@ -61,94 +50,6 @@ truncate_skewed <- function(df, threshold = 0.995, skew_threshold = 1) {
   }
   
   return(df_truncated)
-}
-
-# Function to center continuous variables
-center_cont_variable <- function(var, design) {
-  var <- design$variables[[var]]
-  weighted_mean <- survey::svymean(~var, design = design)[1]
-  centered_var <- var - weighted_mean
-  return(centered_var)
-}
-
-# Function to center categorical variables using dummy variables (excluding reference category)
-center_cat_variable <- function(var, design) {
-  var_data <- design$variables[[var]]  # Extract the variable
-  
-  # Calculate weighted frequencies using dynamically created formula
-  freq_table <- survey::svytable(as.formula(paste0("~", var)), design = design)
-  
-  # Weighted mean (proportions for each category)
-  weighted_mean <- freq_table / sum(freq_table)  # Proportion for each category
-  
-  # Exclude the lowest-numbered category (reference)
-  categories <- levels(var_data)[-1]  # Exclude the first level
-  
-  # Create centered dummy variables for remaining categories
-  centered_dummies <- sapply(categories, function(category) {
-    dummy <- as.numeric(var_data == category)  # Create dummy for the current category
-    centered_dummy <- dummy - weighted_mean[category]  # Center the dummy variable
-    return(centered_dummy)
-  })
-  
-  # Ensure output is a matrix (even if there is only one category left)
-  if (is.vector(centered_dummies)) {
-    centered_dummies <- matrix(centered_dummies, ncol = 1)
-  }
-  
-  # Name columns for clarity
-  colnames(centered_dummies) <- paste0(var, "_", categories)
-  return(centered_dummies)  # Return as a matrix
-}
-
-# Function to fit crude models and return ORs and CIs for all levels of a predictor
-fit_crude_model <- function(predictor, design) {
-  formula <- as.formula(paste("highbp14090_adj ~", predictor))
-  model <- survey::svyglm(formula, design = design, family = quasibinomial())
-  
-  # Extract coefficients and calculate ORs
-  coef_est <- coef(model)
-  or <- round(exp(coef_est), 2)
-  
-  # Calculate confidence intervals
-  conf_int <- exp(confint(model))
-  
-  # Create a data frame with the results
-  # We use [-1] to exclude the intercept
-  results <- data.frame(
-    Variable = predictor,
-    Level = names(coef_est)[-1],
-    OR = or[-1],  # Exclude the intercept
-    CI_Lower = round(conf_int[-1, 1], 2),
-    CI_Upper = round(conf_int[-1, 2], 2)
-  )
-  
-  results <- results %>%
-    dplyr::mutate(Level = recode(Level,
-                                 "ckd" = "Chronic kidney disease",
-                                 "clc_age" = "Age",
-                                 "diabx" = "Diabetes",
-                                 "edudr04edudr04_1" = "High school graduate only",
-                                 "edudr04edudr04_2" = "Did not graduate high school",
-                                 "fmh_15" = "Family history for hypertension",
-                                 "gendmhi" = "Poor or fair mental health",
-                                 "gen_025" = "Quite a bit or extremely stressed",
-                                 "gen_045" = "Weak sense of belonging",
-                                 "hwmdbmi" = "Body mass index",
-                                 "low_drink_score1low_drink_score1_2" = "Low-risk drinker",
-                                 "low_drink_score1low_drink_score1_3" = "Moderate drinker",
-                                 "low_drink_score1low_drink_score1_4" = "Heavy drinker",
-                                 "marriedmarried_2" = "Widowed, separated, or divorced",
-                                 "marriedmarried_3" = "Single",
-                                 "minperweek" = "Minutes of exercise per week",
-                                 "slp_11" = "Sleep duration",
-                                 "smokesmoke_1" = "Former smoker",
-                                 "smokesmoke_2" = "Current smoker",
-                                 "totalfv" = "Daily fruit and vegetable consumption",
-                                 "whr" = "Waist-to-height ratio",
-                                 "working" = "Does not have a job"))
-  
-  return(results)
 }
 
 # Function to create weighted density plots
@@ -212,7 +113,56 @@ create_weighted_density_plots <- function(
   }
 }
 
-# Function to get weighted quantiles
-get_weighted_quantiles <- function(variable, design, probs) {
-  survey::svyquantile(as.formula(paste0("~", variable)), design = design, quantiles = probs, na.rm = TRUE)
+# Function to get weighted descriptives
+summarize_weighted <- function(variables, design, data) {
+  results <- data.frame()
+  
+  for (var in variables) {
+    f <- as.formula(paste("~", var))
+    
+    # Weighted mean and variance (for SD)
+    mean_val <- as.numeric(survey::svymean(f, design, na.rm = TRUE))
+    var_val  <- as.numeric(survey::svyvar(f, design, na.rm = TRUE))
+    sd_val   <- sqrt(var_val)
+    
+    # Weighted quantiles
+    percentiles <- survey::svyquantile(
+      f, design,
+      c(0.05, 0.10, 0.20, 0.25, 0.30, 0.40,
+        0.50, 0.60, 0.75, 0.80, 0.90, 0.95),
+      na.rm = TRUE,
+      ci = FALSE
+    )
+    percentiles <- unlist(percentiles)
+    
+    # Unweighted min/max
+    min_val <- suppressWarnings(min(data[[var]], na.rm = TRUE))
+    max_val <- suppressWarnings(max(data[[var]], na.rm = TRUE))
+    
+    # Combine all results
+    results <- rbind(
+      results,
+      data.frame(
+        variable = var,
+        mean = mean_val,
+        sd = sd_val,
+        min = min_val,
+        max = max_val,
+        p5  = percentiles[1],
+        p10 = percentiles[2],
+        p20 = percentiles[3],
+        p25 = percentiles[4],
+        p30 = percentiles[5],
+        p40 = percentiles[6],
+        p50 = percentiles[7],
+        p60 = percentiles[8],
+        p75 = percentiles[9],
+        p80 = percentiles[10],
+        p90 = percentiles[11],
+        p95 = percentiles[12]
+      )
+    )
+  }
+  
+  return(results)
 }

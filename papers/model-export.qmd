@@ -414,7 +414,7 @@ In secure environment:
 ```{r}
 # 1. Fit your models
 weighted_male_c$degf <- 68
-male_model_c <- survey::svyglm(highbp14090_adj ~ clc_age_rcs_1_C + clc_age_rcs_2_C + clc_age_rcs_3_C + married_2_C + married_3_C + edudr04_1_C + edudr04_2_C + working_2_C + gendmhi_1_C + gen_025_2_C + gen_045_2_C + fmh_15_1_C + hwmdbmi_rcs_1_C + hwmdbmi_rcs_2_C + low_drink_score1_2_C + low_drink_score1_3_C + low_drink_score1_4_C + minperweek_rcs_1_C + minperweek_rcs_2_C + smoke_1_C + smoke_2_C + slp_11_C + totalfv_C + diabx_1_C + ckd_1_C + clc_age_rcs_1_by_gen_045_2_C + clc_age_rcs_2_by_gen_045_2_C + clc_age_rcs_3_by_gen_045_2_C + clc_age_rcs_1_by_hwmdbmi_rcs_1_C + clc_age_rcs_2_by_hwmdbmi_rcs_1_C + clc_age_rcs_3_by_hwmdbmi_rcs_1_C +  clc_age_rcs_1_by_hwmdbmi_rcs_2_C + clc_age_rcs_2_by_hwmdbmi_rcs_2_C + clc_age_rcs_3_by_hwmdbmi_rcs_2_C + clc_age_rcs_1_by_minperweek_rcs_1_C + 
+male_model <- survey::svyglm(highbp14090_adj ~ clc_age_rcs_1_C + clc_age_rcs_2_C + clc_age_rcs_3_C + married_2_C + married_3_C + edudr04_1_C + edudr04_2_C + working_2_C + gendmhi_1_C + gen_025_2_C + gen_045_2_C + fmh_15_1_C + hwmdbmi_rcs_1_C + hwmdbmi_rcs_2_C + low_drink_score1_2_C + low_drink_score1_3_C + low_drink_score1_4_C + minperweek_rcs_1_C + minperweek_rcs_2_C + smoke_1_C + smoke_2_C + slp_11_C + totalfv_C + diabx_1_C + ckd_1_C + clc_age_rcs_1_by_gen_045_2_C + clc_age_rcs_2_by_gen_045_2_C + clc_age_rcs_3_by_gen_045_2_C + clc_age_rcs_1_by_hwmdbmi_rcs_1_C + clc_age_rcs_2_by_hwmdbmi_rcs_1_C + clc_age_rcs_3_by_hwmdbmi_rcs_1_C +  clc_age_rcs_1_by_hwmdbmi_rcs_2_C + clc_age_rcs_2_by_hwmdbmi_rcs_2_C + clc_age_rcs_3_by_hwmdbmi_rcs_2_C + clc_age_rcs_1_by_minperweek_rcs_1_C + 
 clc_age_rcs_2_by_minperweek_rcs_1_C + clc_age_rcs_3_by_minperweek_rcs_1_C + 
 clc_age_rcs_1_by_minperweek_rcs_2_C + clc_age_rcs_2_by_minperweek_rcs_2_C + 
 clc_age_rcs_3_by_minperweek_rcs_2_C + clc_age_rcs_1_by_smoke_1_C + 
@@ -424,7 +424,7 @@ clc_age_rcs_1_by_diabx_1_C + clc_age_rcs_2_by_diabx_1_C +
 clc_age_rcs_3_by_diabx_1_C + clc_age_rcs_1_by_ckd_1_C + clc_age_rcs_2_by_ckd_1_C + clc_age_rcs_3_by_ckd_1_C, design = weighted_male_c, family = quasibinomial())
 
 weighted_female_c$degf <- 68
-female_model_c <- survey::svyglm(highbp14090_adj ~ clc_age_rcs_1_C + clc_age_rcs_2_C + clc_age_rcs_3_C + married_2_C + married_3_C + edudr04_1_C + edudr04_2_C + working_2_C + gendmhi_1_C + gen_025_2_C + gen_045_2_C + fmh_15_1_C + hwmdbmi_rcs_1_C + hwmdbmi_rcs_2_C + low_drink_score1_2_C + low_drink_score1_3_C + low_drink_score1_4_C + minperweek_rcs_1_C + minperweek_rcs_2_C + smoke_1_C + smoke_2_C + slp_11_C + totalfv_C + diabx_1_C + ckd_1_C + clc_age_rcs_1_by_gen_045_2_C + clc_age_rcs_2_by_gen_045_2_C + clc_age_rcs_3_by_gen_045_2_C + clc_age_rcs_1_by_hwmdbmi_rcs_1_C + clc_age_rcs_2_by_hwmdbmi_rcs_1_C + clc_age_rcs_3_by_hwmdbmi_rcs_1_C +  clc_age_rcs_1_by_hwmdbmi_rcs_2_C + clc_age_rcs_2_by_hwmdbmi_rcs_2_C + clc_age_rcs_3_by_hwmdbmi_rcs_2_C + clc_age_rcs_1_by_minperweek_rcs_1_C +
+female_model <- survey::svyglm(highbp14090_adj ~ clc_age_rcs_1_C + clc_age_rcs_2_C + clc_age_rcs_3_C + married_2_C + married_3_C + edudr04_1_C + edudr04_2_C + working_2_C + gendmhi_1_C + gen_025_2_C + gen_045_2_C + fmh_15_1_C + hwmdbmi_rcs_1_C + hwmdbmi_rcs_2_C + low_drink_score1_2_C + low_drink_score1_3_C + low_drink_score1_4_C + minperweek_rcs_1_C + minperweek_rcs_2_C + smoke_1_C + smoke_2_C + slp_11_C + totalfv_C + diabx_1_C + ckd_1_C + clc_age_rcs_1_by_gen_045_2_C + clc_age_rcs_2_by_gen_045_2_C + clc_age_rcs_3_by_gen_045_2_C + clc_age_rcs_1_by_hwmdbmi_rcs_1_C + clc_age_rcs_2_by_hwmdbmi_rcs_1_C + clc_age_rcs_3_by_hwmdbmi_rcs_1_C +  clc_age_rcs_1_by_hwmdbmi_rcs_2_C + clc_age_rcs_2_by_hwmdbmi_rcs_2_C + clc_age_rcs_3_by_hwmdbmi_rcs_2_C + clc_age_rcs_1_by_minperweek_rcs_1_C +
 clc_age_rcs_2_by_minperweek_rcs_1_C + clc_age_rcs_3_by_minperweek_rcs_1_C +
 clc_age_rcs_1_by_minperweek_rcs_2_C + clc_age_rcs_2_by_minperweek_rcs_2_C +
 clc_age_rcs_3_by_minperweek_rcs_2_C + clc_age_rcs_1_by_smoke_1_C +
@@ -434,11 +434,11 @@ clc_age_rcs_1_by_diabx_1_C + clc_age_rcs_2_by_diabx_1_C +
 clc_age_rcs_3_by_diabx_1_C + clc_age_rcs_1_by_ckd_1_C + clc_age_rcs_2_by_ckd_1_C + clc_age_rcs_3_by_ckd_1_C, design = weighted_female_c, family = quasibinomial())
 
 weighted_male_c$degf <- 68
-male_reduced_model_c <- survey::svyglm(highbp14090_adj ~ clc_age_rcs_1_C + clc_age_rcs_2_C + clc_age_rcs_3_C + fmh_15_1_C + hwmdbmi_rcs_1_C + hwmdbmi_rcs_2_C + diabx_1_C + clc_age_rcs_1_by_hwmdbmi_rcs_1_C + clc_age_rcs_2_by_hwmdbmi_rcs_1_C + clc_age_rcs_3_by_hwmdbmi_rcs_1_C +  clc_age_rcs_1_by_hwmdbmi_rcs_2_C + clc_age_rcs_2_by_hwmdbmi_rcs_2_C + clc_age_rcs_3_by_hwmdbmi_rcs_2_C + clc_age_rcs_1_by_diabx_1_C + clc_age_rcs_2_by_diabx_1_C + 
+male_reduced_model <- survey::svyglm(highbp14090_adj ~ clc_age_rcs_1_C + clc_age_rcs_2_C + clc_age_rcs_3_C + fmh_15_1_C + hwmdbmi_rcs_1_C + hwmdbmi_rcs_2_C + diabx_1_C + clc_age_rcs_1_by_hwmdbmi_rcs_1_C + clc_age_rcs_2_by_hwmdbmi_rcs_1_C + clc_age_rcs_3_by_hwmdbmi_rcs_1_C +  clc_age_rcs_1_by_hwmdbmi_rcs_2_C + clc_age_rcs_2_by_hwmdbmi_rcs_2_C + clc_age_rcs_3_by_hwmdbmi_rcs_2_C + clc_age_rcs_1_by_diabx_1_C + clc_age_rcs_2_by_diabx_1_C + 
 clc_age_rcs_3_by_diabx_1_C, design = weighted_male_c, family = quasibinomial())
 
 weighted_female_c$degf <- 68
-female_reduced_model_c <- survey::svyglm(highbp14090_adj ~ clc_age_rcs_1_C + clc_age_rcs_2_C + clc_age_rcs_3_C + fmh_15_1_C + hwmdbmi_rcs_1_C + hwmdbmi_rcs_2_C + diabx_1_C + clc_age_rcs_1_by_hwmdbmi_rcs_1_C + clc_age_rcs_2_by_hwmdbmi_rcs_1_C + clc_age_rcs_3_by_hwmdbmi_rcs_1_C +  clc_age_rcs_1_by_hwmdbmi_rcs_2_C + clc_age_rcs_2_by_hwmdbmi_rcs_2_C + clc_age_rcs_3_by_hwmdbmi_rcs_2_C + clc_age_rcs_1_by_diabx_1_C + clc_age_rcs_2_by_diabx_1_C +
+female_reduced_model <- survey::svyglm(highbp14090_adj ~ clc_age_rcs_1_C + clc_age_rcs_2_C + clc_age_rcs_3_C + fmh_15_1_C + hwmdbmi_rcs_1_C + hwmdbmi_rcs_2_C + diabx_1_C + clc_age_rcs_1_by_hwmdbmi_rcs_1_C + clc_age_rcs_2_by_hwmdbmi_rcs_1_C + clc_age_rcs_3_by_hwmdbmi_rcs_1_C +  clc_age_rcs_1_by_hwmdbmi_rcs_2_C + clc_age_rcs_2_by_hwmdbmi_rcs_2_C + clc_age_rcs_3_by_hwmdbmi_rcs_2_C + clc_age_rcs_1_by_diabx_1_C + clc_age_rcs_2_by_diabx_1_C +
 clc_age_rcs_3_by_diabx_1_C, design = weighted_female_c, family = quasibinomial())
 
 # 2. Create data summary (without individual values)
@@ -493,16 +493,16 @@ female_data_summary <- list(
 )
 
 # 3. Create safe export
-male_safe_model <- create_safe_export(male_model_c, male_data_summary)
-female_safe_model <- create_safe_export(female_model_c, female_data_summary)
-male_safe_reduced_model <- create_safe_export(male_reduced_model_c, male_data_summary)
-female_safe_reduced_model <- create_safe_export(female_reduced_model_c, female_data_summary)
+male_safe_model <- create_safe_export(male_model, male_data_summary)
+female_safe_model <- create_safe_export(female_model, female_data_summary)
+male_safe_reduced_model <- create_safe_export(male_reduced_model, male_data_summary)
+female_safe_reduced_model <- create_safe_export(female_reduced_model, female_data_summary)
 
 # 4. Validate with opposite data before saving
-validate_export(male_model_c, male_safe_model, female_data_c)
-validate_export(female_model_c, female_safe_model, male_data_c)
-validate_export(male_reduced_model_c, male_safe_reduced_model, female_data_c)
-validate_export(female_reduced_model_c, female_safe_reduced_model, male_data_c)
+validate_export(male_model, male_safe_model, female_data_c)
+validate_export(female_model, female_safe_model, male_data_c)
+validate_export(male_reduced_model, male_safe_reduced_model, female_data_c)
+validate_export(female_reduced_model, female_safe_reduced_model, male_data_c)
  
 # 5. Remove large formula components and save objects
 male_safe_model$formula <- NULL
