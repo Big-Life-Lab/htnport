@@ -4,11 +4,11 @@
 
 ## Abstract
 
-**Background**: Hypertension is preventable, and models predicting hypertension lack use for individual and population health planning.
+**Background**: Current models predicting hypertension have limited utility for patient-oriented decision making and population health planning.
 
-**Methods**: The Hypertension Population Risk Tool (HTNPoRT) was derived from 19,643 respondents aged 20-79 in the Canadian Health Measures Survey. Sex-specific logistic regression models were developed using 16 predictors, including 4 sociodemographics, 3 psychosocial measures, 2 health status indicators, 5 health behaviours, and 2 chronic conditions.
+**Methods**: The Hypertension Population Risk Tool (HTNPoRT) was derived from respondents aged 20-79 in the Canadian Health Measures Survey (survey years 2007 to 2019). Sex-specific logistic regression models were developed using 16 predictors, including 4 sociodemographics, 3 psychosocial measures, 2 health status indicators, 5 health behaviours, and 2 chronic conditions. The primary outcome was hypertension presence ascertained from blood pressure measurements and antihypertensive medication use.
 
-**Results**: The final HTNPoRT models were discriminating (men c-statistic: 0.86, women c-statistic: 0.88), and well-calibrated in the overall population (men observed v. predicted: 1.02%, women observed v. predicted: 1.41%) and nearly all equity-relevant subgroups (179 out of 181). Age, diabetes, and body mass index were the most influential predictors of hypertension on SHAP-derived risk profiles, while predictability of adiposity measures differed across sex.
+**Results**: 5,152 of the 19,643 respondents in the study had hypertension (26.2%). The final HTNPoRT models each had 4 predictors and 2 age interactions,  were discriminating  (c-statistic, men: 0.86; women: 0.88), and were well-calibrated in the overall population (ratio of observed v. predicted events, men: 1.02%; women: 1.41%) and nearly all equity-relevant subgroups (179 out of 181). SHAP-derived risk profiles show the contribution of predictors towards the predicted hypertension outcome, while predictability of adiposity measures differed across sex.
 
 **Conclusions**: The public and health policymakers can use the models and risk profiles of HTNPoRT to support planning and decision-making on addressing the hypertension burden.
 
@@ -28,8 +28,8 @@ This project can only be run at the uOttawa Research Data Centre (RDC) managed b
 
 ## Folders
 
-- **data**: Study data (only available at RDC) and test data for validating svyglm model export.
+- **data**: Study data (only available at RDC).
 - **R**: R functions necessary for running HTNPoRT descriptives, derivation, validation, and presentation.
-- **models**: Exported svyglm and glm model objects of HTNPoRT.
+- **output**: Select objects, parameters, and paper output needed for final HTNPoRT model implementation.
 - **papers**: Papers written for this project which include reproducible results.
-- **worksheets**: variables.csv and variable-details.csv files detailing which variables are transformed across CHMS for HTNPoRT analyses and how they are recoded, respectively.
+- **worksheets**: `variables.csv` and `variable-details.csv` files detailing which variables are transformed across CHMS for HTNPoRT analyses and how they are recoded, respectively.

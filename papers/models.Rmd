@@ -476,7 +476,7 @@ female_reduced_model <- survey::svyglm(highbp14090_adj ~ clc_age_rcs_1_C + clc_a
 clc_age_rcs_3_by_diabx_1_C, design = weighted_female_c, family = quasibinomial())
 ```
 
-### Full model assessment for original sample
+### Full model assessment for derivation sample
 
 ```{r, warning = FALSE, message = FALSE}
 # Generate predicted probabilities for full models
@@ -494,9 +494,20 @@ compare_probs(female_data, female_predicted_probabilities)
 # Plot cumulative frequency of predicted probabilities
 plot(sort(male_predicted_probabilities), seq_along(male_predicted_probabilities), type = "s", col = "blue", lwd = 2, xlab = "Predicted probability", ylab = "Cumulative frequency")
 plot(sort(female_predicted_probabilities), seq_along(female_predicted_probabilities), type = "s", col = "red", lwd = 2, xlab = "Predicted probability", ylab = "Cumulative frequency")
+
+# Predicted probability percentiles
+percentiles <- 1:100
+
+predicted_percentiles_full <- data.frame(
+  percentile = percentiles,
+  `predicted risk (male)` = quantile(male_predicted_probabilities, probs = percentiles / 100, na.rm = TRUE),
+  `predicted risk (female)` = quantile(female_predicted_probabilities, probs = percentiles / 100, na.rm = TRUE)
+)
+
+write.csv(predicted_percentiles_full, file = "P:/10619/Dropbox/htnport/output/New Modelling Output/Model Presentation Output/Parameters/svyglm/Full Model Predicted Percentiles.csv")
 ```
 
-### Reduced model assessment for original sample
+### Reduced model assessment for derivation sample
 
 ```{r, warning = FALSE, message = FALSE}
 # Generate predicted probabilities for reduced models
@@ -514,6 +525,17 @@ compare_probs(female_data, female_predicted_probabilities)
 # Plot cumulative frequency of predicted probabilities
 plot(sort(male_predicted_probabilities), seq_along(male_predicted_probabilities), type = "s", col = "blue", lwd = 2, xlab = "Predicted probability", ylab = "Cumulative frequency")
 plot(sort(female_predicted_probabilities), seq_along(female_predicted_probabilities), type = "s", col = "red", lwd = 2, xlab = "Predicted probability", ylab = "Cumulative frequency")
+
+# Predicted probability percentiles
+percentiles <- 1:100
+
+predicted_percentiles_reduced <- data.frame(
+  percentile = percentiles,
+  `predicted risk (male)` = quantile(male_predicted_probabilities, probs = percentiles / 100, na.rm = TRUE),
+  `predicted risk (female)` = quantile(female_predicted_probabilities, probs = percentiles / 100, na.rm = TRUE)
+)
+
+write.csv(predicted_percentiles_reduced, file = "P:/10619/Dropbox/htnport/output/New Modelling Output/Model Presentation Output/Parameters/svyglm/Reduced Model Predicted Percentiles.csv")
 ```
 
 ### Full model assessment for bootstrap samples - BOOTSTRAP VALIDATION 1/2
