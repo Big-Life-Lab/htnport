@@ -245,3 +245,18 @@ extract_beta_coefs <- function(model) {
     row.names = NULL  # Remove row names
   )
 }
+
+# Function to obtain bootstrap beta coefficients for a model
+bootstrap_coefs <- function(data, indices, model) {
+  # Create bootstrap sample
+  boot_data <- data[indices, ]
+  
+  # Recreate survey design
+  boot_design <- survey::svydesign(ids = ~1, weights = ~wgt_full, data = boot_data)
+  
+  # Refit model
+  boot_model <- update(model, data = boot_data, design = boot_design)
+  
+  # Return coefficients
+  return(coef(boot_model))
+}

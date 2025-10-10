@@ -160,9 +160,10 @@ imputed_cycles1to6_data <- dplyr::left_join(imputed_cycles1to6_data, cycles1to6_
 # set.seed(123)
 # imputed_cycles1to6_data <- data.frame(
 #   highbp14090_adj = sample(1:2, 1000, replace = TRUE), # Binary hypertension outcome
-# highbp14090 = sample(1:2, 1000, replace = TRUE), # Binary unadjusted hypertension outcome
-# control14090_adj = sample(1:2, 1000, replace = TRUE), # Binary controlled hypertension outcome
-# control14090 = sample(1:2, 1000, replace = TRUE), # Binary controlled and unadjusted hypertension outcome
+#   highbp14090 = sample(1:2, 1000, replace = TRUE), # Binary unadjusted hypertension outcome
+#   control14090_adj = sample(1:2, 1000, replace = TRUE), # Binary controlled hypertension outcome
+#   control14090 = sample(1:2, 1000, replace = TRUE), # Binary controlled and unadjusted hypertension outcome
+#   highbp13080_adj = sample(1:2, 1000, replace = TRUE), # Binary 130/80 hypertension outcome
 #   ccc_51 = sample(1:2, 1000, replace = TRUE), # Binary self-reported diabetes
 #   ckd = sample(1:2, 1000, replace = TRUE), # Binary chronic kidney disease
 #   edudr04 = sample(1:3, 1000, replace = TRUE), # Categorical education
@@ -214,6 +215,7 @@ imputed_cycles1to6_data <- imputed_cycles1to6_data %>%
   dplyr::mutate(highbp14090_adj = ifelse(highbp14090_adj == 2, 0, highbp14090_adj),
                 highbp14090 = ifelse(highbp14090 == 2, 0, highbp14090),
                 control14090_adj = ifelse(control14090_adj == 2, 0, control14090_adj),
+                highbp13080_adj = ifelse(highbp13080_adj == 2, 0, highbp13080_adj),
                 ckd = ifelse(ckd == 2, 0, ckd),
                 diabx = ifelse(diabx == 2, 0, diabx),
                 fmh_15 = ifelse(fmh_15 == 2, 0, fmh_15),
@@ -451,8 +453,8 @@ female_data_simple <- dplyr::select(female_data_simple, recodeflow:::select_vars
 male_cor_mat <- cor(male_data_simple)
 female_cor_mat <- cor(female_data_simple)
 
-write.csv(male_cor_mat, file = "P:/10619/Dropbox/htnport/vignettes/New Modelling Output/Model Presentation Output/Parameters/Correlation Matrix/Male Correlation Matrix.csv")
-write.csv(female_cor_mat, file = "P:/10619/Dropbox/htnport/vignettes/New Modelling Output/Model Presentation Output/Parameters/Correlation Matrix/Female Correlation Matrix.csv")
+write.csv(male_cor_mat, file = "P:/10619/Dropbox/htnport/output/New Modelling Output/Model Presentation Output/Parameters/Correlation Matrix/Male Correlation Matrix.csv")
+write.csv(female_cor_mat, file = "P:/10619/Dropbox/htnport/output/New Modelling Output/Model Presentation Output/Parameters/Correlation Matrix/Female Correlation Matrix.csv")
 ```
 
 ### Model specification
@@ -980,11 +982,56 @@ male_reduced_betas <- extract_beta_coefs(male_reduced_model)
 female_reduced_betas <- extract_beta_coefs(female_reduced_model)
 
 # Export beta coefficient tables as csv files
-write.csv(male_full_betas, file = "P:/10619/Dropbox/htnport/vignettes/New Modelling Output/Model Presentation Output/Parameters/svyglm/Male Full Model Betas.csv")
-write.csv(female_full_betas, file = "P:/10619/Dropbox/htnport/vignettes/New Modelling Output/Model Presentation Output/Parameters/svyglm/Female Full Model Betas.csv")
+write.csv(male_full_betas, file = "P:/10619/Dropbox/htnport/output/New Modelling Output/Model Presentation Output/Parameters/svyglm/Male Full Model Betas.csv")
+write.csv(female_full_betas, file = "P:/10619/Dropbox/htnport/output/New Modelling Output/Model Presentation Output/Parameters/svyglm/Female Full Model Betas.csv")
 
-write.csv(male_reduced_betas, file = "P:/10619/Dropbox/htnport/vignettes/New Modelling Output/Model Presentation Output/Parameters/svyglm/Male Reduced Model Betas.csv")
-write.csv(female_reduced_betas, file = "P:/10619/Dropbox/htnport/vignettes/New Modelling Output/Model Presentation Output/Parameters/svyglm/Female Reduced Model Betas.csv")
+write.csv(male_reduced_betas, file = "P:/10619/Dropbox/htnport/output/New Modelling Output/Model Presentation Output/Parameters/svyglm/Male Reduced Model Betas.csv")
+write.csv(female_reduced_betas, file = "P:/10619/Dropbox/htnport/output/New Modelling Output/Model Presentation Output/Parameters/svyglm/Female Reduced Model Betas.csv")
+
+# Get bootstrap beta coefficients and their standard errors for full models
+n_bootstrap <- 1000
+set.seed(123)
+
+bootstrap_coefs_male <- replicate(n_bootstrap, {
+  boot_indices <- sample(1:nrow(male_data_c), replace = TRUE)
+  bootstrap_coefs(male_data_c, boot_indices, male_model)
+}, simplify = FALSE)
+
+coef_matrix_male <- do.call(rbind, bootstrap_coefs_male)
+rownames(coef_matrix_male) <- paste0("bootstrap_", 1:n_bootstrap)
+
+write.csv(coef_matrix_male, file = "P:/10619/Dropbox/htnport/output/New Modelling Output/Model Presentation Output/Parameters/svyglm/Bootstrap Betas/Male Full Model Bootstrap Betas.csv", row.names = TRUE)
+
+bootstrap_coefs_female <- replicate(n_bootstrap, {
+  boot_indices <- sample(1:nrow(female_data_c), replace = TRUE)
+  bootstrap_coefs(female_data_c, boot_indices, female_model)
+}, simplify = FALSE)
+
+coef_matrix_female <- do.call(rbind, bootstrap_coefs_female)
+rownames(coef_matrix_female) <- paste0("bootstrap_", 1:n_bootstrap)
+
+write.csv(coef_matrix_female, file = "P:/10619/Dropbox/htnport/output/New Modelling Output/Model Presentation Output/Parameters/svyglm/Bootstrap Betas/Female Full Model Bootstrap Betas.csv", row.names = TRUE)
+
+# Get bootstrap beta coefficients and their standard errors for rediced models
+bootstrap_coefs_male_reduced <- replicate(n_bootstrap, {
+  boot_indices <- sample(1:nrow(male_data_c), replace = TRUE)
+  bootstrap_coefs(male_data_c, boot_indices, male_reduced_model)
+}, simplify = FALSE)
+
+coef_matrix_male_reduced <- do.call(rbind, bootstrap_coefs_male_reduced)
+rownames(coef_matrix_male_reduced) <- paste0("bootstrap_", 1:n_bootstrap)
+
+write.csv(coef_matrix_male_reduced, file = "P:/10619/Dropbox/htnport/output/New Modelling Output/Model Presentation Output/Parameters/svyglm/Bootstrap Betas/Male Reduced Model Bootstrap Betas.csv", row.names = TRUE)
+
+bootstrap_coefs_female_reduced <- replicate(n_bootstrap, {
+  boot_indices <- sample(1:nrow(female_data_c), replace = TRUE)
+  bootstrap_coefs(female_data_c, boot_indices, female_reduced_model)
+}, simplify = FALSE)
+
+coef_matrix_female_reduced <- do.call(rbind, bootstrap_coefs_female_reduced)
+rownames(coef_matrix_female_reduced) <- paste0("bootstrap_", 1:n_bootstrap)
+
+write.csv(coef_matrix_female_reduced, file = "P:/10619/Dropbox/htnport/output/New Modelling Output/Model Presentation Output/Parameters/svyglm/Bootstrap Betas/female Reduced Model Bootstrap Betas.csv", row.names = TRUE)
 
 # Re-apply survey weights to male and female data
 male_data <- dplyr::filter(imputed_cycles1to6_data, clc_sex == 1)
@@ -1022,8 +1069,8 @@ cont_variables <- c("clc_age", "hwmdbmi", "minperweek", "totalfv", "slp_11")
 male_summary <- summarize_weighted(cont_variables, weighted_male, male_data)
 female_summary <- summarize_weighted(cont_variables, weighted_female, female_data)
 
-write.csv(male_summary, file = "P:/10619/Dropbox/htnport/vignettes/New Modelling Output/Model Presentation Output/Parameters/Male Continuous Descriptives.csv")
-write.csv(female_summary, file = "P:/10619/Dropbox/htnport/vignettes/New Modelling Output/Model Presentation Output/Parameters/Female Continuous Descriptives.csv")
+write.csv(male_summary, file = "P:/10619/Dropbox/htnport/output/New Modelling Output/Model Presentation Output/Parameters/Male Continuous Descriptives.csv")
+write.csv(female_summary, file = "P:/10619/Dropbox/htnport/output/New Modelling Output/Model Presentation Output/Parameters/Female Continuous Descriptives.csv")
 
 # Print knot locations of transformed continuous variables
 rcspline.eval(x = weighted_male$variables$clc_age, nk = 4, knots.only = TRUE)
@@ -1636,4 +1683,302 @@ legend("bottomright", legend = c("Uncontrolled HTN", "Uncontrolled + Controlled 
 plot(sort(female_predicted_probabilities_uncontrolled_reduced), seq_along(female_predicted_probabilities_uncontrolled_reduced), type = "s", col = "black", lwd = 2, xlab = "Predicted probability", ylab = "Cumulative frequency", ylim = range(c(seq_along(female_predicted_probabilities_uncontrolled_reduced), seq_along(female_predicted_probabilities_both_reduced))))
 lines(sort(female_predicted_probabilities_both_reduced), seq_along(female_predicted_probabilities_both_reduced), type = "s", col = "blue", lwd = 2)
 legend("bottomright", legend = c("Uncontrolled HTN", "Uncontrolled + Controlled HTN"), col = c("black", "blue"), lwd = 2)
+```
+
+### Sensitivity analyses (new HTN)
+
+```{r, warning = FALSE, message = FALSE}
+# Fit full male and female models with new HTN and see effect
+# Fit male and female models
+weighted_male_c$degf <- 68
+male_model_new <- survey::svyglm(highbp13080_adj ~ clc_age_rcs_1_C + clc_age_rcs_2_C + clc_age_rcs_3_C + married_2_C + married_3_C + edudr04_1_C + edudr04_2_C + working_2_C + gendmhi_1_C + gen_025_2_C + gen_045_2_C + fmh_15_1_C + hwmdbmi_rcs_1_C + hwmdbmi_rcs_2_C + low_drink_score1_2_C + low_drink_score1_3_C + low_drink_score1_4_C + minperweek_rcs_1_C + minperweek_rcs_2_C + smoke_1_C + smoke_2_C + slp_11_C + totalfv_C + diabx_1_C + ckd_1_C + clc_age_rcs_1_by_gen_045_2_C + clc_age_rcs_2_by_gen_045_2_C + clc_age_rcs_3_by_gen_045_2_C + clc_age_rcs_1_by_hwmdbmi_rcs_1_C + clc_age_rcs_2_by_hwmdbmi_rcs_1_C + clc_age_rcs_3_by_hwmdbmi_rcs_1_C +  clc_age_rcs_1_by_hwmdbmi_rcs_2_C + clc_age_rcs_2_by_hwmdbmi_rcs_2_C + clc_age_rcs_3_by_hwmdbmi_rcs_2_C + clc_age_rcs_1_by_minperweek_rcs_1_C + 
+clc_age_rcs_2_by_minperweek_rcs_1_C + clc_age_rcs_3_by_minperweek_rcs_1_C + 
+clc_age_rcs_1_by_minperweek_rcs_2_C + clc_age_rcs_2_by_minperweek_rcs_2_C + 
+clc_age_rcs_3_by_minperweek_rcs_2_C + clc_age_rcs_1_by_smoke_1_C + 
+clc_age_rcs_2_by_smoke_1_C + clc_age_rcs_3_by_smoke_1_C + clc_age_rcs_1_by_smoke_2_C + clc_age_rcs_2_by_smoke_2_C + clc_age_rcs_3_by_smoke_2_C + 
+clc_age_rcs_1_by_slp_11_C + clc_age_rcs_2_by_slp_11_C + clc_age_rcs_3_by_slp_11_C +
+clc_age_rcs_1_by_diabx_1_C + clc_age_rcs_2_by_diabx_1_C + 
+clc_age_rcs_3_by_diabx_1_C + clc_age_rcs_1_by_ckd_1_C + clc_age_rcs_2_by_ckd_1_C + clc_age_rcs_3_by_ckd_1_C, design = weighted_male_c, family = quasibinomial())
+
+weighted_female_c$degf <- 68
+female_model_new <- survey::svyglm(highbp13080_adj ~ clc_age_rcs_1_C + clc_age_rcs_2_C + clc_age_rcs_3_C + married_2_C + married_3_C + edudr04_1_C + edudr04_2_C + working_2_C + gendmhi_1_C + gen_025_2_C + gen_045_2_C + fmh_15_1_C + hwmdbmi_rcs_1_C + hwmdbmi_rcs_2_C + low_drink_score1_2_C + low_drink_score1_3_C + low_drink_score1_4_C + minperweek_rcs_1_C + minperweek_rcs_2_C + smoke_1_C + smoke_2_C + slp_11_C + totalfv_C + diabx_1_C + ckd_1_C + clc_age_rcs_1_by_gen_045_2_C + clc_age_rcs_2_by_gen_045_2_C + clc_age_rcs_3_by_gen_045_2_C + clc_age_rcs_1_by_hwmdbmi_rcs_1_C + clc_age_rcs_2_by_hwmdbmi_rcs_1_C + clc_age_rcs_3_by_hwmdbmi_rcs_1_C +  clc_age_rcs_1_by_hwmdbmi_rcs_2_C + clc_age_rcs_2_by_hwmdbmi_rcs_2_C + clc_age_rcs_3_by_hwmdbmi_rcs_2_C + clc_age_rcs_1_by_minperweek_rcs_1_C + 
+clc_age_rcs_2_by_minperweek_rcs_1_C + clc_age_rcs_3_by_minperweek_rcs_1_C + 
+clc_age_rcs_1_by_minperweek_rcs_2_C + clc_age_rcs_2_by_minperweek_rcs_2_C + 
+clc_age_rcs_3_by_minperweek_rcs_2_C + clc_age_rcs_1_by_smoke_1_C + 
+clc_age_rcs_2_by_smoke_1_C + clc_age_rcs_3_by_smoke_1_C + clc_age_rcs_1_by_smoke_2_C + clc_age_rcs_2_by_smoke_2_C + clc_age_rcs_3_by_smoke_2_C + 
+clc_age_rcs_1_by_slp_11_C + clc_age_rcs_2_by_slp_11_C + clc_age_rcs_3_by_slp_11_C +
+clc_age_rcs_1_by_diabx_1_C + clc_age_rcs_2_by_diabx_1_C + 
+clc_age_rcs_3_by_diabx_1_C + clc_age_rcs_1_by_ckd_1_C + clc_age_rcs_2_by_ckd_1_C + clc_age_rcs_3_by_ckd_1_C, design = weighted_female_c, family = quasibinomial())
+
+male_predicted_probabilities_new_full <- generate_predicted_probabilities(male_model_new)
+female_predicted_probabilities_new_full <- generate_predicted_probabilities(female_model_new)
+
+calibration(male_predicted_probabilities_new_full, model.frame(male_model_new)$highbp13080_adj)
+calibration(female_predicted_probabilities_new_full, model.frame(female_model_new)$highbp13080_adj)
+
+# Fit reduced male and female models with new HTN and see effect
+weighted_male_c$degf <- 68
+male_reduced_model_new <- survey::svyglm(highbp13080_adj ~ clc_age_rcs_1_C + clc_age_rcs_2_C + clc_age_rcs_3_C + fmh_15_1_C + hwmdbmi_rcs_1_C + hwmdbmi_rcs_2_C + diabx_1_C + clc_age_rcs_1_by_hwmdbmi_rcs_1_C + clc_age_rcs_2_by_hwmdbmi_rcs_1_C + clc_age_rcs_3_by_hwmdbmi_rcs_1_C +  clc_age_rcs_1_by_hwmdbmi_rcs_2_C + clc_age_rcs_2_by_hwmdbmi_rcs_2_C + clc_age_rcs_3_by_hwmdbmi_rcs_2_C + clc_age_rcs_1_by_diabx_1_C + clc_age_rcs_2_by_diabx_1_C + 
+clc_age_rcs_3_by_diabx_1_C, design = weighted_male_c, family = quasibinomial())
+
+weighted_female_c$degf <- 68
+female_reduced_model_new <- survey::svyglm(highbp13080_adj ~ clc_age_rcs_1_C + clc_age_rcs_2_C + clc_age_rcs_3_C + fmh_15_1_C + hwmdbmi_rcs_1_C + hwmdbmi_rcs_2_C + diabx_1_C + clc_age_rcs_1_by_hwmdbmi_rcs_1_C + clc_age_rcs_2_by_hwmdbmi_rcs_1_C + clc_age_rcs_3_by_hwmdbmi_rcs_1_C +  clc_age_rcs_1_by_hwmdbmi_rcs_2_C + clc_age_rcs_2_by_hwmdbmi_rcs_2_C + clc_age_rcs_3_by_hwmdbmi_rcs_2_C + clc_age_rcs_1_by_diabx_1_C + clc_age_rcs_2_by_diabx_1_C + 
+clc_age_rcs_3_by_diabx_1_C, design = weighted_female_c, family = quasibinomial())
+
+male_predicted_probabilities_new_reduced <- generate_predicted_probabilities(male_reduced_model_new)
+female_predicted_probabilities_new_reduced <- generate_predicted_probabilities(female_reduced_model_new)
+
+calibration(male_predicted_probabilities_new_reduced, model.frame(male_reduced_model_new)$highbp13080_adj)
+calibration(female_predicted_probabilities_new_reduced, model.frame(female_reduced_model_new)$highbp13080_adj)
+
+# Get predicted probabilities for models with old HTN
+male_predicted_probabilities_old_full <- generate_predicted_probabilities(male_model)
+female_predicted_probabilities_old_full <- generate_predicted_probabilities(female_model)
+male_predicted_probabilities_old_reduced <- generate_predicted_probabilities(male_reduced_model)
+female_predicted_probabilities_old_reduced <- generate_predicted_probabilities(female_reduced_model)
+
+# Plot cumulative frequency of predicted probabilities (newusted BPs vs. oldusted BPs)
+# Full models
+plot(sort(male_predicted_probabilities_new_full), seq_along(male_predicted_probabilities_new_full), type = "s", col = "black", lwd = 2, xlab = "Predicted probability", ylab = "Cumulative frequency")
+lines(sort(male_predicted_probabilities_old_full), seq_along(male_predicted_probabilities_old_full), type = "s", col = "blue", lwd = 2)
+legend("bottomright", legend = c("130/80", "140/90"), col = c("black", "blue"), lwd = 2)
+
+plot(sort(female_predicted_probabilities_new_full), seq_along(female_predicted_probabilities_new_full), type = "s", col = "black", lwd = 2, xlab = "Predicted probability", ylab = "Cumulative frequency")
+lines(sort(female_predicted_probabilities_old_full), seq_along(female_predicted_probabilities_old_full), type = "s", col = "blue", lwd = 2)
+legend("bottomright", legend = c("130/80", "140/90"), col = c("black", "blue"), lwd = 2)
+
+# Reduced models
+plot(sort(male_predicted_probabilities_new_reduced), seq_along(male_predicted_probabilities_new_reduced), type = "s", col = "black", lwd = 2, xlab = "Predicted probability", ylab = "Cumulative frequency")
+lines(sort(male_predicted_probabilities_old_reduced), seq_along(male_predicted_probabilities_old_reduced), type = "s", col = "blue", lwd = 2)
+legend("bottomright", legend = c("130/80", "140/90"), col = c("black", "blue"), lwd = 2)
+
+plot(sort(female_predicted_probabilities_new_reduced), seq_along(female_predicted_probabilities_new_reduced), type = "s", col = "black", lwd = 2, xlab = "Predicted probability", ylab = "Cumulative frequency")
+lines(sort(female_predicted_probabilities_old_reduced), seq_along(female_predicted_probabilities_old_reduced), type = "s", col = "blue", lwd = 2)
+legend("bottomright", legend = c("130/80", "140/90"), col = c("black", "blue"), lwd = 2)
+```
+
+### Validation data with components separated and prediction values:
+
+Comment out male knots and means, and uncomment female knots and means to switch.
+
+```{r}
+set.seed(123)
+male_validation_data <- data.frame(
+  clc_age = sample(20:79, 10000, replace = TRUE),
+  married = factor(sample(1:3, 10000, replace = TRUE)),
+  edudr04 = factor(sample(0:2, 10000, replace = TRUE)),
+  working = factor(sample(1:2, 10000, replace = TRUE)),
+  gendmhi = factor(sample(0:1, 10000, replace = TRUE)),
+  gen_025 = factor(sample(1:2, 10000, replace = TRUE)),
+  gen_045 = factor(sample(1:2, 10000, replace = TRUE)),
+  fmh_15 = factor(sample(0:1, 10000, replace = TRUE)),
+  hwmdbmi = runif(10000, 13.8, 49),
+  low_drink_score1 = factor(sample(1:4, 10000, replace = TRUE)),
+  minperweek = runif(10000, 0, 795),
+  smoke = factor(sample(0:2, 10000, replace = TRUE)),
+  slp_11 = runif(10000, 2, 18),
+  totalfv = runif(10000, 0, 10),
+  diabx = factor(sample(0:1, 10000, replace = TRUE)),
+  ckd = factor(sample(0:1, 10000, replace = TRUE))
+)
+
+# -------- dummy variables --------
+cat_variables <- c("ckd", "diabx", "edudr04", "fmh_15", "gendmhi", "gen_025", "gen_045", "low_drink_score1", "married", "smoke", "working")
+male_validation_data <- step_dummy(male_validation_data, cat_variables)
+
+# -------- rcs --------
+# age
+knots_age <- c(24, 40, 57, 74) # male
+# knots_age <- c(25, 40, 57, 75) # female
+# BMI
+knots_bmi <- c(22.35, 27.24, 34.178) # male
+# knots_bmi <- c(20.69, 26.23, 36.141) # female
+# exercise
+knots_exercise <- c(9, 103, 326) # male
+# knots_exercise <- c(1, 89, 290) # female
+# unpack rcs
+vars_rcs <- c("clc_age", "hwmdbmi", "minperweek")
+knots_list <- list(knots_age, knots_bmi, knots_exercise)
+knots_list <- setNames(knots_list, vars_rcs)
+male_validation_data <- step_rcs(male_validation_data, vars_rcs, knots_list)
+
+# -------- interaction terms --------
+interaction_list <- list(
+  c("clc_age", "gen_045"),
+  c("clc_age", "hwmdbmi"),
+  c("clc_age", "minperweek"),
+  c("clc_age", "smoke"),
+  c("clc_age", "slp_11"),
+  c("clc_age", "diabx"),
+  c("clc_age", "ckd")
+)
+male_validation_data <- step_interaction(male_validation_data, interaction_list)
+
+# Get weighted mean values from the dataset
+vars_mean <- c("clc_age_rcs_1", "clc_age_rcs_2", "clc_age_rcs_3", "married_2", "married_3", "edudr04_1", "edudr04_2", "working_2", "gendmhi_1", "gen_025_2", "gen_045_2", "fmh_15_1", "hwmdbmi_rcs_1", "hwmdbmi_rcs_2", "low_drink_score1_2", "low_drink_score1_3", "low_drink_score1_4", "minperweek_rcs_1", "minperweek_rcs_2",
+"smoke_1", "smoke_2", "slp_11", "totalfv", "diabx_1", "ckd_1", "clc_age_rcs_1_by_gen_045_2", "clc_age_rcs_2_by_gen_045_2", "clc_age_rcs_3_by_gen_045_2", "clc_age_rcs_1_by_hwmdbmi_rcs_1", "clc_age_rcs_2_by_hwmdbmi_rcs_1", "clc_age_rcs_3_by_hwmdbmi_rcs_1", "clc_age_rcs_1_by_hwmdbmi_rcs_2", "clc_age_rcs_2_by_hwmdbmi_rcs_2", "clc_age_rcs_3_by_hwmdbmi_rcs_2", "clc_age_rcs_1_by_minperweek_rcs_1", "clc_age_rcs_2_by_minperweek_rcs_1", "clc_age_rcs_3_by_minperweek_rcs_1",
+"clc_age_rcs_1_by_minperweek_rcs_2", "clc_age_rcs_2_by_minperweek_rcs_2", "clc_age_rcs_3_by_minperweek_rcs_2", "clc_age_rcs_1_by_smoke_1", "clc_age_rcs_2_by_smoke_1", "clc_age_rcs_3_by_smoke_1", "clc_age_rcs_1_by_smoke_2", "clc_age_rcs_2_by_smoke_2", "clc_age_rcs_3_by_smoke_2", "clc_age_rcs_1_by_slp_11", "clc_age_rcs_2_by_slp_11", "clc_age_rcs_3_by_slp_11", "clc_age_rcs_1_by_diabx_1", "clc_age_rcs_2_by_diabx_1", "clc_age_rcs_3_by_diabx_1", "clc_age_rcs_1_by_ckd_1", "clc_age_rcs_2_by_ckd_1", "clc_age_rcs_3_by_ckd_1")
+
+# male
+means <- c(
+  46.14509835, 10.41999141, 2.012829724, 0.085947731, 0.248462597,
+  0.217177205, 0.125063569, 0.258671725, 0.066840869, 0.228373362,
+  0.349876734, 0.524803077, 27.66777298, 2.529042313, 0.777985051,
+  0.045626893, 0.072198781, 147.6496834, 53.84564875, 0.308696985,
+  0.227724746, 7.015035776, 3.280091672, 0.104918358, 0.044784256,
+  15.14081401, 2.855721362, 0.518839488, 1289.586153, 294.9641651,
+  56.95945766, 121.6744825, 28.59310879, 5.458573727, 6383.426259,
+  1151.285813, 200.1725572, 2295.79088, 396.7168969, 67.65261735,
+  16.42423635, 4.962600721, 1.036863773, 9.689177061, 1.65996114,
+  0.282951234, 323.9788677, 74.51391132, 14.59326186, 6.145555691,
+  2.19318601, 0.472921201, 2.811431457, 1.26078209, 0.307342769
+)
+
+# female
+# means <- c(
+#   46.89545843, 10.12555934, 2.151608321, 0.147107554, 0.210100305,
+#   0.193357648, 0.099653209, 0.353413901, 0.088527417, 0.257966189,
+#   0.342661718, 0.573552958, 27.0963796, 2.687938152, 0.753166452,
+#   0.03853446, 0.03202675, 126.2691998, 49.59317196, 0.272198263,
+#   0.165152547, 7.176308826, 3.700420139, 0.073367263, 0.057604582,
+#   15.29680233, 2.877391597, 0.572698397, 1285.110359, 282.7253824,
+#   60.12236359, 131.3924734, 29.62929288, 6.184663944, 5569.647047,
+#   972.9401839, 186.0587491, 2174.213295, 375.6339899, 70.87545919,
+#   14.19872096, 3.733773656, 0.824769535, 7.276738258, 1.206667012,
+#   0.221478809, 336.01649, 73.01912727, 15.59617795, 4.268397084,
+#   1.361402486, 0.314536375, 3.693735889, 1.553035432, 0.402545106
+# )
+
+# centering vars in the dataset
+names(means) <- vars_mean
+vars_center <- names(means)
+male_validation_data <- step_center(male_validation_data, vars_center, means)
+
+# Add centered model predictions to dataset
+male_validation_data$full_predicted <- predict(male_model, newdata = male_validation_data, type = "response")
+male_validation_data$reduced_predicted <- predict(male_reduced_model, newdata = male_validation_data, type = "response")
+write.csv(male_validation_data, file = "P:/10619/Dropbox/htnport/output/New Modelling Output/Model Presentation Output/Parameters/svyglm/Validation Data/Male Validation Data.csv", row.names = TRUE)
+```
+
+### Vascular age
+
+```{r}
+# Predict HTN for all respondents in development data
+male_data_c$full_predicted <- predict(male_model, newdata = male_data_c, type = "response")
+female_data_c$full_predicted <- predict(female_model, newdata = female_data_c, type = "response")
+male_data_c$reduced_predicted <- predict(male_reduced_model, newdata = male_data_c, type = "response")
+female_data_c$reduced_predicted <- predict(female_reduced_model, newdata = female_data_c, type = "response")
+
+# For 1-year age and sex strata, calculate: mean prediction, SD, median, IQR.
+male_summary_1yr <- male_data_c %>%
+  group_by(clc_age) %>%
+  summarise(
+    mean_pred_full = mean(full_predicted),
+    sd_pred_full = sd(full_predicted),
+    median_pred_full = median(full_predicted),
+    iqr_pred_full = IQR(full_predicted),
+    mean_pred_reduced = mean(reduced_predicted),
+    sd_pred_reduced = sd(reduced_predicted),
+    median_pred_reduced = median(reduced_predicted),
+    iqr_pred_reduced = IQR(reduced_predicted)
+  )
+
+female_summary_1yr <- female_data_c %>%
+  group_by(clc_age) %>%
+  summarise(
+    mean_pred_full = mean(full_predicted),
+    sd_pred_full = sd(full_predicted),
+    median_pred_full = median(full_predicted),
+    iqr_pred_full = IQR(full_predicted),
+    mean_pred_reduced = mean(reduced_predicted),
+    sd_pred_reduced = sd(reduced_predicted),
+    median_pred_reduced = median(reduced_predicted),
+    iqr_pred_reduced = IQR(reduced_predicted)
+  )
+
+write.csv(male_summary_1yr, file = "P:/10619/Dropbox/htnport/output/New Modelling Output/Model Presentation Output/Parameters/svyglm/Vascular Age/Male Vascular Age - 1 yr", row.names = TRUE)
+write.csv(female_summary_1yr, file = "P:/10619/Dropbox/htnport/output/New Modelling Output/Model Presentation Output/Parameters/svyglm/Vascular Age/Female Vascular Age - 1 yr", row.names = TRUE)
+
+# For 5-year age and sex strata, calculate mean prediction, SD, and then min, max and percentiles.
+male_data_c$age_group_5yr <- cut(male_data_c$clc_age, breaks = seq(20, 80, by = 5), right = FALSE)
+female_data_c$age_group_5yr <- cut(female_data_c$clc_age, breaks = seq(20, 80, by = 5), right = FALSE)
+
+percentiles <- c(0.05, 0.10, 0.20, 0.25, 0.30, 0.40, 0.50, 0.60, 0.75, 0.80, 0.90, 0.95)
+
+male_summary_5yr <- male_data_c %>%
+  group_by(age_group_5yr) %>%
+  summarise(
+    mean_pred_full = mean(full_predicted),
+    sd_pred_full = sd(full_predicted),
+    min_pred_full = min(full_predicted),
+    max_pred_full = max(full_predicted),
+    p05_full = quantile(full_predicted, 0.05),
+    p10_full = quantile(full_predicted, 0.10),
+    p20_full = quantile(full_predicted, 0.20),
+    p25_full = quantile(full_predicted, 0.25),
+    p30_full = quantile(full_predicted, 0.30),
+    p40_full = quantile(full_predicted, 0.40),
+    p50_full = quantile(full_predicted, 0.50),
+    p60_full = quantile(full_predicted, 0.60),
+    p75_full = quantile(full_predicted, 0.75),
+    p80_full = quantile(full_predicted, 0.80),
+    p90_full = quantile(full_predicted, 0.90),
+    p95_full = quantile(full_predicted, 0.95),
+    mean_pred_reduced = mean(reduced_predicted),
+    sd_pred_reduced = sd(reduced_predicted),
+    min_pred_reduced = min(reduced_predicted),
+    max_pred_reduced = max(reduced_predicted),
+    p05_reduced = quantile(reduced_predicted, 0.05),
+    p10_reduced = quantile(reduced_predicted, 0.10),
+    p20_reduced = quantile(reduced_predicted, 0.20),
+    p25_reduced = quantile(reduced_predicted, 0.25),
+    p30_reduced = quantile(reduced_predicted, 0.30),
+    p40_reduced = quantile(reduced_predicted, 0.40),
+    p50_reduced = quantile(reduced_predicted, 0.50),
+    p60_reduced = quantile(reduced_predicted, 0.60),
+    p75_reduced = quantile(reduced_predicted, 0.75),
+    p80_reduced = quantile(reduced_predicted, 0.80),
+p90_reduced = quantile(reduced_predicted, 0.90),
+    p95_reduced = quantile(reduced_predicted, 0.95)
+  )
+
+female_summary_5yr <- female_data_c %>%
+  group_by(age_group_5yr) %>%
+  summarise(
+    mean_pred_full = mean(full_predicted),
+    sd_pred_full = sd(full_predicted),
+    min_pred_full = min(full_predicted),
+    max_pred_full = max(full_predicted),
+    p05_full = quantile(full_predicted, 0.05),
+    p10_full = quantile(full_predicted, 0.10),
+    p20_full = quantile(full_predicted, 0.20),
+    p25_full = quantile(full_predicted, 0.25),
+    p30_full = quantile(full_predicted, 0.30),
+    p40_full = quantile(full_predicted, 0.40),
+    p50_full = quantile(full_predicted, 0.50),
+    p60_full = quantile(full_predicted, 0.60),
+    p75_full = quantile(full_predicted, 0.75),
+    p80_full = quantile(full_predicted, 0.80),
+    p90_full = quantile(full_predicted, 0.90),
+    p95_full = quantile(full_predicted, 0.95),
+    mean_pred_reduced = mean(reduced_predicted),
+    sd_pred_reduced = sd(reduced_predicted),
+    min_pred_reduced = min(reduced_predicted),
+    max_pred_reduced = max(reduced_predicted),
+    p05_reduced = quantile(reduced_predicted, 0.05),
+    p10_reduced = quantile(reduced_predicted, 0.10),
+    p20_reduced = quantile(reduced_predicted, 0.20),
+    p25_reduced = quantile(reduced_predicted, 0.25),
+    p30_reduced = quantile(reduced_predicted, 0.30),
+    p40_reduced = quantile(reduced_predicted, 0.40),
+    p50_reduced = quantile(reduced_predicted, 0.50),
+    p60_reduced = quantile(reduced_predicted, 0.60),
+    p75_reduced = quantile(reduced_predicted, 0.75),
+    p80_reduced = quantile(reduced_predicted, 0.80),
+    p90_reduced = quantile(reduced_predicted, 0.90),
+    p95_reduced = quantile(reduced_predicted, 0.95)
+  )
+
+write.csv(male_summary_5yr, file = "P:/10619/Dropbox/htnport/output/New Modelling Output/Model Presentation Output/Parameters/svyglm/Vascular Age/Male Vascular Age - 5 yrs", row.names = TRUE)
+write.csv(female_summary_5yr, file = "P:/10619/Dropbox/htnport/output/New Modelling Output/Model Presentation Output/Parameters/svyglm/Vascular Age/Female Vascular Age - 5 yrs", row.names = TRUE)
 ```

@@ -305,6 +305,7 @@ gtsummary::tbl_svysummary(
 # highbp14090 = sample(1:2, 1000, replace = TRUE), # Binary unadjusted hypertension outcome
 # control14090_adj = sample(1:2, 1000, replace = TRUE), # Binary controlled hypertension outcome
 # control14090 = sample(1:2, 1000, replace = TRUE), # Binary controlled and unadjusted hypertension outcome
+# highbp13080_adj = sample(1:2, 1000, replace = TRUE), # Binary 130/80 hypertension outcome
 # ccc_51 = sample(1:2, 1000, replace = TRUE), # Binary self-reported diabetes
 # ckd = sample(1:2, 1000, replace = TRUE), # Binary chronic kidney disease
 # edudr04 = sample(1:3, 1000, replace = TRUE), # Categorical education
@@ -341,6 +342,7 @@ gtsummary::tbl_svysummary(
 imputed_cycles1to6_data <- imputed_cycles1to6_data %>%
   dplyr::rename(
     'Hypertension (Adjusted BPs)' = highbp14090_adj,
+    'Hypertension (Adjusted BPs - 130/80)' = highbp13080_adj,
     'Hypertension (Unadjusted BPs)' = highbp14090,
     'Controlled Hypertension (Adjusted BPs)' = control14090_adj,
     'Controlled Hypertension (Unadjusted BPs)' = control14090,
@@ -350,7 +352,7 @@ imputed_cycles1to6_data <- imputed_cycles1to6_data %>%
 weighted_imputed_data <- survey::svydesign(
   id = ~1,
   weights = ~wgt_full,
-  data = dplyr::select(imputed_cycles1to6_data, c('Hypertension (Adjusted BPs)', 'Hypertension (Unadjusted BPs)', 'Controlled Hypertension (Adjusted BPs)', 'Controlled Hypertension (Unadjusted BPs)', clc_sex, wgt_full))
+  data = dplyr::select(imputed_cycles1to6_data, c('Hypertension (Adjusted BPs)', 'Hypertension (Adjusted BPs - 130/80)', 'Hypertension (Unadjusted BPs)', 'Controlled Hypertension (Adjusted BPs)', 'Controlled Hypertension (Unadjusted BPs)', clc_sex, wgt_full))
 )
 
 # Generate table itself
@@ -379,6 +381,8 @@ gtsummary::tbl_svysummary(
         label = dplyr::case_when(
           variable == "Hypertension (Adjusted BPs)" & label == "1" ~ "Yes",
           variable == "Hypertension (Adjusted BPs)" & label == "2" ~ "No",
+          variable == "Hypertension (Adjusted BPs - 130/80)" & label == "1" ~ "Yes",
+          variable == "Hypertension (Adjusted BPs - 130/80)" & label == "2" ~ "No",
           variable == "Hypertension (Unadjusted BPs)" & label == "1" ~ "Yes",
           variable == "Hypertension (Unadjusted BPs)" & label == "2" ~ "No",
           variable == "Controlled Hypertension (Adjusted BPs)" & label == "1" ~ "Yes",
@@ -393,6 +397,7 @@ gtsummary::tbl_svysummary(
 # Revert the names in the data frame
 original_names <- c(
   "Hypertension (Adjusted BPs)" = "highbp14090_adj",
+  "Hypertension (Adjusted BPs - 130/80)" = "highbp13080_adj",
   'Hypertension (Unadjusted BPs)' = "highbp14090",
   'Controlled Hypertension (Adjusted BPs)' = "control14090_adj",
   'Controlled Hypertension (Unadjusted BPs)' = "control14090",
