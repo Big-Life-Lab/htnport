@@ -152,10 +152,10 @@ create_descriptive_table(
   table1a_data,
   my_variables,
   my_variable_details,
-  recodeflow:::select_vars_by_role(
-    c("Table 1"),
+  c(clc_sex, recodeflow:::select_vars_by_role(
+    c("Predictor"),
     my_variables
-  ),
+  )),
   column_stratifier = c("clc_sex"),
   subjects_order = c("Age", "Sex", "Marital status", "Education", "Occupation", "Family history", "Exercise", "Diet", "Weight", "Chronic disease", "Alcohol", "Smoking", "Sleep", "General")
 )
@@ -181,10 +181,10 @@ cycles1to6_data <- cycles1to6_data %>%
          minperweek = coalesce(minperweek.x, minperweek.y)) %>%
   dplyr::mutate(mvpa_min = ifelse(is.na(mvpa_min), haven::tagged_na("b"), mvpa_min),
          minperweek = ifelse(is.na(minperweek), haven::tagged_na("b"), minperweek)) %>%
-  dplyr::select(c(clinicid, wgt_full, clc_sex, highbp14090, control14090, control14090_adj, recodeflow:::select_vars_by_role(c("imputation-predictor, cali-subgroup"), my_variables)))
+  dplyr::select(c(clinicid, wgt_full, clc_sex, highbp14090, highbp13080_adj, control14090, control14090_adj, recodeflow:::select_vars_by_role(c("imputation-predictor", "cali-subgroup"), my_variables)))
 
 # Impute data
-imputed_cycles1to6_data <- impute_variables(dplyr::select(cycles1to6_data, -clinicid), outcomes = recodeflow:::select_vars_by_role(c("Predictor, cali-subgroup"), my_variables), predictors = recodeflow:::select_vars_by_role(c("imputation-predictor"), my_variables))
+imputed_cycles1to6_data <- impute_variables(dplyr::select(cycles1to6_data, -clinicid), outcomes = recodeflow:::select_vars_by_role(c("Predictor", "cali-subgroup"), my_variables), predictors = recodeflow:::select_vars_by_role(c("imputation-predictor"), my_variables))
 imputed_cycles1to6_data$clinicid <- cycles1to6_data$clinicid
 
 # Load bootstrap weights for all cycles and merge them to imputed sample data

@@ -1168,10 +1168,7 @@ male_data <- male_data %>%
 
 # Create observation as a data frame. Feel free to change predictor values.
 observation <- data.frame(
-  clc_age = 24,         # 24-year old male
-  fmh_15 = 1,           # Family history of hypertension present
-  hwmdbmi = 19.6,       # BMI = 19.6; Healthy
-  diabx = 0             # Diabetes absent
+  
 )
 
 # Ensure observation has the same structure and var order as male_data
@@ -1810,14 +1807,7 @@ male_validation_data <- step_dummy(male_validation_data, cat_variables)
 
 # -------- rcs --------
 # age
-knots_age <- c(24, 40, 57, 74) # male
-# knots_age <- c(25, 40, 57, 75) # female
-# BMI
-knots_bmi <- c(22.35, 27.24, 34.178) # male
-# knots_bmi <- c(20.69, 26.23, 36.141) # female
-# exercise
-knots_exercise <- c(9, 103, 326) # male
-# knots_exercise <- c(1, 89, 290) # female
+
 # unpack rcs
 vars_rcs <- c("clc_age", "hwmdbmi", "minperweek")
 knots_list <- list(knots_age, knots_bmi, knots_exercise)
@@ -1843,32 +1833,12 @@ vars_mean <- c("clc_age_rcs_1", "clc_age_rcs_2", "clc_age_rcs_3", "married_2", "
 
 # male
 means <- c(
-  46.14509835, 10.41999141, 2.012829724, 0.085947731, 0.248462597,
-  0.217177205, 0.125063569, 0.258671725, 0.066840869, 0.228373362,
-  0.349876734, 0.524803077, 27.66777298, 2.529042313, 0.777985051,
-  0.045626893, 0.072198781, 147.6496834, 53.84564875, 0.308696985,
-  0.227724746, 7.015035776, 3.280091672, 0.104918358, 0.044784256,
-  15.14081401, 2.855721362, 0.518839488, 1289.586153, 294.9641651,
-  56.95945766, 121.6744825, 28.59310879, 5.458573727, 6383.426259,
-  1151.285813, 200.1725572, 2295.79088, 396.7168969, 67.65261735,
-  16.42423635, 4.962600721, 1.036863773, 9.689177061, 1.65996114,
-  0.282951234, 323.9788677, 74.51391132, 14.59326186, 6.145555691,
-  2.19318601, 0.472921201, 2.811431457, 1.26078209, 0.307342769
+
 )
 
 # female
 # means <- c(
-#   46.89545843, 10.12555934, 2.151608321, 0.147107554, 0.210100305,
-#   0.193357648, 0.099653209, 0.353413901, 0.088527417, 0.257966189,
-#   0.342661718, 0.573552958, 27.0963796, 2.687938152, 0.753166452,
-#   0.03853446, 0.03202675, 126.2691998, 49.59317196, 0.272198263,
-#   0.165152547, 7.176308826, 3.700420139, 0.073367263, 0.057604582,
-#   15.29680233, 2.877391597, 0.572698397, 1285.110359, 282.7253824,
-#   60.12236359, 131.3924734, 29.62929288, 6.184663944, 5569.647047,
-#   972.9401839, 186.0587491, 2174.213295, 375.6339899, 70.87545919,
-#   14.19872096, 3.733773656, 0.824769535, 7.276738258, 1.206667012,
-#   0.221478809, 336.01649, 73.01912727, 15.59617795, 4.268397084,
-#   1.361402486, 0.314536375, 3.693735889, 1.553035432, 0.402545106
+
 # )
 
 # centering vars in the dataset
@@ -1918,8 +1888,8 @@ female_summary_1yr <- female_data_c %>%
     iqr_pred_reduced = IQR(reduced_predicted)
   )
 
-write.csv(male_summary_1yr, file = "P:/10619/Dropbox/htnport/output/New Modelling Output/Model Presentation Output/Parameters/svyglm/Vascular Age/Male Vascular Age - 1 yr", row.names = TRUE)
-write.csv(female_summary_1yr, file = "P:/10619/Dropbox/htnport/output/New Modelling Output/Model Presentation Output/Parameters/svyglm/Vascular Age/Female Vascular Age - 1 yr", row.names = TRUE)
+write.csv(male_summary_1yr, file = "P:/10619/Dropbox/htnport/output/New Modelling Output/Model Presentation Output/Parameters/svyglm/Vascular Age/Male Vascular Age - 1 yr.csv", row.names = TRUE)
+write.csv(female_summary_1yr, file = "P:/10619/Dropbox/htnport/output/New Modelling Output/Model Presentation Output/Parameters/svyglm/Vascular Age/Female Vascular Age - 1 yr.csv", row.names = TRUE)
 
 # For 5-year age and sex strata, calculate mean prediction, SD, and then min, max and percentiles.
 male_data_c$age_group_5yr <- cut(male_data_c$clc_age, breaks = seq(20, 80, by = 5), right = FALSE)
@@ -2001,6 +1971,6 @@ female_summary_5yr <- female_data_c %>%
     p95_reduced = quantile(reduced_predicted, 0.95)
   )
 
-write.csv(male_summary_5yr, file = "P:/10619/Dropbox/htnport/output/New Modelling Output/Model Presentation Output/Parameters/svyglm/Vascular Age/Male Vascular Age - 5 yrs", row.names = TRUE)
-write.csv(female_summary_5yr, file = "P:/10619/Dropbox/htnport/output/New Modelling Output/Model Presentation Output/Parameters/svyglm/Vascular Age/Female Vascular Age - 5 yrs", row.names = TRUE)
+write.csv(male_summary_5yr, file = "P:/10619/Dropbox/htnport/output/New Modelling Output/Model Presentation Output/Parameters/svyglm/Vascular Age/Male Vascular Age - 5 yrs.csv", row.names = TRUE)
+write.csv(female_summary_5yr, file = "P:/10619/Dropbox/htnport/output/New Modelling Output/Model Presentation Output/Parameters/svyglm/Vascular Age/Female Vascular Age - 5 yrs.csv", row.names = TRUE)
 ```
