@@ -1,30 +1,76 @@
 # HTNPoRT - Vascular Age
 
-## Purpose
+The files in this folder provide summaries of the predicted probability of hypertension for individuals at different ages. This is referred to as "vascular age" - the baseline cardiovascular risk for a given age.
 
-The vascular age refers to the predicted probability/risk of hypertension for each age while other variables are held to their references/means. In other words, the vascular age is the predicted hypertension probability/risk for a healthy person of a given age.
+The summaries are provided for both males and females and are stratified into 1-year and 5-year age groups.
 
-## How to calculate
+## File Contents
 
-1.  Create a data frame with a row for each and every integer age from 20 to 79 years.
+The data is generated from the centered derivation data (`male_data_c` and `female_data_c`), as well as the predicted values from the model.
 
-2.  Set categorical variables to their respective reference category for every age row.
+### 1-Year Risk Summaries
 
--   **Family history:** 0 (family history absent)
--   **Diabetes:** 0 (diabetes absent)
+These files provide risk summaries for each individual year of age from 20 to 79.
 
-3.  Set body mass index to its respective weighted mean for every age row.
+-   `HTNPoRT-male-risk-by-age-1yr.csv`
+-   `HTNPoRT-female-risk-by-age-1yr.csv`
 
--   **Male** 27.66777 kg/m2
--   **Female**: 27.09638 kg/m2
+The columns in these files are:
 
-4.  Unpack all restricted cubic spline and interaction terms, and center all raw and resulting variables on their weighted means.
+*   **`clc_age`**: The single year of age.
+*   **`mean_pred_reduced`**: The mean predicted hypertension risk for that age.
+*   **`sd_pred_reduced`**: The standard deviation of the predicted risk for that age.
+*   **`median_pred_reduced`**: The median (50th percentile) predicted hypertension risk for that age.
+*   **`iqr_pred_reduced`**: The Interquartile Range (IQR) of the predicted risk for that age.
 
-5.  Predict hypertension probability/risk for each age row.
+### 5-Year Risk Summaries
 
-6.  Repeat process for other sex.
+These files provide more detailed risk summaries for 5-year age groups.
 
-## Files
+-   `HTNPoRT-male-risk-by-age-5yr.csv`
+-   `HTNPoRT-female-risk-by-age-5yr.csv`
 
--   **HTNPoRT-male-risk-by-age.csv:** Predicted hypertension probability/risk for healthy males of each age 20-79
--   **HTNPoRT-female-risk-by-age.csv:** Predicted hypertension probability/risk for healthy females of each age 20-79
+The columns in these files are:
+
+*   **`age_group_5yr`**: The 5-year age group (e.g., `[20,25)`).
+*   **`mean_pred_reduced`**: The mean predicted hypertension risk for that age group.
+*   **`sd_pred_reduced`**: The standard deviation of the predicted risk.
+*   **`min_pred_reduced`**: The minimum predicted risk in that age group.
+*   **`max_pred_reduced`**: The maximum predicted risk in that age group.
+*   **`p05_reduced` ... `p95_reduced`**: The 5th, 10th, 20th, 25th, 30th, 40th, 50th, 60th, 75th, 80th, 90th, and 95th percentiles of predicted risk for that age group.
+
+## Usage and Generation
+
+These files can be used to look up the baseline hypertension risk for a "healthy" individual, which can be conceptualized as their "vascular age". For example, a user can find their age in the `1yr` file to see the median and spread of risk for a healthy person of their age.
+
+The code that generates these summary files can be found in `C:\Users\User\Documents\R\htnport\papers\models.Rmd` between lines 1860-1979. The core logic for creating the summaries is as follows:
+
+**1-Year Summary Generation:**
+```r
+male_summary_1yr <- male_data_c %>%
+  group_by(clc_age) %>%
+  summarise(
+    mean_pred_reduced = mean(reduced_predicted),
+    sd_pred_reduced = sd(reduced_predicted),
+    median_pred_reduced = median(reduced_predicted),
+    iqr_pred_reduced = IQR(reduced_predicted)
+  )
+```
+
+**5-Year Summary Generation:**
+```r
+male_data_c$age_group_5yr <- cut(male_data_c$clc_age, breaks = seq(20, 80, by = 5), right = FALSE)
+
+percentiles <- c(0.05, 0.10, 0.20, 0.25, 0.30, 0.40, 0.50, 0.60, 0.75, 0.80, 0.90, 0.95)
+
+male_summary_5yr <- male_data_c %>%
+  group_by(age_group_5yr) %>%
+  summarise(
+    mean_pred_reduced = mean(reduced_predicted),
+    sd_pred_reduced = sd(reduced_predicted),
+    min_pred_reduced = min(reduced_predicted),
+    max_pred_reduced = max(reduced_predicted),
+    p05_reduced = quantile(reduced_predicted, 0.05),
+    # ... and so on for other percentiles
+  )
+```

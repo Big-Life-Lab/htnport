@@ -1783,7 +1783,7 @@ legend("bottomright", legend = c("130/80", "140/90"), col = c("black", "blue"), 
 
 Comment out male knots and means, and uncomment female knots and means to switch.
 
-```{r}
+```{r, warning = FALSE, message = FALSE}
 set.seed(123)
 male_validation_data <- data.frame(
   clc_age = sample(20:79, 10000, replace = TRUE),
@@ -1857,7 +1857,7 @@ write.csv(male_validation_data, file = "P:/10619/Dropbox/htnport/output/New Mode
 
 ### Vascular age
 
-```{r}
+```{r, warning = FALSE, message = FALSE}
 # Predict HTN for all respondents in development data
 male_data_c$full_predicted <- predict(male_model, newdata = male_data_c, type = "response")
 female_data_c$full_predicted <- predict(female_model, newdata = female_data_c, type = "response")
