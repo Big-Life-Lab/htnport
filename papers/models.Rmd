@@ -1168,7 +1168,10 @@ male_data <- male_data %>%
 
 # Create observation as a data frame. Feel free to change predictor values.
 observation <- data.frame(
-  
+  clc_age = 74,         # 74-year old male
+  fmh_15 = 0,           # Family history of hypertension absent
+  hwmdbmi = 35.3,       # BMI = 35.3; Obese
+  diabx = 1             # Diabetes present
 )
 
 # Ensure observation has the same structure and var order as male_data
