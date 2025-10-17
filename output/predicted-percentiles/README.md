@@ -12,7 +12,7 @@ The files map each percentile (from 1 to 100) to a specific predicted hypertensi
 The columns in these files are:
 
 *   **`percentile`**: The percentile rank, from 1 to 100.
-*   **`predicted_risk_male` / `predicted_risk_female`**: The predicted hypertension risk value that corresponds to that percentile for the specified sex. For example, the value in the `predicted_risk_female` column for the `percentile` of 50 is the median predicted risk for the entire female study population.
+*   **`predicted_risk`**: The predicted hypertension risk value that corresponds to that percentile for the specified sex. For example, the value in the female `predicted_risk` column for the `percentile` of 50 is the median predicted risk for the entire female study population.
 
 ## Usage and Generation
 
