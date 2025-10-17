@@ -30,6 +30,6 @@ This project can only be run at the uOttawa Research Data Centre (RDC) managed b
 
 - **data**: Study data (only available at RDC).
 - **R**: R functions necessary for running HTNPoRT descriptives, derivation, validation, and presentation.
-- **output**: Select objects, parameters, and paper output needed for final HTNPoRT model implementation.
+- **output**: Select parameters, objects, and paper output needed for final HTNPoRT model implementation.
 - **papers**: Papers written for this project which include reproducible results.
 - **worksheets**: `variables.csv` and `variable-details.csv` files detailing which variables are transformed across CHMS for HTNPoRT analyses and how they are recoded, respectively.

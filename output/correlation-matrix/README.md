@@ -20,4 +20,19 @@ The CSV files contain a matrix where both rows and columns represent the followi
 
 ## Code Reference
 
-The code that generated these files can be found in `models.Rmd` between lines 449 and 457.
+The code that generated these files can be found in `models.Rmd` between lines 449 and 454.
+
+### Example Code
+
+```r
+# Obtain raw sex-specific data without transformations and centering
+male_data_simple <- dplyr::filter(imputed_cycles1to6_data, clc_sex == 1)
+female_data_simple <- dplyr::filter(imputed_cycles1to6_data, clc_sex == 2)
+
+# Generate correlation matrix for predictors only
+male_data_simple <- dplyr::select(male_data_simple, recodeflow:::select_vars_by_role(c("Predictor"), my_variables))
+female_data_simple <- dplyr::select(female_data_simple, recodeflow:::select_vars_by_role(c("Predictor"), my_variables))
+
+male_cor_mat <- cor(male_data_simple)
+female_cor_mat <- cor(female_data_simple)
+```

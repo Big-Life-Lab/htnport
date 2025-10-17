@@ -10,7 +10,7 @@ This folder provides the files required to implement and run the HTNPoRT algorit
 
 ## Folder Structure
 
-Click [here](https://big-life-lab.github.io/model-parameters/2-model-parameter-files.html) for details on csv file aspects.
+Click [here](https://big-life-lab.github.io/model-parameters/2-model-parameter-files.html) for documentation on model parameter csv files.
 
 ### Core Files
 

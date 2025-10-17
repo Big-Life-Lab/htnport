@@ -18,12 +18,14 @@ The columns in these files are:
 
 These files can be used to determine the percentile rank of an individual's predicted risk. By calculating a person's predicted risk using the HTNPoRT model, you can use these tables to find where that risk falls within the context of the broader population.
 
-The code that generates these percentile lookups can be found in `C:\Users\User\Documents\R\htnport\papers\models.Rmd` between lines 529-536. The logic is as follows:
+The code that generates these percentile lookups can be found in `models.Rmd` between lines 529-536. The logic is as follows:
+
+### Example Code
 
 ```r
 percentiles <- 1:100
 
-predicted_percentiles_reduced <- data.frame(
+predicted_percentiles <- data.frame(
   percentile = percentiles,
   `predicted risk (male)` = quantile(male_predicted_probabilities, probs = percentiles / 100, na.rm = TRUE),
   `predicted risk (female)` = quantile(female_predicted_probabilities, probs = percentiles / 100, na.rm = TRUE)

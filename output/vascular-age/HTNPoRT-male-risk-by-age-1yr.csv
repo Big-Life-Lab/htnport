@@ -1,4 +1,4 @@
-clc_age,mean_pred_reduced,sd_pred_reduced,median_pred_reduced,iqr_pred_reduced
+clc_age,mean_pred,sd_pred,median_pred,iqr_pred
 20,0.008295768,0.021263999,0.002561071,0.007921588
 21,0.007967683,0.02552279,0.002822119,0.006475744
 22,0.006401529,0.007515228,0.00314354,0.00857325
