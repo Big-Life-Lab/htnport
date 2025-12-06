@@ -140,10 +140,10 @@ table1a_data <- get_descriptive_data(
   my_variables,
   my_variable_details,
   # All the variables whose descriptive statistics we want
-  recodeflow:::select_vars_by_role(
-    c("Table 1"),
+  c("clc_sex", recodeflow:::select_vars_by_role(
+    c("predictor"),
     my_variables
-  ),
+  )),
   # Sets the stratifier
   list("all" = list("clc_sex"))
 )
