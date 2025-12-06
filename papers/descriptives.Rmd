@@ -104,12 +104,12 @@ cycle5 <- process_long_medication_data(cycle5, cycle5_medication_data)
 cycle6 <- process_long_medication_data(cycle6, cycle6_medication_data)
 
 # Recode variables from each cycle
-cycle1_data <- recodeflow::rec_with_table(cycle1, recodeflow:::select_vars_by_role(c("Recode", "Fam"), my_variables), variable_details = my_variable_details, log = TRUE)
-cycle2_data <- recodeflow::rec_with_table(cycle2, recodeflow:::select_vars_by_role(c("Recode", "Fam"), my_variables), variable_details = my_variable_details, log = TRUE)
-cycle3_data <- recodeflow::rec_with_table(cycle3, recodeflow:::select_vars_by_role(c("Recode", "Fam"), my_variables), variable_details = my_variable_details, log = TRUE)
-cycle4_data <- recodeflow::rec_with_table(cycle4, recodeflow:::select_vars_by_role(c("Recode", "Fam"), my_variables), variable_details = my_variable_details, log = TRUE)
-cycle5_data <- recodeflow::rec_with_table(cycle5, recodeflow:::select_vars_by_role(c("Recode"), my_variables), variable_details = my_variable_details, log = TRUE)
-cycle6_data <- recodeflow::rec_with_table(cycle6, recodeflow:::select_vars_by_role(c("Recode"), my_variables), variable_details = my_variable_details, log = TRUE)
+cycle1_data <- recodeflow::rec_with_table(cycle1, recodeflow:::select_vars_by_role(c("recode", "fam"), my_variables), variable_details = my_variable_details, log = TRUE)
+cycle2_data <- recodeflow::rec_with_table(cycle2, recodeflow:::select_vars_by_role(c("recode", "fam"), my_variables), variable_details = my_variable_details, log = TRUE)
+cycle3_data <- recodeflow::rec_with_table(cycle3, recodeflow:::select_vars_by_role(c("recode", "fam"), my_variables), variable_details = my_variable_details, log = TRUE)
+cycle4_data <- recodeflow::rec_with_table(cycle4, recodeflow:::select_vars_by_role(c("recode", "fam"), my_variables), variable_details = my_variable_details, log = TRUE)
+cycle5_data <- recodeflow::rec_with_table(cycle5, recodeflow:::select_vars_by_role(c("recode"), my_variables), variable_details = my_variable_details, log = TRUE)
+cycle6_data <- recodeflow::rec_with_table(cycle6, recodeflow:::select_vars_by_role(c("recode"), my_variables), variable_details = my_variable_details, log = TRUE)
 ```
 
 ### Table 1a - Unweighted unimputed data
@@ -153,7 +153,7 @@ create_descriptive_table(
   my_variables,
   my_variable_details,
   c(clc_sex, recodeflow:::select_vars_by_role(
-    c("Predictor"),
+    c("predictor"),
     my_variables
   )),
   column_stratifier = c("clc_sex"),
@@ -184,7 +184,7 @@ cycles1to6_data <- cycles1to6_data %>%
   dplyr::select(c(clinicid, wgt_full, clc_sex, highbp14090, highbp13080_adj, control14090, control14090_adj, recodeflow:::select_vars_by_role(c("imputation-predictor", "cali-subgroup"), my_variables)))
 
 # Impute data
-imputed_cycles1to6_data <- impute_variables(dplyr::select(cycles1to6_data, -clinicid), outcomes = recodeflow:::select_vars_by_role(c("Predictor", "cali-subgroup"), my_variables), predictors = recodeflow:::select_vars_by_role(c("imputation-predictor"), my_variables))
+imputed_cycles1to6_data <- impute_variables(dplyr::select(cycles1to6_data, -clinicid), outcomes = recodeflow:::select_vars_by_role(c("predictor", "cali-subgroup"), my_variables), predictors = recodeflow:::select_vars_by_role(c("imputation-predictor"), my_variables))
 imputed_cycles1to6_data$clinicid <- cycles1to6_data$clinicid
 
 # Load bootstrap weights for all cycles and merge them to imputed sample data
