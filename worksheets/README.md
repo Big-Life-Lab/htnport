@@ -1,6 +1,6 @@
 # Roles
 
-## Recode
+## recode
 
 Variables needed for any analyses (including for deriving variables) and recoded using recodeflow:::select_vars_by_role(). All variables in variables.csv have this role, except:
 
@@ -9,7 +9,7 @@ Variables needed for any analyses (including for deriving variables) and recoded
 | mucatc        | ATC code for medication (cycles 3-6)    |
 | npi_25b       | Time medication last taken (cycles 3-6) |
 
-## Fam
+## fam
 
 Variables present in only the first four cycles of the CHMS.
 
@@ -18,7 +18,7 @@ Variables present in only the first four cycles of the CHMS.
 | fmh_15        | Hypertension family history |
 | slp_11        | Hours of sleep per night    |
 
-## Drugs
+## drugs
 
 Variables present in only medication files of CHMS cycles 1-2 + derived medication variables
 
@@ -35,7 +35,7 @@ Variables present in only medication files of CHMS cycles 1-2 + derived medicati
 | mhr201-15b    | Time when fifteen over-the-counter medications last taken  |
 | mhr231-35b    | Time when five new over-the-counter medications last taken |
 
-## Predictor
+## predictor
 
 Variables included as candidate predictors for HTNPoRT models.
 
@@ -67,6 +67,7 @@ Variables included as predictors for the imputation model.
 |------------------|---------------------------------------|
 | ckd              | Chronic kidney disease                |
 | clc_age          | Age                                   |
+| clc_sex          | Sex                                   |
 | cycle            | CHMS cycle                            |
 | diabx            | Diabetes                              |
 | edudr04          | Highest education level               |

@@ -108,12 +108,12 @@ cycle5 <- process_long_medication_data(cycle5, cycle5_medication_data)
 cycle6 <- process_long_medication_data(cycle6, cycle6_medication_data)
 
 # Recode variables from each cycle
-cycle1_data <- recodeflow::rec_with_table(cycle1, recodeflow:::select_vars_by_role(c("Recode", "Fam"), my_variables), variable_details = my_variable_details, log = TRUE)
-cycle2_data <- recodeflow::rec_with_table(cycle2, recodeflow:::select_vars_by_role(c("Recode", "Fam"), my_variables), variable_details = my_variable_details, log = TRUE)
-cycle3_data <- recodeflow::rec_with_table(cycle3, recodeflow:::select_vars_by_role(c("Recode", "Fam"), my_variables), variable_details = my_variable_details, log = TRUE)
-cycle4_data <- recodeflow::rec_with_table(cycle4, recodeflow:::select_vars_by_role(c("Recode", "Fam"), my_variables), variable_details = my_variable_details, log = TRUE)
-cycle5_data <- recodeflow::rec_with_table(cycle5, recodeflow:::select_vars_by_role(c("Recode"), my_variables), variable_details = my_variable_details, log = TRUE)
-cycle6_data <- recodeflow::rec_with_table(cycle6, recodeflow:::select_vars_by_role(c("Recode"), my_variables), variable_details = my_variable_details, log = TRUE)
+cycle1_data <- recodeflow::rec_with_table(cycle1, recodeflow:::select_vars_by_role(c("recode", "fam"), my_variables), variable_details = my_variable_details, log = TRUE)
+cycle2_data <- recodeflow::rec_with_table(cycle2, recodeflow:::select_vars_by_role(c("recode", "fam"), my_variables), variable_details = my_variable_details, log = TRUE)
+cycle3_data <- recodeflow::rec_with_table(cycle3, recodeflow:::select_vars_by_role(c("recode", "fam"), my_variables), variable_details = my_variable_details, log = TRUE)
+cycle4_data <- recodeflow::rec_with_table(cycle4, recodeflow:::select_vars_by_role(c("recode", "fam"), my_variables), variable_details = my_variable_details, log = TRUE)
+cycle5_data <- recodeflow::rec_with_table(cycle5, recodeflow:::select_vars_by_role(c("recode"), my_variables), variable_details = my_variable_details, log = TRUE)
+cycle6_data <- recodeflow::rec_with_table(cycle6, recodeflow:::select_vars_by_role(c("recode"), my_variables), variable_details = my_variable_details, log = TRUE)
 ```
 
 ### Combine cycles to obtain sample, and merge extra exercise data and bootstrap weights to the sample data
@@ -143,7 +143,7 @@ cycles1to6_data <- cycles1to6_data %>%
 
 ```{r, include = FALSE, warning = FALSE, message = FALSE}
 # Impute data
-imputed_cycles1to6_data <- impute_variables(dplyr::select(cycles1to6_data, -clinicid), outcomes = recodeflow:::select_vars_by_role(c("Predictor", "cali-subgroup"), my_variables), predictors = recodeflow:::select_vars_by_role(c("imputation-predictor"), my_variables))
+imputed_cycles1to6_data <- impute_variables(dplyr::select(cycles1to6_data, -clinicid), outcomes = recodeflow:::select_vars_by_role(c("predictor", "cali-subgroup"), my_variables), predictors = recodeflow:::select_vars_by_role(c("imputation-predictor"), my_variables))
 imputed_cycles1to6_data$clinicid <- cycles1to6_data$clinicid
 
 # Load bootstrap weights for all cycles and merge them to imputed sample data
@@ -585,7 +585,7 @@ male_predicted_probabilities <- generate_predicted_probabilities(male_model)
 female_predicted_probabilities <- generate_predicted_probabilities(female_model)
 
 # Obtain calibration subgroups
-subgroups <- recodeflow:::select_vars_by_role(c("Predictor", "cali-subgroup"), my_variables)
+subgroups <- recodeflow:::select_vars_by_role(c("predictor", "cali-subgroup"), my_variables)
 subgroups <- subgroups[subgroups != "clc_age"]
 
 # Initialize an empty list to store calibration results
@@ -769,7 +769,7 @@ male_predicted_probabilities <- generate_predicted_probabilities(male_reduced_mo
 female_predicted_probabilities <- generate_predicted_probabilities(female_reduced_model)
 
 # Obtain calibration subgroups
-subgroups <- recodeflow:::select_vars_by_role(c("Predictor", "cali-subgroup"), my_variables)
+subgroups <- recodeflow:::select_vars_by_role(c("predictor", "cali-subgroup"), my_variables)
 subgroups <- subgroups[subgroups != "clc_age"]
 
 # Initialize an empty list to store calibration results
@@ -1040,7 +1040,7 @@ male_final_model <- glm(highbp14090_adj ~ rcs(clc_age, 4) + married + edudr04 + 
 
 # Predictors and outcome only
 male_data <- male_data %>% 
-  dplyr::select(recodeflow:::select_vars_by_role(c("Predictor"), my_variables)) %>%
+  dplyr::select(recodeflow:::select_vars_by_role(c("predictor"), my_variables)) %>%
   dplyr::select(-whr)
 
 # Create observation as a data frame. Feel free to change predictor values.
@@ -1204,7 +1204,7 @@ female_final_model <- glm(highbp14090_adj ~ rcs(clc_age, 4) + married + edudr04 
 # Male model
 # Predictors only
 male_data <- male_data %>% 
-  dplyr::select(recodeflow:::select_vars_by_role(c("Predictor"), my_variables)) %>%
+  dplyr::select(recodeflow:::select_vars_by_role(c("predictor"), my_variables)) %>%
   dplyr::select(-whr)
 
 # Create explainer object for model
@@ -1234,7 +1234,7 @@ for (i in 1:nrow(male_data)) {
 all_male_shap_values <- do.call(rbind, male_shap_list)
 
 # Loop through all predictors and print their S-OR and CI
-predictors <- recodeflow:::select_vars_by_role(c("Predictor"), my_variables)
+predictors <- recodeflow:::select_vars_by_role(c("predictor"), my_variables)
 predictors <- predictors[predictors != "whr"]
 
 for (pred in predictors) {
@@ -1244,7 +1244,7 @@ for (pred in predictors) {
 # Female model
 # Predictors only
 female_data <- female_data %>% 
-  dplyr::select(recodeflow:::select_vars_by_role(c("Predictor"), my_variables)) %>%
+  dplyr::select(recodeflow:::select_vars_by_role(c("predictor"), my_variables)) %>%
   dplyr::select(-whr)
 
 # Create explainer object for model
@@ -1274,7 +1274,7 @@ for (i in 1:nrow(female_data)) {
 all_female_shap_values <- do.call(rbind, female_shap_list)
 
 # Loop through all predictors and print their S-OR and CI
-predictors <- recodeflow:::select_vars_by_role(c("Predictor"), my_variables)
+predictors <- recodeflow:::select_vars_by_role(c("predictor"), my_variables)
 predictors <- predictors[predictors != "whr"]
 
 for (pred in predictors) {
@@ -1445,7 +1445,7 @@ for (var in age_cont_int_variables) {
 
 ```{r, warning = FALSE, message = FALSE}
 # Impute data, except family history
-predictors <- recodeflow:::select_vars_by_role(c("Predictor", "cali-subgroup"), my_variables)
+predictors <- recodeflow:::select_vars_by_role(c("predictor", "cali-subgroup"), my_variables)
 predictors <- predictors[predictors != "fmh_15"]
 
 imputation_predictors <- recodeflow:::select_vars_by_role("imputation-predictor", my_variables)
@@ -1667,7 +1667,7 @@ calibration(female_predicted_probabilities, model.frame(unimputed_female_reduced
 
 ```{r, warning = FALSE, message = FALSE}
 # Reobtain imputed data and centered objects but don't truncate anything
-imputed_cycles1to6_data <- impute_variables(dplyr::select(cycles1to6_data, -clinicid), outcomes = recodeflow:::select_vars_by_role(c("Predictor", "cali-subgroup"), my_variables), predictors = recodeflow:::select_vars_by_role(c("imputation-predictor"), my_variables))
+imputed_cycles1to6_data <- impute_variables(dplyr::select(cycles1to6_data, -clinicid), outcomes = recodeflow:::select_vars_by_role(c("predictor", "cali-subgroup"), my_variables), predictors = recodeflow:::select_vars_by_role(c("imputation-predictor"), my_variables))
 imputed_cycles1to6_data$clinicid <- cycles1to6_data$clinicid
 
 names(cycles1to6_bsw) <- tolower(names(cycles1to6_bsw))
@@ -1781,7 +1781,7 @@ calibration(female_predicted_probabilities, model.frame(untruncated_female_reduc
 
 ```{r, warning = FALSE, message = FALSE}
 # Reobtain imputed, truncated data and centered objects
-imputed_cycles1to6_data <- impute_variables(dplyr::select(cycles1to6_data, -clinicid), outcomes = recodeflow:::select_vars_by_role(c("Predictor", "cali-subgroup"), my_variables), predictors = recodeflow:::select_vars_by_role(c("imputation-predictor"), my_variables))
+imputed_cycles1to6_data <- impute_variables(dplyr::select(cycles1to6_data, -clinicid), outcomes = recodeflow:::select_vars_by_role(c("predictor", "cali-subgroup"), my_variables), predictors = recodeflow:::select_vars_by_role(c("imputation-predictor"), my_variables))
 imputed_cycles1to6_data$clinicid <- cycles1to6_data$clinicid
 
 names(cycles1to6_bsw) <- tolower(names(cycles1to6_bsw))
@@ -1912,7 +1912,7 @@ calibration(female_predicted_probabilities, model.frame(female_final_reduced_mod
 
 # See effect on S-ORs and CIs for new full male model
 male_data <- male_data %>% 
-  dplyr::select(recodeflow:::select_vars_by_role(c("Predictor"), my_variables)) %>%
+  dplyr::select(recodeflow:::select_vars_by_role(c("predictor"), my_variables)) %>%
   dplyr::select(-whr)
 
 male_explainer <- iml::Predictor$new(
@@ -1932,7 +1932,7 @@ for (i in 1:nrow(male_data)) {
 
 all_male_shap_values_linint <- do.call(rbind, male_shap_list)
 
-predictors <- recodeflow:::select_vars_by_role(c("Predictor"), my_variables)
+predictors <- recodeflow:::select_vars_by_role(c("predictor"), my_variables)
 predictors <- predictors[predictors != "whr"]
 
 for (pred in predictors) {
@@ -1941,7 +1941,7 @@ for (pred in predictors) {
 
 # See effect on S-ORs and CIs for new full female model
 female_data <- female_data %>% 
-  dplyr::select(recodeflow:::select_vars_by_role(c("Predictor"), my_variables)) %>%
+  dplyr::select(recodeflow:::select_vars_by_role(c("predictor"), my_variables)) %>%
   dplyr::select(-whr)
 
 female_explainer <- iml::Predictor$new(
@@ -1961,7 +1961,7 @@ for (i in 1:nrow(female_data)) {
 
 all_female_shap_values_linint <- do.call(rbind, female_shap_list)
 
-predictors <- recodeflow:::select_vars_by_role(c("Predictor"), my_variables)
+predictors <- recodeflow:::select_vars_by_role(c("predictor"), my_variables)
 predictors <- predictors[predictors != "whr"]
 
 for (pred in predictors) {

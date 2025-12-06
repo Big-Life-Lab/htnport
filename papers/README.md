@@ -1,16 +1,8 @@
 # Papers
 
-## centered-algorithm.qmd
-
-Run this qmd to properly center the models of HTNPoRT.
-
 ## descriptives.Rmd
 
 Run this Rmd to reproduce all results pertaining to the descriptives of HTNPoRT study populations.
-
-## model-export.qmd
-
-Run this qmd to export the svyglm model objects of HTNPoRT from a secure environment.
 
 ## models.Rmd
 
