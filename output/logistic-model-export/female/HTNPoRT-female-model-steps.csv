@@ -1,6 +1,0 @@
-﻿step,fileType,filePath,notes
-dummy,N/A,./HTNPoRT-female-dummy.csv,
-rcs,N/A,./HTNPoRT-female-rcs.csv,
-interaction,N/A,./HTNPoRT-female-interactions.csv,
-center,N/A,./HTNPoRT-female-center.csv,
-logistic,N/A,./HTNPoRT-female-logistic.csv,

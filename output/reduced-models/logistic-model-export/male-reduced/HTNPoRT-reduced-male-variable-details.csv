@@ -1,0 +1,11 @@
+variable,dummyVariable,typeEnd,databaseStart,variableStart,typeStart,recEnd,numValidCat,catLabel,catLabelLong,units,recStart,catStartLabel,variableStartShortLabel,variableStartLabel,notes
+clc_age,N/A,cont,limesurvey,limesurvey::age,cont,copy,N/A,N/A,N/A,years,"[20, 79]",N/A,Age,Age,
+clc_age,N/A,cont,limesurvey,limesurvey::age,cont,NA::b,N/A,N/A,N/A,years,else,N/A,Age,Age,
+fmh_15,fmh_15_1,cat,limesurvey,limesurvey::fmh,cat,1,2,Yes,Yes,N/A,1,Yes,Hypertension family history,Hypertension family history,
+fmh_15,fmh_15_2,cat,limesurvey,limesurvey::fmh,cat,2,2,No,No,N/A,2,No,Hypertension family history,Hypertension family history,
+fmh_15,fmh_15_NA::b,cat,limesurvey,limesurvey::fmh,cat,NA::b,2,missing,missing,N/A,else,N/A,Hypertension family history,Hypertension family history,
+hwmdbmi,N/A,cont,limesurvey,"DerivedVar::[limesurvey::cm, limesurvey::kgs]",cont,Func::BMI_fun,N/A,N/A,N/A,kg/m2,N/A,N/A,Body mass index,Body mass index,
+hwmdbmi,N/A,cont,limesurvey,"DerivedVar::[limesurvey::cm, limesurvey::kgs]",cont,NA::b,N/A,N/A,N/A,kg/m2,N/A,N/A,Body mass index,Body mass index,
+diabx,diabx_1,cat,limesurvey,limesurvey::diab,cat,1,2,Yes,Yes,N/A,1,Yes,Diabetes,Diabetes,
+diabx,diabx_2,cat,limesurvey,limesurvey::diab,cat,2,2,No,No,N/A,2,No,Diabetes,Diabetes,
+diabx,diabx_NA::b,cat,limesurvey,limesurvey::diab,cat,NA::b,2,missing,missing,N/A,else,N/A,Diabetes,Diabetes,

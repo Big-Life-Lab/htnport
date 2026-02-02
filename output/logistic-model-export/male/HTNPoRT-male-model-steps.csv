@@ -1,6 +1,0 @@
-﻿step,fileType,filePath,notes
-dummy,N/A,./HTNPoRT-male-dummy.csv,
-rcs,N/A,./HTNPoRT-male-rcs.csv,
-interaction,N/A,./HTNPoRT-male-interactions.csv,
-center,N/A,./HTNPoRT-male-center.csv,
-logistic,N/A,./HTNPoRT-male-logistic.csv,

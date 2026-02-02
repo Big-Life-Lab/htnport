@@ -1,5 +1,0 @@
-variable,role,label,labelLong,section,subject,variableType,units,databaseStart,variableStart,description
-clc_age,Predictor,Age,Age,About You,Age,Continuous,years,limesurvey,limesurvey::age,
-fmh_15,Predictor,Hypertension family history,Hypertension family history,Health Profile,Family history,Categorical,N/A,limesurvey,limesurvey::fmh,
-hwmdbmi,Predictor,Body mass index,Body mass index,Health Profile,Weight,Continuous,kg/m2,limesurvey,"DerivedVar::[limesurvey::cm, limesurvey::kgs]",
-diabx,Predictor,Diabetes,Diabetes,Health Profile,Chronic disease,Categorical,N/A,limesurvey,limesurvey::diab,

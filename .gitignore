@@ -85,3 +85,6 @@ packrat.lock
 .Rproj.user
 
 /.luarc.json
+
+# Claude use
+/.claude

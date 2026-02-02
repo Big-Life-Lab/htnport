@@ -1,16 +1,28 @@
 # HTNPoRT Model Outputs
 
-This folder contains all the outputs needed for the implementation of the final HTNPoRT models, including model parameters, validation data, and other model-related files.
+This folder contains all the outputs needed for the implementation of the HTNPoRT models, organized by model type.
 
-# Structure
+## Structure
 
-Each folder in this repository contains a specific type of output from the HTNPoRT model.
+*   [**`full-models`**](./full-models/): Contains outputs for the **full HTNPoRT models** with all predictors (age, marital status, education, working status, mental health, stress, community belonging, hypertension family history, BMI, alcohol consumption, smoking, physical activity, fruit and vegetable consumption, sleep duration, diabetes, and CKD).
 
-*   [**`bootstrap-betas`**](./bootstrap-betas/): Contains the coefficients from 1000 bootstrap iterations of the HTNPoRT models.
-*   [**`correlation-matrix`**](./correlation-matrix/): Contains the correlation matrices for the predictor variables used in the HTNPoRT models.
-*   [**`logistic-model-export`**](./logistic-model-export/): Contains the exported logistic regression model parameters.
-*   [**`model-object`**](./model-object/): Contains the saved model objects for the HTNPoRT models.
-*   [**`predicted-percentiles`**](./predicted-percentiles/): Contains the percentiles of predicted hypertension risk across the entire study population.
-*   [**`R`**](./R/): Contains custom R functions used to create the derived variables in the model.
-*   [**`validation-data`**](./validation-data/): Contains the validation datasets for the HTNPoRT models.
-*   [**`vascular-age`**](./vascular-age/): Contains summaries of the predicted probability of hypertension for individuals at different ages.
+*   [**`reduced-models`**](./reduced-models/): Contains outputs for the **final reduced HTNPoRT models** with core predictors only (age, hypertension family history, BMI, and diabetes).
+
+## Subfolders Within Each Model Type
+
+Each model folder (`full-models/` and `reduced-models/`) contains:
+
+*   **`bootstrap-betas/`**: Coefficients from 1000 bootstrap iterations of the HTNPoRT models.
+*   **`correlation-matrix/`**: Correlation matrices for the predictor variables.
+*   **`logistic-model-export/`**: Exported logistic regression model parameters (CSV files for deployment).
+*   **`model-object/`**: Saved R model objects (`.rds` files).
+*   **`predicted-percentiles/`**: Percentiles of predicted hypertension risk across the study population.
+*   **`validation-data/`**: Validation datasets for testing model predictions.
+*   **`vascular-age/`**: Summaries of predicted hypertension probability by age group.
+
+## File Naming Convention
+
+Files follow the pattern: `HTNPoRT-{model}-{sex}-{description}.csv`
+
+*   **Full models**: `HTNPoRT-full-male-*.csv`, `HTNPoRT-full-female-*.csv`
+*   **Reduced models**: `HTNPoRT-reduced-male-*.csv`, `HTNPoRT-reduced-female-*.csv`
