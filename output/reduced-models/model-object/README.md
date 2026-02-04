@@ -1,6 +1,6 @@
-# HTNPoRT Model Objects
+# HTNPoRT Reduced Model Objects
 
-This folder contains the survey-weighted generalized linear (`svyglm`) model for predicting hypertension, saved as an R object (`.rds` file). The model been processed to remove all individual-level data, ensuring privacy while retaining the necessary components for prediction and recalibration.
+This folder contains the survey-weighted generalized linear (`svyglm`) reduced models for predicting hypertension, saved as R objects (`.rds` files). The models have been processed to remove all individual-level data, ensuring privacy while retaining the necessary components for prediction and recalibration.
 
 ## Model Object Components:
 
