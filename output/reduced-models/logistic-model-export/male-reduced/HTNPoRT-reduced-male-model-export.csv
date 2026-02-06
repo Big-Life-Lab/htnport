@@ -1,4 +1,4 @@
 fileType,filePath
-variables,./HTNPoRT-male-variables.csv
-variable-details,./HTNPoRT-male-variable-details.csv
-model-steps,./HTNPoRT-male-model-steps.csv
+variables,./HTNPoRT-reduced-male-variables.csv
+variable-details,./HTNPoRT-reduced-male-variable-details.csv
+model-steps,./HTNPoRT-reduced-male-model-steps.csv
