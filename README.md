@@ -4,13 +4,13 @@
 
 ## Abstract
 
-**Background**: Current models predicting hypertension have limited utility for patient-oriented decision making and population health planning.
+**Objectives**: Effective, equitable hypertension prevention requires an understanding of which populations are at risk. We aimed to develop and validate the Hypertension Population Risk Tool (HTNPoRT) - a diagnostic model derived with only readily available data, suitable for individual screening and population health planning.
 
-**Methods**: The Hypertension Population Risk Tool (HTNPoRT) was derived from respondents aged 20-79 in the Canadian Health Measures Survey (survey years 2007 to 2019). Sex-specific logistic regression models were developed using 16 predictors, including 4 sociodemographics, 3 psychosocial measures, 2 health status indicators, 5 health behaviours, and 2 chronic conditions. The primary outcome was hypertension presence ascertained from blood pressure measurements and antihypertensive medication use.
+**Methods**: We analyzed data from the Canadian Health Measures Survey (cycles 1–6, 2007–2019). The study included community-dwelling respondents aged 20–79 years. The primary outcome was hypertension, defined as measured systolic/diastolic blood pressure of 140/90 mm Hg or current antihypertensive medication use. Sex-specific logistic regression models were developed using 16 predictors, including 4 sociodemographic, 3 psychosocial, 2 health status, 5 health behavioural, and 2 chronic condition variables. The model was fully prespecified, including the stepdown procedure to derive parsimonious models.
 
-**Results**: 5,152 of the 19,643 respondents in the study had hypertension (26.2%). The final HTNPoRT models each had 4 predictors and 2 age interactions,  were discriminating  (c-statistic, men: 0.86; women: 0.88), and were well-calibrated in the overall population (ratio of observed v. predicted events, men: 1.02%; women: 1.41%) and nearly all equity-relevant subgroups (179 out of 181). SHAP-derived risk profiles show the contribution of predictors towards the predicted hypertension outcome, while predictability of adiposity measures differed across sex.
+**Results**: Of 19,643 participants, 5,152 (26.2%) had hypertension. The final models included age, body mass index, diabetes, and family history of hypertension. Optimism-corrected c-statistics were 0.86 (95% CI: 0.85–0.87) for men and 0.88 (95% CI: 0.87–0.88) for women. Calibration showed relative differences between observed and predicted risk of 1.02% (men) and 1.41% (women), and consistent performance across 179 of 181 policy-relevant subgroups. Predicted hypertension risk in Canada varied but rose markedly with older age, diabetes, and obesity.
 
-**Conclusions**: The public and health policymakers can use the models and risk profiles of HTNPoRT to support planning and decision-making on addressing the hypertension burden.
+**Conclusions**: HTNPoRT is a well-performing predictive algorithm that relies only on minimal non-invasive, self-reported data. It is suitable for both individual risk screening and population-level surveillance to inform hypertension prevention strategies targeting both the general population and high-risk groups.
 
 ## Setup
 
