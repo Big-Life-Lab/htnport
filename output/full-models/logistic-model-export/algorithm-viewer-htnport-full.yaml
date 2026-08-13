@@ -12,7 +12,7 @@ models:
     title: Female
     model_export: ./female-full/HTNPoRT-full-female-model-export.csv
     reference_group:
-      hwmdbmi: 14.9           # kg/m²
+      hwmdbmi: 14.9           # BMI: kg/m²
     predictor_allowable_values:
       hwmdbmi:
         seq:
@@ -23,7 +23,7 @@ models:
     title: Male
     model_export: ./male-full/HTNPoRT-full-male-model-export.csv
     reference_group:
-      hwmdbmi: 13.8           # kg/m²
+      hwmdbmi: 13.8           # BMI: kg/m²
     predictor_allowable_values:
       hwmdbmi:
         seq:
@@ -32,18 +32,18 @@ models:
           by: 0.1
   _all_:
     reference_group:
-      clc_age: 20             # years
-      married: 1              # Married or common-law
-      edudr04: 3              # Post-secondary
-      working: 1              # Working
-      gendmhi: 2              # Good, very good, or excellent
-      gen_025: 1              # Not at all to a bit stressed
-      gen_045: 1              # Strong
-      fmh_15: 2               # No
-      low_drink_score1: 1     # Never drank
-      minperweek: 0           # minutes/week
-      smoke: 3                # Never smoker
-      slp_11: 2               # hours/night
-      totalfv: 0              # times/day
-      diabx: 2                # No
-      ckd: 2                  # No
+      clc_age: 20             # Age: years
+      married: 1              # Marital status: Married or common-law
+      edudr04: 3              # Highest education level: Post-secondary
+      working: 1              # Employment status: Working
+      gendmhi: 2              # Self-rated mental health: Good, very good, or excellent
+      gen_025: 1              # Stress: Not at all to a bit stressed
+      gen_045: 1              # Sense of belonging: Strong
+      fmh_15: 2               # HTN family history: No
+      low_drink_score1: 1     # Alcohol consumption level: Never drank
+      minperweek: 0           # Physical activity minutes: minutes/week
+      smoke: 3                # Smoking status: Never smoker
+      slp_11: 2               # Sleep duration: hours/night
+      totalfv: 0              # Daily fruit and vegetable consumption: times/day
+      diabx: 2                # Diabetes: No
+      ckd: 2                  # Chronic kidney disease: No

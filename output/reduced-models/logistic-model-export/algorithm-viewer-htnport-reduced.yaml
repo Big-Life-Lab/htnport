@@ -12,7 +12,7 @@ models:
     title: Female
     model_export: ./female-reduced/HTNPoRT-reduced-female-model-export.csv
     reference_group:
-      hwmdbmi: 14.9           # kg/m²
+      hwmdbmi: 14.9           # BMI: kg/m²
     predictor_allowable_values:
       hwmdbmi:
         seq:
@@ -23,7 +23,7 @@ models:
     title: Male
     model_export: ./male-reduced/HTNPoRT-reduced-male-model-export.csv
     reference_group:
-      hwmdbmi: 13.8           # kg/m²
+      hwmdbmi: 13.8           # BMI: kg/m²
     predictor_allowable_values:
       hwmdbmi:
         seq:
@@ -32,6 +32,6 @@ models:
           by: 0.1
   _all_:
     reference_group:
-      clc_age: 20             # years
-      fmh_15: 2               # No
-      diabx: 2                # No
+      clc_age: 20             # Age: years
+      fmh_15: 2               # HTN family history: No
+      diabx: 2                # Diabetes: No
