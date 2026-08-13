@@ -1,0 +1,37 @@
+# This is an algorithm configuration file to be used with the Algorithm Viewer,
+# which allows you to visualize the algorithm with plots.
+# The Algorithm Viewer GitHub repository can be found at:
+# https://github.com/Big-Life-Lab/algorithm-viewer
+
+meta:
+  algorithm: HTNPoRT Reduced
+  version: 1.0.0
+
+models:
+  female:
+    title: Female
+    model_export: ./female-reduced/HTNPoRT-reduced-female-model-export.csv
+    reference_group:
+      hwmdbmi: 14.9
+    predictor_allowable_values:
+      hwmdbmi:
+        seq:
+          from: 14.9
+          to: 49
+          by: 0.1
+  male:
+    title: Male
+    model_export: ./male-reduced/HTNPoRT-reduced-male-model-export.csv
+    reference_group:
+      hwmdbmi: 13.8
+    predictor_allowable_values:
+      hwmdbmi:
+        seq:
+          from: 13.8
+          to: 49
+          by: 0.1
+  _all_:
+    reference_group:
+      clc_age: 20
+      fmh_15: 2
+      diabx: 2
