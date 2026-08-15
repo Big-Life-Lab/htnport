@@ -6,7 +6,7 @@ This folder contains the model export files for the **Hypertension Population Ri
 
 HTNPoRT is intended to support decision-making regarding hypertension prevention at both individual and population levels. The model predicts hypertension probability for community-dwelling adults based on age, family history, body mass index, and diabetes, while also providing SHAP-derived risk profiles which showcase the most influential predictors towards the probability value.
 
-This folder provides the files required to implement and run the HTNPoRT algorithm, including both raw coefficient files and a PMML file for deployment.
+This folder provides the files required to implement and run the HTNPoRT algorithm, including the raw coefficient files and an Algorithm Viewer configuration file for visualization.
 
 ## Folder Structure
 
@@ -30,12 +30,12 @@ Click [here](https://big-life-lab.github.io/model-parameters/2-model-parameter-f
 
 ### Model Coefficients and Predictions
 
--   **logistic.csv:** Sex-specific coefficients from the logistic regression model.
+-   **logistic-regression.csv:** Sex-specific coefficients from the logistic regression model.
 -   **interactions.csv:** Details the interaction terms included in the model.
 
-### Deployment File
+### Visualization File
 
--   **HTNPoRT.pmml:** The Predictive Model Markup Language (PMML) file for direct integration with compatible software.
+-   **algorithm-viewer-htnport-reduced.yaml:** An [Algorithm Viewer](https://github.com/Big-Life-Lab/algorithm-viewer) configuration file that points to the sex-specific model exports and defines the reference groups and predictor value ranges used to visualize the algorithm with plots.
 
 ## Model Card: HTNPoRT
 
@@ -46,7 +46,7 @@ Click [here](https://big-life-lab.github.io/model-parameters/2-model-parameter-f
 -   **Version:** HTNPoRT
 -   **Input:** Age, family history, body mass index, and diabetes.\
 -   **Output:** Hypertension probability/risk (diagnosed or undiagnosed).\
--   **Model Format:** PMML (with CSV support).\
+-   **Model Format:** CSV model parameter files (with an Algorithm Viewer YAML configuration).\
 -   **License:** Apache License 2.0.
 -   **Excel Calculator**: <https://osf.io/mjd7n/>
 
