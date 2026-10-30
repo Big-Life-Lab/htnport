@@ -250,13 +250,180 @@ extract_beta_coefs <- function(model) {
 bootstrap_coefs <- function(data, indices, model) {
   # Create bootstrap sample
   boot_data <- data[indices, ]
-  
+
   # Recreate survey design
   boot_design <- survey::svydesign(ids = ~1, weights = ~wgt_full, data = boot_data)
-  
+
   # Refit model
   boot_model <- update(model, data = boot_data, design = boot_design)
-  
+
   # Return coefficients
   return(coef(boot_model))
+}
+
+# Population estimate function for use with survey::withReplicates().
+# Refits the model with replicate weights, computes weighted mean predicted risk
+# overall and by subgroup (age 1yr, age 5yr, family history, BMI, diabetes),
+# weighted percentiles, weighted O-E, and replicate coefficients.
+pop_est <- function(w, data, formula, outcome = "highbp14090_adj",
+                    age_var = "clc_age", age5yr_var = "age_group_5yr",
+                    fmh_var = "fmh_15", bmi_var = "bmigroup",
+                    diab_var = "diabx") {
+
+  # Refit model with replicate weights
+  data$.w <- w
+  fit <- glm(formula, data = data, weights = .w, family = quasibinomial())
+  p <- predict(fit, newdata = data, type = "response")
+  obs <- data[[outcome]]
+
+  # Weighted mean helper
+  wmean <- function(x, wt) sum(wt * x) / sum(wt)
+
+  # Overall
+  overall_mean <- wmean(p, w)
+  overall_obs <- wmean(obs, w)
+  o_minus_e <- overall_obs - overall_mean
+
+  # Mean predicted risk by 1-year age
+  ages_1yr <- sort(unique(data[[age_var]]))
+  mean_by_age1yr <- sapply(ages_1yr, function(a) {
+    idx <- data[[age_var]] == a
+    wmean(p[idx], w[idx])
+  })
+  names(mean_by_age1yr) <- paste0("age1yr_", ages_1yr)
+
+  # Mean predicted risk by 5-year age group
+  age5yr_levels <- levels(data[[age5yr_var]])
+  mean_by_age5yr <- sapply(age5yr_levels, function(g) {
+    idx <- data[[age5yr_var]] == g
+    wmean(p[idx], w[idx])
+  })
+  names(mean_by_age5yr) <- paste0("age5yr_", age5yr_levels)
+
+  # Mean predicted risk by family history
+  fmh_levels <- sort(unique(data[[fmh_var]]))
+  mean_by_fmh <- sapply(fmh_levels, function(lvl) {
+    idx <- data[[fmh_var]] == lvl
+    wmean(p[idx], w[idx])
+  })
+  names(mean_by_fmh) <- paste0("fmh_", fmh_levels)
+
+  # Mean predicted risk by BMI group
+  bmi_levels <- sort(unique(data[[bmi_var]]))
+  mean_by_bmi <- sapply(bmi_levels, function(lvl) {
+    idx <- data[[bmi_var]] == lvl
+    wmean(p[idx], w[idx])
+  })
+  names(mean_by_bmi) <- paste0("bmi_", bmi_levels)
+
+  # Mean predicted risk by diabetes status
+  diab_levels <- sort(unique(data[[diab_var]]))
+  mean_by_diab <- sapply(diab_levels, function(lvl) {
+    idx <- data[[diab_var]] == lvl
+    wmean(p[idx], w[idx])
+  })
+  names(mean_by_diab) <- paste0("diab_", diab_levels)
+
+  # Weighted percentiles
+  pct_probs <- c(0.05, 0.10, 0.20, 0.25, 0.30, 0.40, 0.50, 0.60, 0.75, 0.80, 0.90, 0.95)
+  ord <- order(p)
+  p_sorted <- p[ord]
+  w_sorted <- w[ord]
+  cum_w <- cumsum(w_sorted) / sum(w_sorted)
+  w_pctiles <- sapply(pct_probs, function(q) p_sorted[which(cum_w >= q)[1]])
+  names(w_pctiles) <- paste0("pct_", pct_probs * 100)
+
+  # Replicate coefficients
+  betas <- coef(fit)
+  names(betas) <- paste0("beta_", names(betas))
+
+  c(overall_mean = overall_mean, overall_obs = overall_obs, o_minus_e = o_minus_e,
+    mean_by_age1yr, mean_by_age5yr, mean_by_fmh, mean_by_bmi, mean_by_diab,
+    w_pctiles, betas)
+}
+
+# Extract estimates with CIs from a withReplicates result object.
+# Greps for named elements matching `pattern` and returns a data frame
+# with point estimate, SE, and 95% CI using t(degf).
+extract_ci <- function(res, pattern, degf = 68) {
+  est <- coef(res)
+  se <- SE(res)
+  idx <- grep(pattern, names(est))
+  t_crit <- qt(0.975, degf)
+  data.frame(
+    name = names(est)[idx],
+    estimate = est[idx],
+    se = se[idx],
+    ci_lower = est[idx] - t_crit * se[idx],
+    ci_upper = est[idx] + t_crit * se[idx],
+    row.names = NULL
+  )
+}
+
+# Extract replicate-weight coefficient sets from a withReplicates result.
+# Returns a matrix with one row per replicate, columns = model coefficients.
+extract_replicate_betas <- function(res) {
+  reps <- res$replicates
+  beta_cols <- grep("^beta_", colnames(reps))
+  betas <- reps[, beta_cols]
+  colnames(betas) <- gsub("^beta_", "", colnames(betas))
+  rownames(betas) <- paste0("replicate_", seq_len(nrow(betas)))
+  betas
+}
+
+# Build 1-year age summary with CIs from withReplicates results (full + reduced).
+# Returns a data frame with one row per age, columns for full and reduced estimates + CIs.
+build_age1yr_summary <- function(res_full, res_reduced) {
+  full_ci <- extract_ci(res_full, "^age1yr_")
+  reduced_ci <- extract_ci(res_reduced, "^age1yr_")
+  full_ci$clc_age <- as.numeric(gsub("age1yr_", "", full_ci$name))
+  reduced_ci$clc_age <- as.numeric(gsub("age1yr_", "", reduced_ci$name))
+  merge(
+    full_ci[, c("clc_age", "estimate", "ci_lower", "ci_upper")],
+    reduced_ci[, c("clc_age", "estimate", "ci_lower", "ci_upper")],
+    by = "clc_age", suffixes = c("_full", "_reduced")
+  )
+}
+
+# Build 5-year age group summary with CIs from withReplicates results (full + reduced).
+# Returns a data frame with one row per age group, columns for full and reduced estimates + CIs.
+build_age5yr_summary <- function(res_full, res_reduced) {
+  full_ci <- extract_ci(res_full, "^age5yr_")
+  reduced_ci <- extract_ci(res_reduced, "^age5yr_")
+  full_ci$age_group_5yr <- gsub("age5yr_", "", full_ci$name)
+  reduced_ci$age_group_5yr <- gsub("age5yr_", "", reduced_ci$name)
+
+  summary_df <- merge(
+    full_ci[, c("age_group_5yr", "estimate", "ci_lower", "ci_upper")],
+    reduced_ci[, c("age_group_5yr", "estimate", "ci_lower", "ci_upper")],
+    by = "age_group_5yr", suffixes = c("_full", "_reduced")
+  )
+  summary_df
+}
+
+# Build predicted percentile summary with CIs from a withReplicates result.
+build_percentile_summary <- function(res) {
+  extract_ci(res, "^pct_")
+}
+
+# Build population mean predicted risks with CIs across all 4 models (full/reduced × male/female).
+# Returns a data frame with one row per subgroup (overall, age groups, family history, BMI, diabetes).
+build_pop_mean_risks <- function(res_male_full, res_female_full, res_male_reduced, res_female_reduced) {
+  patterns <- c("^overall_mean$", "^age5yr_", "^fmh_", "^bmi_", "^diab_")
+  results <- list()
+  for (pat in patterns) {
+    mf <- extract_ci(res_male_full, pat)
+    ff <- extract_ci(res_female_full, pat)
+    mr <- extract_ci(res_male_reduced, pat)
+    fr <- extract_ci(res_female_reduced, pat)
+    combined <- data.frame(
+      group = mf$name,
+      male_full = mf$estimate, male_full_lower = mf$ci_lower, male_full_upper = mf$ci_upper,
+      female_full = ff$estimate, female_full_lower = ff$ci_lower, female_full_upper = ff$ci_upper,
+      male_reduced = mr$estimate, male_reduced_lower = mr$ci_lower, male_reduced_upper = mr$ci_upper,
+      female_reduced = fr$estimate, female_reduced_lower = fr$ci_lower, female_reduced_upper = fr$ci_upper
+    )
+    results <- c(results, list(combined))
+  }
+  do.call(rbind, results)
 }

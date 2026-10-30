@@ -290,8 +290,13 @@ weighted_male <- male_data %>%
   srvyr::as_survey_rep(
     weights = wgt_full,
     repweights = all_of(male_replicate_weights),
-    type = "bootstrap"
+    type = "bootstrap",
+    combined.weights = TRUE,
+    scale = 1 / length(male_replicate_weights),
+    rscales = 1,
+    mse = TRUE
   )
+weighted_male$degf <- 68
 
 # Get weighted mean values from the ORIGINAL dataset
 vars_mean <- c("clc_age_rcs_1", "clc_age_rcs_2", "clc_age_rcs_3", "married_2", "married_3", "edudr04_1", "edudr04_2", "working_2", "gendmhi_1", "gen_025_2", "gen_045_2", "fmh_15_1", "hwmdbmi_rcs_1", "hwmdbmi_rcs_2", "low_drink_score1_2", "low_drink_score1_3", "low_drink_score1_4", "minperweek_rcs_1", "minperweek_rcs_2",
@@ -317,8 +322,13 @@ weighted_male_c <- male_data_c %>%
   srvyr::as_survey_rep(
     weights = wgt_full,
     repweights = all_of(male_replicate_weights),
-    type = "bootstrap"
+    type = "bootstrap",
+    combined.weights = TRUE,
+    scale = 1 / length(male_replicate_weights),
+    rscales = 1,
+    mse = TRUE
   )
+weighted_male_c$degf <- 68
 
 # female
 # -------- dummy variables --------
@@ -367,8 +377,13 @@ weighted_female <- female_data %>%
   srvyr::as_survey_rep(
     weights = wgt_full,
     repweights = all_of(female_replicate_weights),
-    type = "bootstrap"
+    type = "bootstrap",
+    combined.weights = TRUE,
+    scale = 1 / length(female_replicate_weights),
+    rscales = 1,
+    mse = TRUE
   )
+weighted_female$degf <- 68
 
 # Get weighted mean values from the ORIGINAL dataset
 vars_mean <- c("clc_age_rcs_1", "clc_age_rcs_2", "clc_age_rcs_3", "married_2", "married_3", "edudr04_1", "edudr04_2", "working_2", "gendmhi_1", "gen_025_2", "gen_045_2", "fmh_15_1", "hwmdbmi_rcs_1", "hwmdbmi_rcs_2", "low_drink_score1_2", "low_drink_score1_3", "low_drink_score1_4", "minperweek_rcs_1", "minperweek_rcs_2",
@@ -394,8 +409,13 @@ weighted_female_c <- female_data_c %>%
   srvyr::as_survey_rep(
     weights = wgt_full,
     repweights = all_of(female_replicate_weights),
-    type = "bootstrap"
+    type = "bootstrap",
+    combined.weights = TRUE,
+    scale = 1 / length(female_replicate_weights),
+    rscales = 1,
+    mse = TRUE
   )
+weighted_female_c$degf <- 68
 ```
 
 ### Fit male and female models using weighted, centered male and female data.
@@ -453,6 +473,7 @@ female_data_simple <- dplyr::select(female_data_simple, recodeflow:::select_vars
 male_cor_mat <- cor(male_data_simple)
 female_cor_mat <- cor(female_data_simple)
 
+# Export correlation matrices
 write.csv(male_cor_mat, file = "P:/10619/Dropbox/htnport/output/New Modelling Output/Model Presentation Output/Parameters/Correlation Matrix/Male Correlation Matrix.csv")
 write.csv(female_cor_mat, file = "P:/10619/Dropbox/htnport/output/New Modelling Output/Model Presentation Output/Parameters/Correlation Matrix/Female Correlation Matrix.csv")
 ```
@@ -494,17 +515,6 @@ compare_probs(female_data, female_predicted_probabilities)
 # Plot cumulative frequency of predicted probabilities
 plot(sort(male_predicted_probabilities), seq_along(male_predicted_probabilities), type = "s", col = "blue", lwd = 2, xlab = "Predicted probability", ylab = "Cumulative frequency")
 plot(sort(female_predicted_probabilities), seq_along(female_predicted_probabilities), type = "s", col = "red", lwd = 2, xlab = "Predicted probability", ylab = "Cumulative frequency")
-
-# Predicted probability percentiles
-percentiles <- 1:100
-
-predicted_percentiles_full <- data.frame(
-  percentile = percentiles,
-  `predicted risk (male)` = quantile(male_predicted_probabilities, probs = percentiles / 100, na.rm = TRUE),
-  `predicted risk (female)` = quantile(female_predicted_probabilities, probs = percentiles / 100, na.rm = TRUE)
-)
-
-write.csv(predicted_percentiles_full, file = "P:/10619/Dropbox/htnport/output/New Modelling Output/Model Presentation Output/Parameters/svyglm/Full Model Predicted Percentiles.csv")
 ```
 
 ### Reduced model assessment for derivation sample
@@ -525,17 +535,6 @@ compare_probs(female_data, female_predicted_probabilities)
 # Plot cumulative frequency of predicted probabilities
 plot(sort(male_predicted_probabilities), seq_along(male_predicted_probabilities), type = "s", col = "blue", lwd = 2, xlab = "Predicted probability", ylab = "Cumulative frequency")
 plot(sort(female_predicted_probabilities), seq_along(female_predicted_probabilities), type = "s", col = "red", lwd = 2, xlab = "Predicted probability", ylab = "Cumulative frequency")
-
-# Predicted probability percentiles
-percentiles <- 1:100
-
-predicted_percentiles_reduced <- data.frame(
-  percentile = percentiles,
-  `predicted risk (male)` = quantile(male_predicted_probabilities, probs = percentiles / 100, na.rm = TRUE),
-  `predicted risk (female)` = quantile(female_predicted_probabilities, probs = percentiles / 100, na.rm = TRUE)
-)
-
-write.csv(predicted_percentiles_reduced, file = "P:/10619/Dropbox/htnport/output/New Modelling Output/Model Presentation Output/Parameters/svyglm/Reduced Model Predicted Percentiles.csv")
 ```
 
 ### Full model assessment for bootstrap samples - BOOTSTRAP VALIDATION 1/2
@@ -1007,53 +1006,52 @@ female_reduced_betas <- extract_beta_coefs(female_reduced_model)
 write.csv(male_full_betas, file = "P:/10619/Dropbox/htnport/output/New Modelling Output/Model Presentation Output/Parameters/svyglm/Male Full Model Betas.csv")
 write.csv(female_full_betas, file = "P:/10619/Dropbox/htnport/output/New Modelling Output/Model Presentation Output/Parameters/svyglm/Female Full Model Betas.csv")
 
+# Export reduced model beta coefficient tables
 write.csv(male_reduced_betas, file = "P:/10619/Dropbox/htnport/output/New Modelling Output/Model Presentation Output/Parameters/svyglm/Male Reduced Model Betas.csv")
 write.csv(female_reduced_betas, file = "P:/10619/Dropbox/htnport/output/New Modelling Output/Model Presentation Output/Parameters/svyglm/Female Reduced Model Betas.csv")
 
-# Get bootstrap beta coefficients and their standard errors for full models
-n_bootstrap <- 1000
-set.seed(123)
+# --- Population estimates with uncertainty via replicate-weight refitting ---
+# Add 5-year age groups to the survey design's internal data
+weighted_male_c$variables$age_group_5yr <- cut(weighted_male_c$variables$clc_age, breaks = seq(20, 80, by = 5), right = FALSE)
+weighted_female_c$variables$age_group_5yr <- cut(weighted_female_c$variables$clc_age, breaks = seq(20, 80, by = 5), right = FALSE)
 
-bootstrap_coefs_male <- replicate(n_bootstrap, {
-  boot_indices <- sample(1:nrow(male_data_c), replace = TRUE)
-  bootstrap_coefs(male_data_c, boot_indices, male_model)
-}, simplify = FALSE)
+# Full models
+res_male_full <- survey::withReplicates(weighted_male_c, function(w, data) {
+  pop_est(w, data, formula = formula(male_model))
+}, return.replicates = TRUE)
 
-coef_matrix_male <- do.call(rbind, bootstrap_coefs_male)
-rownames(coef_matrix_male) <- paste0("bootstrap_", 1:n_bootstrap)
+res_female_full <- survey::withReplicates(weighted_female_c, function(w, data) {
+  pop_est(w, data, formula = formula(female_model))
+}, return.replicates = TRUE)
 
-write.csv(coef_matrix_male, file = "P:/10619/Dropbox/htnport/output/New Modelling Output/Model Presentation Output/Parameters/svyglm/Bootstrap Betas/Male Full Model Bootstrap Betas.csv", row.names = TRUE)
+# Reduced models
+res_male_reduced <- survey::withReplicates(weighted_male_c, function(w, data) {
+  pop_est(w, data, formula = formula(male_reduced_model))
+}, return.replicates = TRUE)
 
-bootstrap_coefs_female <- replicate(n_bootstrap, {
-  boot_indices <- sample(1:nrow(female_data_c), replace = TRUE)
-  bootstrap_coefs(female_data_c, boot_indices, female_model)
-}, simplify = FALSE)
+res_female_reduced <- survey::withReplicates(weighted_female_c, function(w, data) {
+  pop_est(w, data, formula = formula(female_reduced_model))
+}, return.replicates = TRUE)
 
-coef_matrix_female <- do.call(rbind, bootstrap_coefs_female)
-rownames(coef_matrix_female) <- paste0("bootstrap_", 1:n_bootstrap)
+# Verification: overall weighted mean predicted risk should equal weighted prevalence
+cat("Male full - mean risk:", coef(res_male_full)["overall_mean"],
+    "obs prevalence:", coef(res_male_full)["overall_obs"], "\n")
+cat("Female full - mean risk:", coef(res_female_full)["overall_mean"],
+    "obs prevalence:", coef(res_female_full)["overall_obs"], "\n")
+cat("Male reduced - mean risk:", coef(res_male_reduced)["overall_mean"],
+    "obs prevalence:", coef(res_male_reduced)["overall_obs"], "\n")
+cat("Female reduced - mean risk:", coef(res_female_reduced)["overall_mean"],
+    "obs prevalence:", coef(res_female_reduced)["overall_obs"], "\n")
 
-write.csv(coef_matrix_female, file = "P:/10619/Dropbox/htnport/output/New Modelling Output/Model Presentation Output/Parameters/svyglm/Bootstrap Betas/Female Full Model Bootstrap Betas.csv", row.names = TRUE)
-
-# Get bootstrap beta coefficients and their standard errors for rediced models
-bootstrap_coefs_male_reduced <- replicate(n_bootstrap, {
-  boot_indices <- sample(1:nrow(male_data_c), replace = TRUE)
-  bootstrap_coefs(male_data_c, boot_indices, male_reduced_model)
-}, simplify = FALSE)
-
-coef_matrix_male_reduced <- do.call(rbind, bootstrap_coefs_male_reduced)
-rownames(coef_matrix_male_reduced) <- paste0("bootstrap_", 1:n_bootstrap)
-
-write.csv(coef_matrix_male_reduced, file = "P:/10619/Dropbox/htnport/output/New Modelling Output/Model Presentation Output/Parameters/svyglm/Bootstrap Betas/Male Reduced Model Bootstrap Betas.csv", row.names = TRUE)
-
-bootstrap_coefs_female_reduced <- replicate(n_bootstrap, {
-  boot_indices <- sample(1:nrow(female_data_c), replace = TRUE)
-  bootstrap_coefs(female_data_c, boot_indices, female_reduced_model)
-}, simplify = FALSE)
-
-coef_matrix_female_reduced <- do.call(rbind, bootstrap_coefs_female_reduced)
-rownames(coef_matrix_female_reduced) <- paste0("bootstrap_", 1:n_bootstrap)
-
-write.csv(coef_matrix_female_reduced, file = "P:/10619/Dropbox/htnport/output/New Modelling Output/Model Presentation Output/Parameters/svyglm/Bootstrap Betas/female Reduced Model Bootstrap Betas.csv", row.names = TRUE)
+# Export replicate-weight bootstrap beta coefficients
+write.csv(extract_replicate_betas(res_male_full),
+  file = "P:/10619/Dropbox/htnport/output/New Modelling Output/Model Presentation Output/Parameters/svyglm/Bootstrap Betas/Male Full Model Bootstrap Betas.csv", row.names = TRUE)
+write.csv(extract_replicate_betas(res_female_full),
+  file = "P:/10619/Dropbox/htnport/output/New Modelling Output/Model Presentation Output/Parameters/svyglm/Bootstrap Betas/Female Full Model Bootstrap Betas.csv", row.names = TRUE)
+write.csv(extract_replicate_betas(res_male_reduced),
+  file = "P:/10619/Dropbox/htnport/output/New Modelling Output/Model Presentation Output/Parameters/svyglm/Bootstrap Betas/Male Reduced Model Bootstrap Betas.csv", row.names = TRUE)
+write.csv(extract_replicate_betas(res_female_reduced),
+  file = "P:/10619/Dropbox/htnport/output/New Modelling Output/Model Presentation Output/Parameters/svyglm/Bootstrap Betas/female Reduced Model Bootstrap Betas.csv", row.names = TRUE)
 
 # Re-apply survey weights to male and female data
 male_data <- dplyr::filter(imputed_cycles1to6_data, clc_sex == 1)
@@ -1091,6 +1089,7 @@ cont_variables <- c("clc_age", "hwmdbmi", "minperweek", "totalfv", "slp_11")
 male_summary <- summarize_weighted(cont_variables, weighted_male, male_data)
 female_summary <- summarize_weighted(cont_variables, weighted_female, female_data)
 
+# Export weighted continuous descriptives
 write.csv(male_summary, file = "P:/10619/Dropbox/htnport/output/New Modelling Output/Model Presentation Output/Parameters/Male Continuous Descriptives.csv")
 write.csv(female_summary, file = "P:/10619/Dropbox/htnport/output/New Modelling Output/Model Presentation Output/Parameters/Female Continuous Descriptives.csv")
 
@@ -1879,128 +1878,38 @@ male_validation_data <- step_center(male_validation_data, vars_center, means)
 # Add centered model predictions to dataset
 male_validation_data$full_predicted <- predict(male_model, newdata = male_validation_data, type = "response")
 male_validation_data$reduced_predicted <- predict(male_reduced_model, newdata = male_validation_data, type = "response")
+# Export validation data with predicted probabilities
 write.csv(male_validation_data, file = "P:/10619/Dropbox/htnport/output/New Modelling Output/Model Presentation Output/Parameters/svyglm/Validation Data/Male Validation Data.csv", row.names = TRUE)
 ```
 
-### Vascular age
+### Vascular age and population estimates (weighted, with 95% CIs)
 
 ```{r, warning = FALSE, message = FALSE}
-# Predict HTN for all respondents in development data
-male_data_c$full_predicted <- predict(male_model, newdata = male_data_c, type = "response")
-female_data_c$full_predicted <- predict(female_model, newdata = female_data_c, type = "response")
-male_data_c$reduced_predicted <- predict(male_reduced_model, newdata = male_data_c, type = "response")
-female_data_c$reduced_predicted <- predict(female_reduced_model, newdata = female_data_c, type = "response")
+# --- Vascular age: 1-year age summaries with CIs ---
+male_summary_1yr <- build_age1yr_summary(res_male_full, res_male_reduced)
+female_summary_1yr <- build_age1yr_summary(res_female_full, res_female_reduced)
 
-# For 1-year age and sex strata, calculate: mean prediction, SD, median, IQR.
-male_summary_1yr <- male_data_c %>%
-  group_by(clc_age) %>%
-  summarise(
-    mean_pred_full = mean(full_predicted),
-    sd_pred_full = sd(full_predicted),
-    median_pred_full = median(full_predicted),
-    iqr_pred_full = IQR(full_predicted),
-    mean_pred_reduced = mean(reduced_predicted),
-    sd_pred_reduced = sd(reduced_predicted),
-    median_pred_reduced = median(reduced_predicted),
-    iqr_pred_reduced = IQR(reduced_predicted)
-  )
+write.csv(male_summary_1yr, file = "P:/10619/Dropbox/htnport/output/New Modelling Output/Model Presentation Output/Parameters/svyglm/Vascular Age/Male Vascular Age - 1 yr.csv", row.names = FALSE)
+write.csv(female_summary_1yr, file = "P:/10619/Dropbox/htnport/output/New Modelling Output/Model Presentation Output/Parameters/svyglm/Vascular Age/Female Vascular Age - 1 yr.csv", row.names = FALSE)
 
-female_summary_1yr <- female_data_c %>%
-  group_by(clc_age) %>%
-  summarise(
-    mean_pred_full = mean(full_predicted),
-    sd_pred_full = sd(full_predicted),
-    median_pred_full = median(full_predicted),
-    iqr_pred_full = IQR(full_predicted),
-    mean_pred_reduced = mean(reduced_predicted),
-    sd_pred_reduced = sd(reduced_predicted),
-    median_pred_reduced = median(reduced_predicted),
-    iqr_pred_reduced = IQR(reduced_predicted)
-  )
+# --- Vascular age: 5-year age summaries with CIs ---
+male_summary_5yr <- build_age5yr_summary(res_male_full, res_male_reduced)
+female_summary_5yr <- build_age5yr_summary(res_female_full, res_female_reduced)
 
-write.csv(male_summary_1yr, file = "P:/10619/Dropbox/htnport/output/New Modelling Output/Model Presentation Output/Parameters/svyglm/Vascular Age/Male Vascular Age - 1 yr.csv", row.names = TRUE)
-write.csv(female_summary_1yr, file = "P:/10619/Dropbox/htnport/output/New Modelling Output/Model Presentation Output/Parameters/svyglm/Vascular Age/Female Vascular Age - 1 yr.csv", row.names = TRUE)
+write.csv(male_summary_5yr, file = "P:/10619/Dropbox/htnport/output/New Modelling Output/Model Presentation Output/Parameters/svyglm/Vascular Age/Male Vascular Age - 5 yrs.csv", row.names = FALSE)
+write.csv(female_summary_5yr, file = "P:/10619/Dropbox/htnport/output/New Modelling Output/Model Presentation Output/Parameters/svyglm/Vascular Age/Female Vascular Age - 5 yrs.csv", row.names = FALSE)
 
-# For 5-year age and sex strata, calculate mean prediction, SD, and then min, max and percentiles.
-male_data_c$age_group_5yr <- cut(male_data_c$clc_age, breaks = seq(20, 80, by = 5), right = FALSE)
-female_data_c$age_group_5yr <- cut(female_data_c$clc_age, breaks = seq(20, 80, by = 5), right = FALSE)
+# --- Predicted percentiles with CIs ---
+write.csv(build_percentile_summary(res_male_full),
+  file = "P:/10619/Dropbox/htnport/output/New Modelling Output/Model Presentation Output/Parameters/svyglm/Full Model Predicted Percentiles Male.csv", row.names = FALSE)
+write.csv(build_percentile_summary(res_female_full),
+  file = "P:/10619/Dropbox/htnport/output/New Modelling Output/Model Presentation Output/Parameters/svyglm/Full Model Predicted Percentiles Female.csv", row.names = FALSE)
+write.csv(build_percentile_summary(res_male_reduced),
+  file = "P:/10619/Dropbox/htnport/output/New Modelling Output/Model Presentation Output/Parameters/svyglm/Reduced Model Predicted Percentiles Male.csv", row.names = FALSE)
+write.csv(build_percentile_summary(res_female_reduced),
+  file = "P:/10619/Dropbox/htnport/output/New Modelling Output/Model Presentation Output/Parameters/svyglm/Reduced Model Predicted Percentiles Female.csv", row.names = FALSE)
 
-percentiles <- c(0.05, 0.10, 0.20, 0.25, 0.30, 0.40, 0.50, 0.60, 0.75, 0.80, 0.90, 0.95)
-
-male_summary_5yr <- male_data_c %>%
-  group_by(age_group_5yr) %>%
-  summarise(
-    mean_pred_full = mean(full_predicted),
-    sd_pred_full = sd(full_predicted),
-    min_pred_full = min(full_predicted),
-    max_pred_full = max(full_predicted),
-    p05_full = quantile(full_predicted, 0.05),
-    p10_full = quantile(full_predicted, 0.10),
-    p20_full = quantile(full_predicted, 0.20),
-    p25_full = quantile(full_predicted, 0.25),
-    p30_full = quantile(full_predicted, 0.30),
-    p40_full = quantile(full_predicted, 0.40),
-    p50_full = quantile(full_predicted, 0.50),
-    p60_full = quantile(full_predicted, 0.60),
-    p75_full = quantile(full_predicted, 0.75),
-    p80_full = quantile(full_predicted, 0.80),
-    p90_full = quantile(full_predicted, 0.90),
-    p95_full = quantile(full_predicted, 0.95),
-    mean_pred_reduced = mean(reduced_predicted),
-    sd_pred_reduced = sd(reduced_predicted),
-    min_pred_reduced = min(reduced_predicted),
-    max_pred_reduced = max(reduced_predicted),
-    p05_reduced = quantile(reduced_predicted, 0.05),
-    p10_reduced = quantile(reduced_predicted, 0.10),
-    p20_reduced = quantile(reduced_predicted, 0.20),
-    p25_reduced = quantile(reduced_predicted, 0.25),
-    p30_reduced = quantile(reduced_predicted, 0.30),
-    p40_reduced = quantile(reduced_predicted, 0.40),
-    p50_reduced = quantile(reduced_predicted, 0.50),
-    p60_reduced = quantile(reduced_predicted, 0.60),
-    p75_reduced = quantile(reduced_predicted, 0.75),
-    p80_reduced = quantile(reduced_predicted, 0.80),
-    p90_reduced = quantile(reduced_predicted, 0.90),
-    p95_reduced = quantile(reduced_predicted, 0.95)
-  )
-
-female_summary_5yr <- female_data_c %>%
-  group_by(age_group_5yr) %>%
-  summarise(
-    mean_pred_full = mean(full_predicted),
-    sd_pred_full = sd(full_predicted),
-    min_pred_full = min(full_predicted),
-    max_pred_full = max(full_predicted),
-    p05_full = quantile(full_predicted, 0.05),
-    p10_full = quantile(full_predicted, 0.10),
-    p20_full = quantile(full_predicted, 0.20),
-    p25_full = quantile(full_predicted, 0.25),
-    p30_full = quantile(full_predicted, 0.30),
-    p40_full = quantile(full_predicted, 0.40),
-    p50_full = quantile(full_predicted, 0.50),
-    p60_full = quantile(full_predicted, 0.60),
-    p75_full = quantile(full_predicted, 0.75),
-    p80_full = quantile(full_predicted, 0.80),
-    p90_full = quantile(full_predicted, 0.90),
-    p95_full = quantile(full_predicted, 0.95),
-    mean_pred_reduced = mean(reduced_predicted),
-    sd_pred_reduced = sd(reduced_predicted),
-    min_pred_reduced = min(reduced_predicted),
-    max_pred_reduced = max(reduced_predicted),
-    p05_reduced = quantile(reduced_predicted, 0.05),
-    p10_reduced = quantile(reduced_predicted, 0.10),
-    p20_reduced = quantile(reduced_predicted, 0.20),
-    p25_reduced = quantile(reduced_predicted, 0.25),
-    p30_reduced = quantile(reduced_predicted, 0.30),
-    p40_reduced = quantile(reduced_predicted, 0.40),
-    p50_reduced = quantile(reduced_predicted, 0.50),
-    p60_reduced = quantile(reduced_predicted, 0.60),
-    p75_reduced = quantile(reduced_predicted, 0.75),
-    p80_reduced = quantile(reduced_predicted, 0.80),
-    p90_reduced = quantile(reduced_predicted, 0.90),
-    p95_reduced = quantile(reduced_predicted, 0.95)
-  )
-
-write.csv(male_summary_5yr, file = "P:/10619/Dropbox/htnport/output/New Modelling Output/Model Presentation Output/Parameters/svyglm/Vascular Age/Male Vascular Age - 5 yrs.csv", row.names = TRUE)
-write.csv(female_summary_5yr, file = "P:/10619/Dropbox/htnport/output/New Modelling Output/Model Presentation Output/Parameters/svyglm/Vascular Age/Female Vascular Age - 5 yrs.csv", row.names = TRUE)
+# --- Population mean predicted risks with CIs ---
+pop_mean_risks <- build_pop_mean_risks(res_male_full, res_female_full, res_male_reduced, res_female_reduced)
+write.csv(pop_mean_risks, file = "P:/10619/Dropbox/htnport/output/New Modelling Output/Model Presentation Output/Parameters/svyglm/Population Mean Predicted Probabilities.csv", row.names = FALSE)
 ```
