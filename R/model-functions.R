@@ -234,6 +234,37 @@ bootstrap_function <- function(data, indices, model) {
   ))
 }
 
+# Add Wilson CIs for observed proportions and SE-of-mean CIs for predicted means
+# to a calibration data frame. Expects columns: n, Obs, Pavg.
+add_calibration_cis <- function(cal_df, outcome, predicted, group_var, alpha = 0.05) {
+  z <- qnorm(1 - alpha / 2)
+
+  # Wilson CI for observed proportion
+  x <- round(cal_df$Obs * cal_df$n)
+  n <- cal_df$n
+  denom <- n + z^2
+  p_tilde <- (x + z^2 / 2) / denom
+  margin <- (z / denom) * sqrt(x * (n - x) / n + z^2 / 4)
+  cal_df$Obs_lower <- p_tilde - margin
+  cal_df$Obs_upper <- p_tilde + margin
+
+  # SE of mean for predicted risks per subgroup
+  cal_df$Pavg_lower <- NA
+  cal_df$Pavg_upper <- NA
+  for (i in seq_len(nrow(cal_df))) {
+    lvl <- as.character(cal_df$Subgroup[i])
+    idx <- as.character(group_var) == lvl
+    if (sum(idx) > 1) {
+      p_sub <- predicted[idx]
+      se_mean <- sd(p_sub) / sqrt(length(p_sub))
+      t_crit <- qt(1 - alpha / 2, length(p_sub) - 1)
+      cal_df$Pavg_lower[i] <- cal_df$Pavg[i] - t_crit * se_mean
+      cal_df$Pavg_upper[i] <- cal_df$Pavg[i] + t_crit * se_mean
+    }
+  }
+  cal_df
+}
+
 # Function to obtain beta coefficients from a model
 extract_beta_coefs <- function(model) {
   coef_summary <- summary(model)$coefficients  # Extract coefficients and SEs

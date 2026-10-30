@@ -191,7 +191,7 @@ imputed_cycles1to6_data <- dplyr::left_join(imputed_cycles1to6_data, cycles1to6_
 #   adj_hh_inc = runif(1000, 20000, 150000), # Numeric income
 #   agegroup4 = sample(1:4, 1000, replace = TRUE), # Categorical age group
 #   alcdwky = sample(0:84, 1000, replace = TRUE), # Integer alcohol consumption per week
-#   gendhdi = sample(0:4, 1000, replace = TRUE), # Categorical self-rated health
+#   gendhdi = sample(1:2, 1000, replace = TRUE), # Categorical self-rated health
 #   gfr = runif(1000, 6, 240), # Numeric glomerular filtration rate
 #   hwm_13kg = runif(1000, 42.0, 176.5), # Numeric weight in kg
 #   hwm_14cx = runif(1000, 61.4, 162.5), # Numeric waist circumference in cm
@@ -201,7 +201,7 @@ imputed_cycles1to6_data <- dplyr::left_join(imputed_cycles1to6_data, cycles1to6_
 #   mvpa150wk = sample(1:2, 1000, replace = TRUE), # Binary moderate-vigorous activity
 #   nonhdltodd = sample(1:2, 1000, replace = TRUE), # Binary non-HDL cholesterol
 #   gooddiet = sample(1:2, 1000, replace = TRUE), # Binary poor diet indicator
-#   pgdcgt = sample(1:13, 1000, replace = TRUE), # Categorical ethnicity
+#   pgdcgt = sample(1:2, 1000, replace = TRUE), # Categorical ethnicity
 #   bsw1 = runif(1000, 0, 1), # Numeric bootstrap weights
 #   bsw2 = runif(1000, 0, 1) # Numeric bootstrap weights
 # )
@@ -768,6 +768,9 @@ for (subgroup in subgroups) {
       )
       cal_df <- cal_df[1:(nrow(cal_df) - 1), ]
 
+      # Add Wilson CIs for observed and SE-of-mean CIs for predicted
+      cal_df <- add_calibration_cis(cal_df, male_data$highbp14090_adj, male_predicted_probabilities, male_data[[subgroup]])
+
       # Set x-axis label dynamically
       x_label <- ifelse(subgroup %in% names(subgroup_labels), subgroup_labels[[subgroup]], subgroup)
 
@@ -783,11 +786,13 @@ for (subgroup in subgroups) {
       # Merge symbols if both conditions are met
       cal_df$symbol <- paste0(cal_df$asterisk, cal_df$X_mark)
 
-      # Plot with symbols for significant differences and low observations
+      # Plot with error bars for observed (Wilson) and predicted (SE of mean)
       print(ggplot(cal_df, aes(x = Subgroup)) +
         geom_bar(aes(y = Obs, fill = "Observed"), stat = "identity", width = 0.6, alpha = 0.7) +
+        geom_errorbar(aes(ymin = Obs_lower, ymax = Obs_upper), width = 0.2, color = "steelblue") +
         geom_point(aes(y = Pavg, color = "Predicted"), size = 4) +
-        geom_text(aes(y = Obs + 0.05, label = symbol), color = "black", size = 6, vjust = -0.5) + # Add symbols
+        geom_errorbar(aes(ymin = Pavg_lower, ymax = Pavg_upper), width = 0.15, color = "red") +
+        geom_text(aes(y = pmax(Obs_upper, Pavg_upper, na.rm = TRUE) + 0.02, label = symbol), color = "black", size = 6, vjust = -0.5) +
         scale_fill_manual(name = "", values = c("Observed" = "steelblue")) +
         scale_color_manual(name = "", values = c("Predicted" = "red")) +
         labs(y = "Estimate", x = x_label) + ylim(0,1) +
@@ -816,7 +821,7 @@ for (subgroup in subgroups) {
 
     cal_result <- female_calibration_results[[subgroup]]
     cal_result <- as.data.frame(cal_result[["stats"]])
-    
+
     if (!is.null(cal_result) && "n" %in% names(cal_result) && "Pavg" %in% names(cal_result) && "Obs" %in% names(cal_result)) {
       cal_df <- data.frame(
         Subgroup = factor(rownames(cal_result), levels = rownames(cal_result)),
@@ -825,6 +830,9 @@ for (subgroup in subgroups) {
         Obs = cal_result$Obs
       )
       cal_df <- cal_df[1:(nrow(cal_df) - 1), ]
+
+      # Add Wilson CIs for observed and SE-of-mean CIs for predicted
+      cal_df <- add_calibration_cis(cal_df, female_data$highbp14090_adj, female_predicted_probabilities, female_data[[subgroup]])
 
       # Set x-axis label dynamically
       x_label <- ifelse(subgroup %in% names(subgroup_labels), subgroup_labels[[subgroup]], subgroup)
@@ -841,11 +849,13 @@ for (subgroup in subgroups) {
       # Merge symbols if both conditions are met
       cal_df$symbol <- paste0(cal_df$asterisk, cal_df$X_mark)
 
-      # Plot with symbols for significant differences and low observations
+      # Plot with error bars for observed (Wilson) and predicted (SE of mean)
       print(ggplot(cal_df, aes(x = Subgroup)) +
         geom_bar(aes(y = Obs, fill = "Observed"), stat = "identity", width = 0.6, alpha = 0.7) +
+        geom_errorbar(aes(ymin = Obs_lower, ymax = Obs_upper), width = 0.2, color = "steelblue") +
         geom_point(aes(y = Pavg, color = "Predicted"), size = 4) +
-        geom_text(aes(y = Obs + 0.05, label = symbol), color = "black", size = 6, vjust = -0.5) + # Add symbols
+        geom_errorbar(aes(ymin = Pavg_lower, ymax = Pavg_upper), width = 0.15, color = "red") +
+        geom_text(aes(y = pmax(Obs_upper, Pavg_upper, na.rm = TRUE) + 0.02, label = symbol), color = "black", size = 6, vjust = -0.5) +
         scale_fill_manual(name = "", values = c("Observed" = "steelblue")) +
         scale_color_manual(name = "", values = c("Predicted" = "red")) +
         labs(y = "Estimate", x = x_label) + ylim(0,1) +
@@ -896,6 +906,9 @@ for (subgroup in subgroups) {
       )
       cal_df <- cal_df[1:(nrow(cal_df) - 1), ]
 
+      # Add Wilson CIs for observed and SE-of-mean CIs for predicted
+      cal_df <- add_calibration_cis(cal_df, male_data$highbp14090_adj, male_predicted_probabilities, male_data[[subgroup]])
+
       # Set x-axis label dynamically
       x_label <- ifelse(subgroup %in% names(subgroup_labels), subgroup_labels[[subgroup]], subgroup)
 
@@ -911,11 +924,13 @@ for (subgroup in subgroups) {
       # Merge symbols if both conditions are met
       cal_df$symbol <- paste0(cal_df$asterisk, cal_df$X_mark)
 
-      # Plot with symbols for significant differences and low observations
+      # Plot with error bars for observed (Wilson) and predicted (SE of mean)
       print(ggplot(cal_df, aes(x = Subgroup)) +
         geom_bar(aes(y = Obs, fill = "Observed"), stat = "identity", width = 0.6, alpha = 0.7) +
+        geom_errorbar(aes(ymin = Obs_lower, ymax = Obs_upper), width = 0.2, color = "steelblue") +
         geom_point(aes(y = Pavg, color = "Predicted"), size = 4) +
-        geom_text(aes(y = Obs + 0.05, label = symbol), color = "black", size = 6, vjust = -0.5) + # Add symbols
+        geom_errorbar(aes(ymin = Pavg_lower, ymax = Pavg_upper), width = 0.15, color = "red") +
+        geom_text(aes(y = pmax(Obs_upper, Pavg_upper, na.rm = TRUE) + 0.02, label = symbol), color = "black", size = 6, vjust = -0.5) +
         scale_fill_manual(name = "", values = c("Observed" = "steelblue")) +
         scale_color_manual(name = "", values = c("Predicted" = "red")) +
         labs(y = "Estimate", x = x_label) + ylim(0,1) +
@@ -944,7 +959,7 @@ for (subgroup in subgroups) {
 
     cal_result <- female_calibration_results[[subgroup]]
     cal_result <- as.data.frame(cal_result[["stats"]])
-    
+
     if (!is.null(cal_result) && "n" %in% names(cal_result) && "Pavg" %in% names(cal_result) && "Obs" %in% names(cal_result)) {
       cal_df <- data.frame(
         Subgroup = factor(rownames(cal_result), levels = rownames(cal_result)),
@@ -953,6 +968,9 @@ for (subgroup in subgroups) {
         Obs = cal_result$Obs
       )
       cal_df <- cal_df[1:(nrow(cal_df) - 1), ]
+
+      # Add Wilson CIs for observed and SE-of-mean CIs for predicted
+      cal_df <- add_calibration_cis(cal_df, female_data$highbp14090_adj, female_predicted_probabilities, female_data[[subgroup]])
 
       # Set x-axis label dynamically
       x_label <- ifelse(subgroup %in% names(subgroup_labels), subgroup_labels[[subgroup]], subgroup)
@@ -969,11 +987,13 @@ for (subgroup in subgroups) {
       # Merge symbols if both conditions are met
       cal_df$symbol <- paste0(cal_df$asterisk, cal_df$X_mark)
 
-      # Plot with symbols for significant differences and low observations
+      # Plot with error bars for observed (Wilson) and predicted (SE of mean)
       print(ggplot(cal_df, aes(x = Subgroup)) +
         geom_bar(aes(y = Obs, fill = "Observed"), stat = "identity", width = 0.6, alpha = 0.7) +
+        geom_errorbar(aes(ymin = Obs_lower, ymax = Obs_upper), width = 0.2, color = "steelblue") +
         geom_point(aes(y = Pavg, color = "Predicted"), size = 4) +
-        geom_text(aes(y = Obs + 0.05, label = symbol), color = "black", size = 6, vjust = -0.5) + # Add symbols
+        geom_errorbar(aes(ymin = Pavg_lower, ymax = Pavg_upper), width = 0.15, color = "red") +
+        geom_text(aes(y = pmax(Obs_upper, Pavg_upper, na.rm = TRUE) + 0.02, label = symbol), color = "black", size = 6, vjust = -0.5) +
         scale_fill_manual(name = "", values = c("Observed" = "steelblue")) +
         scale_color_manual(name = "", values = c("Predicted" = "red")) +
         labs(y = "Estimate", x = x_label) + ylim(0,1) +
