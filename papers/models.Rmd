@@ -191,7 +191,6 @@ imputed_cycles1to6_data <- dplyr::left_join(imputed_cycles1to6_data, cycles1to6_
 #   adj_hh_inc = runif(1000, 20000, 150000), # Numeric income
 #   agegroup4 = sample(1:4, 1000, replace = TRUE), # Categorical age group
 #   alcdwky = sample(0:84, 1000, replace = TRUE), # Integer alcohol consumption per week
-#   bmigroup = sample(1:4, 1000, replace = TRUE), # Categorical BMI group
 #   gendhdi = sample(0:4, 1000, replace = TRUE), # Categorical self-rated health
 #   gfr = runif(1000, 6, 240), # Numeric glomerular filtration rate
 #   hwm_13kg = runif(1000, 42.0, 176.5), # Numeric weight in kg
@@ -1014,6 +1013,10 @@ write.csv(female_reduced_betas, file = "P:/10619/Dropbox/htnport/output/New Mode
 # Add 5-year age groups to the survey design's internal data
 weighted_male_c$variables$age_group_5yr <- cut(weighted_male_c$variables$clc_age, breaks = seq(20, 80, by = 5), right = FALSE)
 weighted_female_c$variables$age_group_5yr <- cut(weighted_female_c$variables$clc_age, breaks = seq(20, 80, by = 5), right = FALSE)
+
+# Add BMI groups to the survey design's internal data
+weighted_male_c$variables$bmigroup <- cut(weighted_male_c$variables$hwmdbmi, breaks = c(-Inf, 18.5, 25, 30, Inf), right = FALSE, labels = c("Underweight", "Normal", "Overweight", "Obese"))
+weighted_female_c$variables$bmigroup <- cut(weighted_female_c$variables$hwmdbmi, breaks = c(-Inf, 18.5, 25, 30, Inf), right = FALSE, labels = c("Underweight", "Normal", "Overweight", "Obese"))
 
 # Full models
 res_male_full <- survey::withReplicates(weighted_male_c, function(w, data) {
