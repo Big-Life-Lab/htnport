@@ -248,6 +248,11 @@ add_calibration_cis <- function(cal_df, outcome, predicted, group_var, alpha = 0
   cal_df$Obs_lower <- p_tilde - margin
   cal_df$Obs_upper <- p_tilde + margin
 
+  # Rebuild val.prob's quartile groups for continuous subgroups so labels match
+  if (is.numeric(group_var)) {
+    group_var <- Hmisc::cut2(group_var, g = 4)
+  }
+
   # SE of mean for predicted risks per subgroup
   cal_df$Pavg_lower <- NA
   cal_df$Pavg_upper <- NA
