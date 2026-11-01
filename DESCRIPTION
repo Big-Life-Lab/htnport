@@ -27,7 +27,7 @@ Imports:
     cowplot,
     plyr,
     tidyr,
-    iml,
+    kernelshap,
     ggplot2,
     ggeffects,
     ggrepel,

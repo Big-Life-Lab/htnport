@@ -20,7 +20,7 @@ library(srvyr)
 library(e1071)
 library(rms)
 library(ggplot2)
-library(iml)
+library(kernelshap)
 library(ggeffects)
 library(scales)
 
@@ -1184,8 +1184,11 @@ male_data <- male_data %>%
 # Fit final reduced male model with glm to avoid errors
 male_final_reduced_model <- glm(highbp14090_adj ~ rcs(clc_age, 4) + fmh_15 + rcs(clc_age, 4)*rcs(hwmdbmi, 3) + rcs(clc_age, 4)*diabx, family = quasibinomial(), data = male_data, weights = wgt_full)
 
-# Predictors and outcome only
-male_data <- male_data %>% 
+# Survey weights for the SHAP background so the average prediction is the weighted population mean
+male_weights <- male_data$wgt_full
+
+# Predictors only
+male_data <- male_data %>%
   dplyr::select(clc_age, fmh_15, diabx, hwmdbmi)
 
 # Create observation as a data frame. Feel free to change predictor values.
@@ -1209,40 +1212,39 @@ for (var in names(male_data)) {
   }
 }
 
-# Create explainer object for model
-male_explainer <- iml::Predictor$new(
-   model = male_final_reduced_model,                               # Pass the model
-   data = male_data,                                               # Pass the data
-   y = male_data[["highbp14090_adj"]],                             # Indicate outcome
-   type = "response"                                               # Return predicted probabilities )
+# Compute exact SHAP values against the survey-weighted male sample
+male_shap_values <- kernelshap::kernelshap(
+  male_final_reduced_model,                                        # Pass the model
+  X = observation,                                                 # Individual to explain
+  bg_X = male_data,                                                # Background data
+  bg_w = male_weights,                                             # Survey weights for background
+  pred_fun = function(m, X) predict(m, newdata = X, type = "response")  # Return predicted probabilities
 )
 
-# Compute and plot SHAP values
-set.seed(123)
-male_shap_values <- iml::Shapley$new(male_explainer, x.interest = observation)
+male_baseline <- male_shap_values$baseline                         # Weighted mean prediction
+male_prediction <- male_baseline + sum(male_shap_values$S)         # Individual prediction
 
-shap_df <- as.data.frame(male_shap_values$results) %>%
-  mutate(
-    std.err = sqrt(phi.var) / sqrt(100),  # Individual SE based on MC sampling
-    feature = reorder(feature, phi)       # Reorder for plotting
-  )
+shap_df <- data.frame(
+  feature = colnames(male_shap_values$S),
+  feature.value = paste0(colnames(male_shap_values$S), "=", sapply(observation, as.character)),
+  phi = as.numeric(male_shap_values$S[1, ])
+) %>%
+  mutate(feature = reorder(feature, phi))                          # Reorder for plotting
 
 shap_df %>%
-  mutate(feature = reorder(feature, phi)) %>%
   ggplot(aes(x = phi, y = feature)) +
   geom_bar(stat = "identity", fill = "grey30") +
-  geom_errorbarh(aes(xmin = phi - std.err, xmax = phi + std.err), height = 0.2) +
   labs(
     x = "SHAP value",
     y = NULL,
-    title = paste0("Actual prediction: ", round((100 * male_shap_values$y.hat.interest), 2),
-                   "\nAverage prediction: ", round((100 * male_shap_values$y.hat.average), 2))
+    title = paste0("Actual prediction: ", sprintf("%.1f%%", 100 * male_prediction),
+                   "\nAverage prediction: ", sprintf("%.1f%%", 100 * male_baseline))
   ) +
   theme_minimal()
 
-as.data.frame(shap_df) %>%
+shap_df %>%
   arrange(desc(phi)) %>%
-  select(feature.value, phi, std.err)
+  select(feature.value, phi)
 ```
 
 ### Sensitivity analyses (missing data)
