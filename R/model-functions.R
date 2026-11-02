@@ -380,18 +380,21 @@ pop_est <- function(w, data, formula, outcome = "highbp14090_adj",
 
 # Extract estimates with CIs from a withReplicates result object.
 # Greps for named elements matching `pattern` and returns a data frame
-# with point estimate, SE, and 95% CI using t(degf).
+# with point estimate, SE, and 95% CI using t(degf). CIs are built on the
+# logit scale (delta method) and back-transformed so they stay within 0-1.
 extract_ci <- function(res, pattern, degf = 68) {
   est <- coef(res)
   se <- SE(res)
   idx <- grep(pattern, names(est))
   t_crit <- qt(0.975, degf)
+  p <- est[idx]
+  se_logit <- se[idx] / (p * (1 - p))
   data.frame(
     name = names(est)[idx],
-    estimate = est[idx],
+    estimate = p,
     se = se[idx],
-    ci_lower = est[idx] - t_crit * se[idx],
-    ci_upper = est[idx] + t_crit * se[idx],
+    ci_lower = plogis(qlogis(p) - t_crit * se_logit),
+    ci_upper = plogis(qlogis(p) + t_crit * se_logit),
     row.names = NULL
   )
 }
