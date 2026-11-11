@@ -1,58 +1,34 @@
 # Bootstrap Betas for HTNPoRT Models
 
-This folder contains CSV files with the coefficients (betas) from 1000 bootstrap iterations of the HTNPoRT models for males and females.
+This folder contains the model coefficients (betas) re-estimated with each of the 500 Canadian Health Measures Survey (CHMS) bootstrap replicate weights, for the full HTNPoRT models in males and females.
 
 ## File Descriptions
 
-*   `HTNPoRT-full-male-1000-betas.csv`: Contains the bootstrap coefficients for the male full model.
-*   `HTNPoRT-full-female-1000-betas.csv`: Contains the bootstrap coefficients for the female full model.
+*   `HTNPoRT-full-male-500-betas.csv`: Replicate-weight coefficients for the male full model.
+*   `HTNPoRT-full-female-500-betas.csv`: Replicate-weight coefficients for the female full model.
 
 ## Data Dictionary
 
-Each row in the CSV files represents a single bootstrap iteration.
+Each row represents the model refitted with one CHMS bootstrap replicate weight.
 
-| Variable                          | Description                                                 |
-| --------------------------------- | ----------------------------------------------------------- |
-| Model iteration                   | Identifier for the bootstrap sample (e.g., "bootstrap_1")   |
-| Intercept                         | The intercept term for the model in that iteration.         |
-| ... (model coefficients)          | Columns for each of the model's predictor variables' coefficients. |
+| Variable                 | Description                                                         |
+| ------------------------ | ------------------------------------------------------------------- |
+| (first column, unnamed)  | Replicate identifier (e.g., "replicate_1")                          |
+| (Intercept)              | The model intercept for that replicate.                             |
+| ... (model coefficients) | One column per centred predictor term (e.g., `clc_age_rcs_1_C`).   |
 
 ## Code Reference
 
-These files can be used for generating uncertainty around model predictions. The code that generated these files can be found in `models.Rmd` between lines 1038 and 1056 and in `model-functions.R` between lines 250 and 262.
+These coefficients can be used to generate uncertainty around model predictions, consistent with the CHMS bootstrap variance method (scale = 1/500, 68 degrees of freedom).
+
+The replicate refits are run in `papers/models.Rmd` (lines 1041–1057) using `survey::withReplicates()` with `pop_est()` (`R/model-functions.R`, line 304). Coefficients are extracted with `extract_replicate_betas()` (`R/model-functions.R`, line 404) and exported in `papers/models.Rmd` (lines 1069–1077).
 
 ### Example Code
 
 ```r
-# Function to obtain bootstrap beta coefficients for a model
-bootstrap_coefs <- function(data, indices, model) {
-  # Create bootstrap sample
-  boot_data <- data[indices, ]
-  
-  # Recreate survey design
-  boot_design <- survey::svydesign(ids = ~1, weights = ~wgt_full, data = boot_data)
-  
-  # Refit model
-  boot_model <- update(model, data = boot_data, design = boot_design)
-  
-  # Return coefficients
-  return(coef(boot_model))
-}
+res_male_full <- survey::withReplicates(weighted_male_c, function(w, data) {
+  pop_est(w, data, formula = formula(male_model))
+}, return.replicates = TRUE)
 
-# Get bootstrap beta coefficients and their standard errors
-bootstrap_coefs_male <- replicate(n_bootstrap, {
-  boot_indices <- sample(1:nrow(male_data_c), replace = TRUE)
-  bootstrap_coefs(male_data_c, boot_indices, male_full_model)
-}, simplify = FALSE)
-
-coef_matrix_male <- do.call(rbind, bootstrap_coefs_male)
-rownames(coef_matrix_male) <- paste0("bootstrap_", 1:n_bootstrap)
-
-bootstrap_coefs_female <- replicate(n_bootstrap, {
-  boot_indices <- sample(1:nrow(female_data_c), replace = TRUE)
-  bootstrap_coefs(female_data_c, boot_indices, female_full_model)
-}, simplify = FALSE)
-
-coef_matrix_female <- do.call(rbind, bootstrap_coefs_female)
-rownames(coef_matrix_female) <- paste0("bootstrap_", 1:n_bootstrap)
+betas_male_full <- extract_replicate_betas(res_male_full)
 ```

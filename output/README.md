@@ -12,13 +12,13 @@ This folder contains all the outputs needed for the implementation of the HTNPoR
 
 Each model folder (`full-models/` and `reduced-models/`) contains:
 
-*   **`bootstrap-betas/`**: Coefficients from 1000 bootstrap iterations of the HTNPoRT models.
+*   **`bootstrap-betas/`**: Coefficients from refitting the HTNPoRT models with each of the 500 CHMS bootstrap replicate weights.
 *   **`correlation-matrix/`**: Correlation matrices for the predictor variables.
 *   **`logistic-model-export/`**: Exported logistic regression model parameters (CSV files for deployment).
 *   **`model-object/`**: Saved R model objects (`.rds` files).
-*   **`predicted-percentiles/`**: Percentiles of predicted hypertension risk across the study population.
+*   **`predicted-percentiles/`**: Survey-weighted percentiles of predicted hypertension risk across the study population, with 95% CIs.
 *   **`validation-data/`**: Validation datasets for testing model predictions.
-*   **`vascular-age/`**: Summaries of predicted hypertension probability by age group.
+*   **`vascular-age/`**: Survey-weighted mean predicted hypertension probability by 1-year age and 5-year age group, with 95% CIs.
 
 ## File Naming Convention
 
