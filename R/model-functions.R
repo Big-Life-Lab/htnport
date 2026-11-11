@@ -306,8 +306,8 @@ pop_est <- function(w, data, formula, outcome = "highbp14090_adj",
                     fmh_var = "fmh_15", bmi_var = "bmigroup",
                     diab_var = "diabx") {
 
-  # Refit model with replicate weights
-  data$.w <- w
+  # Refit model with normalized replicate weights
+  data$.w <- w * length(w) / sum(w)
   fit <- glm(formula, data = data, weights = .w, family = quasibinomial())
   p <- predict(fit, newdata = data, type = "response")
   obs <- data[[outcome]]
